@@ -61,12 +61,23 @@ Replace the `libraries/TFT_eSPI/User_Setup.h` with the `User_Setup.h` from the r
 1. Pair "CYD MIDI" via Bluetooth
 2. Select as MIDI input in your DAW
 
+### 6. Optional: Enable Remote Display
+To view the CYD display in your web browser:
+1. Copy `include/wifi_config.h.example` to `include/wifi_config.h`
+2. Edit the file and enter your WiFi credentials
+3. Rebuild and upload
+4. Check Serial Monitor for the IP address
+5. Open the IP address in your browser
+
+For full details, see [REMOTE_DISPLAY.md](REMOTE_DISPLAY.md)
+
 ## Troubleshooting
 
 - **Upload Speed**: Lower it to `115200` if the sketch isn't uploading
 - **Blank screen**: Check TFT_eSPI pin configuration
 - **No touch**: Verify touchscreen library installation
 - **No Bluetooth**: Restart device and re-pair
+- **Remote Display not working**: Ensure WiFi credentials are correct and your network is 2.4GHz (ESP32 doesn't support 5GHz)
 
 ## License
 
