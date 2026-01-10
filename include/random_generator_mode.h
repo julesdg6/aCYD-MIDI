@@ -225,7 +225,7 @@ void handleRandomGeneratorMode() {
       return;
     }
     if (isButtonPressed(95, y, 25, 25)) {
-      randomGen.bpm = min(SCALE_Y(200), randomGen.bpm + 5);
+      randomGen.bpm = min(200, randomGen.bpm + 5);
       calculateNoteInterval();
       drawRandomGenControls();
       return;

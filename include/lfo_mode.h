@@ -117,10 +117,10 @@ void drawLFOControls() {
 
 void drawWaveform() {
   // Draw a mini waveform visualization
-  int waveX = 10;
-  int waveY = 180;
-  int waveW = SCALE_Y(200);
-  int waveH = 30;
+  int waveX = MARGIN_SMALL;
+  int waveY = SCALE_Y(180);
+  int waveW = SCALE_X(200);
+  int waveH = SCALE_Y(30);
   
   tft.drawRect(waveX, waveY, waveW, waveH, THEME_TEXT_DIM);
   

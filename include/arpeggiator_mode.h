@@ -77,7 +77,7 @@ void drawArpControls() {
   drawRoundButton(160, y, 25, 25, ">", THEME_SECONDARY);
   
   // Chord type
-  tft.drawString("Type:", SCALE_Y(200), y + 6, 1);
+  tft.drawString("Type:", SCALE_X(200), y + 6, 1);
   drawRoundButton(240, y, 50, 25, chordTypeNames[arp.chordType], THEME_ACCENT);
   
   y += spacing;
@@ -234,7 +234,7 @@ void handleArpeggiatorMode() {
       return;
     }
     if (isButtonPressed(110, y, 25, 25)) {
-      arp.bpm = min(SCALE_Y(200), arp.bpm + 5);
+      arp.bpm = min(200, arp.bpm + 5);
       calculateStepInterval();
       drawArpControls();
       return;

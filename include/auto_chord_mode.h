@@ -113,36 +113,37 @@ void handleAutoChordMode() {
   }
   
   if (touch.justPressed) {
+    int ctrlY = SCALE_Y(180);
     // Octave controls
-    if (isButtonPressed(SCALE_X(10), SCALE_Y(180), 40, 25)) {
+    if (isButtonPressed(SCALE_X(10), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       chordOctave = max(2, chordOctave - 1);
       drawAutoChordMode();
       return;
     }
-    if (isButtonPressed(SCALE_X(60), SCALE_Y(180), 40, 25)) {
+    if (isButtonPressed(SCALE_X(60), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       chordOctave = min(6, chordOctave + 1);
       drawAutoChordMode();
       return;
     }
     
     // Scale selector
-    if (isButtonPressed(110, 180, 60, 25)) {
+    if (isButtonPressed(SCALE_X(110), ctrlY, BTN_LARGE_W, BTN_SMALL_H)) {
       chordScale = (chordScale + 1) % NUM_SCALES;
       drawAutoChordMode();
       return;
     }
     
     // Clear all
-    if (isButtonPressed(SCALE_X(180), SCALE_Y(180), 60, 25)) {
+    if (isButtonPressed(SCALE_X(180), ctrlY, BTN_LARGE_W, BTN_SMALL_H)) {
       stopAllChords();
       drawChordKeys();
       return;
     }
     
     // Chord keys - only handle on initial press
-    int keyWidth = 320 / 8;
-    int keyHeight = 80;
-    int keyY = 80;
+    int keyWidth = DISPLAY_WIDTH / 8;
+    int keyHeight = SCALE_Y(80);
+    int keyY = SCALE_Y(80);
     
     for (int i = 0; i < 8; i++) {
       int x = i * keyWidth;
