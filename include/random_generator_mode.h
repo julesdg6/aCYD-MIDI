@@ -282,7 +282,7 @@ void playRandomNote() {
       sendMIDI(0x90, note, 100);
       randomGen.currentNote = note;
       
-      Serial.printf("Random note: %s (prob: %d%%)\n", 
+      MIDI_DEBUG("Random note: %s (prob: %d%%)\n", 
                    getNoteNameFromMIDI(note).c_str(), randomGen.probability);
       
       // Update display

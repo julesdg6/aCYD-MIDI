@@ -155,7 +155,7 @@ void playKeyboardNote(int row, int keyIndex, bool on) {
   int note = getNoteInScale(keyboardScale, keyIndex, keyboardOctave + row) + keyboardKey;
   sendMIDI(on ? 0x90 : 0x80, note, on ? 100 : 0);
   
-  Serial.printf("Key R%d:%d: %s %s\n", row, keyIndex, getNoteNameFromMIDI(note).c_str(), on ? "ON" : "OFF");
+  MIDI_DEBUG("Key R%d:%d: %s %s\n", row, keyIndex, getNoteNameFromMIDI(note).c_str(), on ? "ON" : "OFF");
 }
 
 #endif

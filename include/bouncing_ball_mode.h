@@ -362,7 +362,7 @@ void checkWallCollisions() {
         walls[w].active = true;
         walls[w].activeTime = millis();
         
-        Serial.printf("Wall segment hit: %s\n", walls[w].noteName.c_str());
+        MIDI_DEBUG("Wall segment hit: %s\n", walls[w].noteName.c_str());
         break; // Only trigger one wall per ball per frame
       }
     }
