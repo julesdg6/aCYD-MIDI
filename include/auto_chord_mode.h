@@ -57,21 +57,22 @@ void drawAutoChordMode() {
   drawChordKeys();
   
   // Controls
-  drawRoundButton(10, 180, 40, 25, "OCT-", THEME_SECONDARY);
-  drawRoundButton(60, 180, 40, 25, "OCT+", THEME_SECONDARY);
-  drawRoundButton(110, 180, 60, 25, "SCALE", THEME_ACCENT);
-  drawRoundButton(180, 180, 60, 25, "CLEAR", THEME_ERROR);
+  int ctrlY = SCALE_Y(180);
+  drawRoundButton(SCALE_X(10), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "OCT-", THEME_SECONDARY);
+  drawRoundButton(SCALE_X(60), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "OCT+", THEME_SECONDARY);
+  drawRoundButton(SCALE_X(110), ctrlY, BTN_LARGE_W, BTN_SMALL_H, "SCALE", THEME_ACCENT);
+  drawRoundButton(SCALE_X(180), ctrlY, BTN_LARGE_W, BTN_SMALL_H, "CLEAR", THEME_ERROR);
   
   // Status
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Oct " + String(chordOctave), 10, 210, 1);
-  tft.drawString("Classic piano chords", 110, 210, 1);
+  tft.drawString("Oct " + String(chordOctave), MARGIN_SMALL, SCALE_Y(210), 1);
+  tft.drawString("Classic piano chords", SCALE_X(110), SCALE_Y(210), 1);
 }
 
 void drawChordKeys() {
-  int keyWidth = 320 / 8;
-  int keyHeight = 80;
-  int keyY = 80;
+  int keyWidth = DISPLAY_WIDTH / 8;
+  int keyHeight = SCALE_Y(80);
+  int keyY = SCALE_Y(80);
   
   uint16_t degreeColors[] = {
     THEME_PRIMARY, THEME_SECONDARY, THEME_ACCENT, THEME_SUCCESS,
@@ -113,12 +114,12 @@ void handleAutoChordMode() {
   
   if (touch.justPressed) {
     // Octave controls
-    if (isButtonPressed(10, 180, 40, 25)) {
+    if (isButtonPressed(SCALE_X(10), SCALE_Y(180), 40, 25)) {
       chordOctave = max(2, chordOctave - 1);
       drawAutoChordMode();
       return;
     }
-    if (isButtonPressed(60, 180, 40, 25)) {
+    if (isButtonPressed(SCALE_X(60), SCALE_Y(180), 40, 25)) {
       chordOctave = min(6, chordOctave + 1);
       drawAutoChordMode();
       return;
@@ -132,7 +133,7 @@ void handleAutoChordMode() {
     }
     
     // Clear all
-    if (isButtonPressed(180, 180, 60, 25)) {
+    if (isButtonPressed(SCALE_X(180), SCALE_Y(180), 60, 25)) {
       stopAllChords();
       drawChordKeys();
       return;

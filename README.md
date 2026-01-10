@@ -60,12 +60,30 @@ Replace the `libraries/TFT_eSPI/User_Setup.h` with the `User_Setup.h` from the r
 1. Pair "CYD MIDI" via Bluetooth
 2. Select as MIDI input in your DAW
 
+## Display Autoscaling
+
+The UI automatically scales to different screen sizes and resolutions. The system:
+
+- **Auto-detects** display dimensions at startup from LVGL
+- **Scales** all UI elements proportionally using scaling macros
+- **Maintains** consistent layout across different ESP32/CYD hardware
+- **Supports** custom display configurations via `platformio.ini`
+
+### Reference Display
+The default layout is designed for 320x240 pixels (ESP32-2432S028R). The scaling system automatically adjusts all coordinates, sizes, and spacing for different resolutions.
+
+### Adding Support for New Displays
+1. Configure your display hardware in `platformio.ini` build flags
+2. The autoscaling system will automatically adjust the UI
+3. No code changes needed - scaling happens at runtime
+
 ## Troubleshooting
 
 - **Upload Speed**: Lower it to `115200` if the sketch isn't uploading
 - **Blank screen**: Check TFT_eSPI pin configuration
 - **No touch**: Verify touchscreen library installation
 - **No Bluetooth**: Restart device and re-pair
+- **UI too small/large**: Check display resolution detection in serial output
 
 ## License
 

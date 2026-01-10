@@ -67,10 +67,10 @@ void initializePhysicsDropMode() {
     dropBalls[i].active = false;
   }
   
-  // Create some default platforms
-  platforms[0] = {80, 160, 60, 8, 0.2, THEME_PRIMARY, false, 60, "C4", 0};
-  platforms[1] = {180, 140, 50, 8, -0.3, THEME_SECONDARY, false, 64, "E4", 0};
-  platforms[2] = {120, 120, 40, 8, 0.1, THEME_ACCENT, false, 67, "G4", 0};
+  // Create some default platforms (with scaled positions)
+  platforms[0] = {(float)SCALE_X(80), (float)SCALE_Y(160), (float)SCALE_X(60), (float)SCALE_Y(8), 0.2, THEME_PRIMARY, false, 60, "C4", 0};
+  platforms[1] = {(float)SCALE_X(180), (float)SCALE_Y(140), (float)SCALE_X(50), (float)SCALE_Y(8), -0.3, THEME_SECONDARY, false, 64, "E4", 0};
+  platforms[2] = {(float)SCALE_X(120), (float)SCALE_Y(120), (float)SCALE_X(40), (float)SCALE_Y(8), 0.1, THEME_ACCENT, false, 67, "G4", 0};
   numPlatforms = 3;
 }
 
@@ -89,9 +89,9 @@ void drawPhysicsDropMode() {
   // Status display
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   String keyName = getNoteNameFromMIDI(dropKey);
-  tft.drawString(keyName + " " + scales[dropScale].name, 10, 180, 1);
-  tft.drawString("Oct:" + String(dropOctave), 150, 180, 1);
-  tft.drawString("Balls:" + String(numActiveDropBalls), 220, 180, 1);
+  tft.drawString(keyName + " " + scales[dropScale].name, MARGIN_SMALL, SCALE_Y(180), 1);
+  tft.drawString("Oct:" + String(dropOctave), SCALE_X(150), SCALE_Y(180), 1);
+  tft.drawString("Balls:" + String(numActiveDropBalls), SCALE_X(220), SCALE_Y(180), 1);
   
   drawPlatforms();
   drawDropBalls();
