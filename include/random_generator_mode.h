@@ -131,7 +131,7 @@ void drawRandomGenControls() {
 
 void handleRandomGeneratorMode() {
   // Back button
-  if (touch.justPressed && isButtonPressed(10, 10, 50, 25)) {
+  if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
     exitToMenu();
     return;
   }
@@ -225,7 +225,7 @@ void handleRandomGeneratorMode() {
       return;
     }
     if (isButtonPressed(95, y, 25, 25)) {
-      randomGen.bpm = min(200, randomGen.bpm + 5);
+      randomGen.bpm = min(SCALE_Y(200), randomGen.bpm + 5);
       calculateNoteInterval();
       drawRandomGenControls();
       return;

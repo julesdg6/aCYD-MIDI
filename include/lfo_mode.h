@@ -119,7 +119,7 @@ void drawWaveform() {
   // Draw a mini waveform visualization
   int waveX = 10;
   int waveY = 180;
-  int waveW = 200;
+  int waveW = SCALE_Y(200);
   int waveH = 30;
   
   tft.drawRect(waveX, waveY, waveW, waveH, THEME_TEXT_DIM);
@@ -153,7 +153,7 @@ void drawWaveform() {
 
 void handleLFOMode() {
   // Back button
-  if (touch.justPressed && isButtonPressed(10, 10, 50, 25)) {
+  if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
     lfo.isRunning = false;
     exitToMenu();
     return;
