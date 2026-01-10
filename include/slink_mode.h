@@ -234,6 +234,15 @@ void drawScaleTab();
 void drawModTab();
 void drawSetupTab();
 
+// UI handlers
+void handleMainTab();
+void handleTriggerTab();
+void handlePitchTab();
+void handleClockTab();
+void handleScaleTab();
+void handleModTab();
+void handleSetupTab();
+
 // UI helpers
 void drawWaveVisualization(int y_start, int height, SlinkWave* wave, 
                           uint16_t color, const char* label);
@@ -253,5 +262,6 @@ void drawKnobControl(int x, int y, int radius, float value,
 float applyForteCurve(float normalized, float forte);
 float getSyncInterval(float sync_value, bool triplet, bool dotted, float bpm);
 uint32_t calculateNoteLength(float trigger_val, float pitch_val, ClockEngine* engine);
+int countActiveVoices();
 
 #endif // SLINK_MODE_H
