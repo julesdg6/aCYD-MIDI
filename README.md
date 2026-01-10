@@ -22,6 +22,8 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 ### Core Features
 
 - **Bluetooth MIDI** - Wireless connection to DAWs and music software
+- **Hardware MIDI** - DIN-5 connector output via UART (optional)
+- **Dual MIDI Output** - Send to both BLE and hardware simultaneously
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
 - **Visual Feedback** - Responsive graphics
@@ -29,7 +31,8 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 ## What You Need
 
 - **ESP32-2432S028R (CYD)** - ~$15 from AliExpress/Amazon
-- Arduino IDE with ESP32 support
+- PlatformIO or Arduino IDE with ESP32 support
+- *Optional:* Hardware MIDI circuit components (see [HARDWARE_MIDI.md](HARDWARE_MIDI.md))
 
 ## Installation
 
@@ -59,6 +62,13 @@ Replace the `libraries/TFT_eSPI/User_Setup.h` with the `User_Setup.h` from the r
 ### 5. Connect
 1. Pair "CYD MIDI" via Bluetooth
 2. Select as MIDI input in your DAW
+
+### 6. Optional: Hardware MIDI Output
+For traditional DIN-5 MIDI output with lower latency, see the complete guide:
+- **[Hardware MIDI Setup Guide](HARDWARE_MIDI.md)**
+- Supports simultaneous BLE + Hardware MIDI
+- Two UART options: UART0 (serial breakout) or UART2 (expansion GPIOs)
+- Circuit components ~$5-10
 
 ## Troubleshooting
 
