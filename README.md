@@ -25,11 +25,13 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
 - **Visual Feedback** - Responsive graphics
+- **Screenshot Capture** - Save screenshots to SD card as BMP files (from main menu)
 
 ## What You Need
 
 - **ESP32-2432S028R (CYD)** - ~$15 from AliExpress/Amazon
-- Arduino IDE with ESP32 support
+- **MicroSD Card** (optional) - For screenshot capture feature
+- Arduino IDE with ESP32 support or PlatformIO
 
 ## Installation
 
@@ -60,12 +62,21 @@ Replace the `libraries/TFT_eSPI/User_Setup.h` with the `User_Setup.h` from the r
 1. Pair "CYD MIDI" via Bluetooth
 2. Select as MIDI input in your DAW
 
+## Usage
+
+### Taking Screenshots
+1. Insert a MicroSD card into the CYD's SD card slot
+2. From the main menu, tap the "SCREENSHOT" button
+3. Screenshots are saved as BMP files (screen000.bmp, screen001.bmp, etc.) to the SD card
+4. View the serial monitor for confirmation messages
+
 ## Troubleshooting
 
 - **Upload Speed**: Lower it to `115200` if the sketch isn't uploading
 - **Blank screen**: Check TFT_eSPI pin configuration
 - **No touch**: Verify touchscreen library installation
 - **No Bluetooth**: Restart device and re-pair
+- **Screenshot fails**: Ensure SD card is properly inserted and formatted (FAT32)
 
 ## License
 
