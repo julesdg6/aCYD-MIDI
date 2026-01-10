@@ -141,14 +141,17 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 void initRemoteDisplay() {
     Serial.println("Initializing Remote Display...");
     
-    // Connect to WiFi
+    // Connect to WiFi (non-blocking approach would be better for production)
+    // Note: This uses a simple blocking approach during initialization
+    // For production, consider using WiFi.onEvent() for non-blocking connection
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
     Serial.print("Connecting to WiFi");
     int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
+    const int maxAttempts = 20;  // 10 second timeout
+    while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
+        delay(500);  // Blocking delay during init only - acceptable during setup
         Serial.print(".");
         attempts++;
     }
@@ -199,44 +202,37 @@ void sendFrameUpdate() {
     size_t bufferSize = width * height * 2;
     
     // Allocate temporary buffer for frame data
+    // Using malloc here as this is called periodically and size varies by display
     uint8_t *frameBuffer = (uint8_t *)malloc(bufferSize);
     if (!frameBuffer) {
-        Serial.println("Failed to allocate frame buffer");
-        return;
+        Serial.println("Failed to allocate frame buffer for remote display");
+        return;  // Early return ensures no memory leak
     }
     
-    // Use LVGL screenshot API to capture the current screen
-    // Create an image descriptor for the screenshot
-    lv_obj_t *scr = lv_screen_active();
-    if (scr) {
-        // Create a canvas to render the screen to
-        lv_area_t area;
-        area.x1 = 0;
-        area.y1 = 0;
-        area.x2 = width - 1;
-        area.y2 = height - 1;
-        
-        // For now, we'll use a simplified approach:
-        // Request a screenshot by rendering the screen to our buffer
-        // This is a placeholder - in a production implementation, you would
-        // either hook into the display driver's flush callback or use
-        // LVGL's lv_snapshot_take_to_buf() if available in your LVGL version
-        
-        // Alternative approach: Read from display driver buffer
-        // This would require accessing the internal display buffer
-        // For now, send a black frame as a placeholder
-        memset(frameBuffer, 0, bufferSize);
-        
-        // TODO: Implement proper framebuffer capture
-        // Options:
-        // 1. Use lv_snapshot_take_to_buf() if available
-        // 2. Hook into display flush callback to copy buffer
-        // 3. Use display driver's get_buffer function
-    }
+    // IMPLEMENTATION NOTE: Framebuffer Capture
+    // The current implementation sends a black placeholder frame.
+    // To capture the actual display content, implement one of these approaches:
+    //
+    // Option 1: Use LVGL snapshot API (LVGL 9.x):
+    //   lv_draw_buf_t *snapshot = lv_snapshot_take_to_buf(lv_screen_active(), LV_COLOR_FORMAT_RGB565);
+    //   if (snapshot) {
+    //       memcpy(frameBuffer, snapshot->data, bufferSize);
+    //       lv_draw_buf_destroy(snapshot);
+    //   }
+    //
+    // Option 2: Hook display flush callback to copy buffer:
+    //   Store a pointer to the last flushed buffer and copy from it
+    //
+    // Option 3: Read from display driver internal buffer:
+    //   Access esp32_smartdisplay internals to get current framebuffer
     
-    // Send frame data to all connected clients
+    // Placeholder: Send black frame (intentional for development/testing)
+    memset(frameBuffer, 0, bufferSize);
+    
+    // Send frame data to all connected clients via WebSocket
     ws.binaryAll(frameBuffer, bufferSize);
     
+    // Free allocated memory - ensures no leak on any exit path
     free(frameBuffer);
 }
 

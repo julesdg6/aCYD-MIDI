@@ -1,14 +1,15 @@
-# WiFi Configuration Example
-# Copy this file to include/wifi_config.h and update with your credentials
+/* WiFi Configuration Example
+ * Copy this file to include/wifi_config.h and update with your credentials
+ */
 
 #ifndef WIFI_CONFIG_H
 #define WIFI_CONFIG_H
 
-// Replace these with your actual WiFi credentials
+/* Replace these with your actual WiFi credentials */
 #define WIFI_SSID "MyWiFiNetwork"
 #define WIFI_PASSWORD "MyWiFiPassword"
 
-// Remote Display Configuration
-#define REMOTE_DISPLAY_ENABLED 1  // Set to 0 to disable remote display
+/* Remote Display Configuration */
+#define REMOTE_DISPLAY_ENABLED 1  /* Set to 0 to disable remote display */
 
-#endif // WIFI_CONFIG_H
+#endif /* WIFI_CONFIG_H */
