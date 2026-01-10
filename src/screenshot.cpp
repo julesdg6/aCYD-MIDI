@@ -2,28 +2,30 @@
 
 static bool sdInitialized = false;
 
-// BMP file header structures
+// BMP file header structures (Windows BMP format)
 #pragma pack(push, 1)
+// BITMAPFILEHEADER - File header (14 bytes)
 typedef struct {
-    uint16_t bfType;
-    uint32_t bfSize;
-    uint16_t bfReserved1;
-    uint16_t bfReserved2;
-    uint32_t bfOffBits;
+    uint16_t bfType;        // "BM" signature (0x4D42)
+    uint32_t bfSize;        // File size in bytes
+    uint16_t bfReserved1;   // Reserved (0)
+    uint16_t bfReserved2;   // Reserved (0)
+    uint32_t bfOffBits;     // Offset to pixel data
 } BITMAPFILEHEADER;
 
+// BITMAPINFOHEADER - DIB header (40 bytes)
 typedef struct {
-    uint32_t biSize;
-    int32_t biWidth;
-    int32_t biHeight;
-    uint16_t biPlanes;
-    uint16_t biBitCount;
-    uint32_t biCompression;
-    uint32_t biSizeImage;
-    int32_t biXPelsPerMeter;
-    int32_t biYPelsPerMeter;
-    uint32_t biClrUsed;
-    uint32_t biClrImportant;
+    uint32_t biSize;            // Header size (40)
+    int32_t biWidth;            // Image width
+    int32_t biHeight;           // Image height (positive = bottom-up)
+    uint16_t biPlanes;          // Color planes (1)
+    uint16_t biBitCount;        // Bits per pixel (24)
+    uint32_t biCompression;     // Compression type (0 = none)
+    uint32_t biSizeImage;       // Image size in bytes
+    int32_t biXPelsPerMeter;    // Horizontal resolution (0)
+    int32_t biYPelsPerMeter;    // Vertical resolution (0)
+    uint32_t biClrUsed;         // Colors used (0 = all)
+    uint32_t biClrImportant;    // Important colors (0 = all)
 } BITMAPINFOHEADER;
 #pragma pack(pop)
 
@@ -85,7 +87,16 @@ bool takeScreenshot() {
     Serial.printf("Display size: %dx%d\n", width, height);
     
     // Allocate buffer for snapshot (RGB565 format)
-    size_t buf_size = width * height * sizeof(lv_color_t);
+    // Check for potential overflow in buffer size calculation
+    size_t pixels = (size_t)width * (size_t)height;
+    size_t buf_size = pixels * sizeof(lv_color_t);
+    
+    // Sanity check: ensure buffer size is reasonable (max ~1MB for typical displays)
+    if (buf_size == 0 || buf_size > 1024 * 1024) {
+        Serial.printf("Invalid buffer size: %zu bytes\n", buf_size);
+        return false;
+    }
+    
     void* buf = malloc(buf_size);
     if (!buf) {
         Serial.println("Failed to allocate snapshot buffer");
@@ -106,7 +117,9 @@ bool takeScreenshot() {
     
     Serial.println("Snapshot captured, saving to BMP...");
     
-    // Generate filename with timestamp
+    // Generate filename with incrementing counter
+    // Note: Counter resets on device restart, which may overwrite existing files
+    // TODO: Consider checking for existing files or persisting counter to avoid overwrites
     static int screenshot_count = 0;
     char filename[32];
     snprintf(filename, sizeof(filename), "/screen%03d.bmp", screenshot_count++);
