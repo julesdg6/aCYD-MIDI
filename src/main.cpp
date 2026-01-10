@@ -30,6 +30,9 @@ uint8_t midiPacket[] = {0x80, 0x80, 0, 0, 0};
 TouchState touch;
 AppMode currentMode = MENU;
 
+// Display configuration for autoscaling
+DisplayConfig displayConfig;
+
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override { deviceConnected = true; }
   void onDisconnect(BLEServer *server) override {
@@ -77,20 +80,20 @@ void setupBLE() {
 
 void drawMenu() {
   tft.fillScreen(THEME_BG);
-  tft.fillRect(0, 0, 320, 45, THEME_SURFACE);
-  tft.drawFastHLine(0, 45, 320, THEME_PRIMARY);
+  tft.fillRect(0, 0, DISPLAY_WIDTH, HEADER_HEIGHT, THEME_SURFACE);
+  tft.drawFastHLine(0, HEADER_HEIGHT, DISPLAY_WIDTH, THEME_PRIMARY);
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);
-  tft.drawCentreString("CYD MIDI", 160, 8, 4);
+  tft.drawCentreString("CYD MIDI", DISPLAY_CENTER_X, HEADER_TITLE_Y, 4);
   tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-  tft.drawCentreString("Select Mode", 160, 28, 2);
+  tft.drawCentreString("Select Mode", DISPLAY_CENTER_X, HEADER_SUBTITLE_Y, 2);
 
   const int cols = 2;
-  const int btnW = 140;
-  const int btnH = 28;
-  const int gapX = 20;
-  const int gapY = 8;
-  const int startX = 10;
-  const int startY = 55;
+  const int btnW = SCALE_X(140);
+  const int btnH = SCALE_Y(28);
+  const int gapX = SCALE_X(20);
+  const int gapY = SCALE_Y(8);
+  const int startX = MARGIN_SMALL;
+  const int startY = SCALE_Y(55);
 
   for (size_t i = 0; i < sizeof(kMenuItems) / sizeof(kMenuItems[0]); i++) {
     int col = i % cols;
@@ -203,12 +206,12 @@ void handleMenu() {
     return;
   }
   const int cols = 2;
-  const int btnW = 140;
-  const int btnH = 28;
-  const int gapX = 20;
-  const int gapY = 8;
-  const int startX = 10;
-  const int startY = 55;
+  const int btnW = SCALE_X(140);
+  const int btnH = SCALE_Y(28);
+  const int gapX = SCALE_X(20);
+  const int gapY = SCALE_Y(8);
+  const int startX = MARGIN_SMALL;
+  const int startY = SCALE_Y(55);
 
   for (size_t i = 0; i < sizeof(kMenuItems) / sizeof(kMenuItems[0]); i++) {
     int col = i % cols;
@@ -226,12 +229,30 @@ void exitToMenu() {
   switchMode(MENU);
 }
 
+void initDisplayConfig() {
+  lv_display_t *display = lv_display_get_default();
+  if (display) {
+    displayConfig.width = lv_display_get_horizontal_resolution(display);
+    displayConfig.height = lv_display_get_vertical_resolution(display);
+    displayConfig.scaleX = (float)displayConfig.width / (float)DISPLAY_REF_WIDTH;
+    displayConfig.scaleY = (float)displayConfig.height / (float)DISPLAY_REF_HEIGHT;
+    
+    Serial.printf("Display Config: %dx%d (scale: %.2fx, %.2fy)\n", 
+                  displayConfig.width, displayConfig.height,
+                  displayConfig.scaleX, displayConfig.scaleY);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(200);
   smartdisplay_init();
   lv_display_t *display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
+  
+  // Initialize display configuration for autoscaling
+  initDisplayConfig();
+  
   tft.init();
   render_obj = lv_obj_create(lv_screen_active());
   lv_obj_set_size(render_obj,
