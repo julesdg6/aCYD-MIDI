@@ -21,7 +21,13 @@ The system uses:
 
 ### 1. Configure WiFi Credentials
 
-Edit `include/wifi_config.h` and update:
+Copy the example configuration file and update with your credentials:
+
+```bash
+cp include/wifi_config.h.example include/wifi_config.h
+```
+
+Then edit `include/wifi_config.h` and update:
 
 ```cpp
 #define WIFI_SSID "YourWiFiSSID"
@@ -35,6 +41,8 @@ build_flags =
     -D WIFI_SSID=\"YourWiFiSSID\"
     -D WIFI_PASSWORD=\"YourWiFiPassword\"
 ```
+
+**Note:** The `wifi_config.h` file is ignored by git to prevent accidentally committing credentials.
 
 ### 2. Build and Upload
 
@@ -99,9 +107,52 @@ To disable the remote display feature:
 - Check firewall settings
 
 ### Display Shows Black Screen
-- The remote display requires successful LVGL framebuffer capture
+- The current implementation sends placeholder black frames
+- Full framebuffer capture requires deeper LVGL integration
+- This is a known limitation in the current version
+- Future updates will implement proper screen capture
 - Check Serial Monitor for error messages
 - Ensure sufficient memory is available
+
+## Implementation Notes
+
+### Current Limitations
+
+The current implementation includes a basic WebSocket-based remote display framework but has the following limitations:
+
+1. **Framebuffer Capture**: The screen capture is currently a placeholder. Full implementation requires:
+   - Hooking into the LVGL display driver's flush callback
+   - Using LVGL's snapshot API (if available in your version)
+   - Direct access to the display driver buffer
+
+2. **Performance**: With full framebuffer capture enabled:
+   - Each frame is ~150KB (320x240 RGB565)
+   - At 20 FPS, this requires ~3MB/s bandwidth
+   - May impact main application performance
+
+### Future Enhancements
+
+To complete the implementation, developers can:
+
+1. **Add Framebuffer Capture Hook**:
+   ```cpp
+   // In display driver flush callback
+   void my_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *color_p) {
+       // Copy buffer data for remote display
+       // Then call normal flush
+   }
+   ```
+
+2. **Use LVGL Snapshot API** (LVGL 9.x):
+   ```cpp
+   lv_draw_buf_t *buf = lv_snapshot_take_to_buf(scr, LV_COLOR_FORMAT_RGB565);
+   // Send buf->data via WebSocket
+   ```
+
+3. **Optimize Transmission**:
+   - Add frame compression (JPEG, PNG)
+   - Implement delta encoding
+   - Reduce frame rate dynamically based on changes
 
 ## Technical Details
 

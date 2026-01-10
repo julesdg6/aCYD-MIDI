@@ -205,15 +205,33 @@ void sendFrameUpdate() {
         return;
     }
     
-    // Get the active screen buffer
-    // Note: This is a simplified approach. In a real implementation,
-    // you would need to read the actual framebuffer from LVGL
+    // Use LVGL screenshot API to capture the current screen
+    // Create an image descriptor for the screenshot
     lv_obj_t *scr = lv_screen_active();
     if (scr) {
-        // This is a placeholder - actual implementation would need
-        // to capture the rendered framebuffer from LVGL
-        // For now, we'll create a simple test pattern
+        // Create a canvas to render the screen to
+        lv_area_t area;
+        area.x1 = 0;
+        area.y1 = 0;
+        area.x2 = width - 1;
+        area.y2 = height - 1;
+        
+        // For now, we'll use a simplified approach:
+        // Request a screenshot by rendering the screen to our buffer
+        // This is a placeholder - in a production implementation, you would
+        // either hook into the display driver's flush callback or use
+        // LVGL's lv_snapshot_take_to_buf() if available in your LVGL version
+        
+        // Alternative approach: Read from display driver buffer
+        // This would require accessing the internal display buffer
+        // For now, send a black frame as a placeholder
         memset(frameBuffer, 0, bufferSize);
+        
+        // TODO: Implement proper framebuffer capture
+        // Options:
+        // 1. Use lv_snapshot_take_to_buf() if available
+        // 2. Hook into display flush callback to copy buffer
+        // 3. Use display driver's get_buffer function
     }
     
     // Send frame data to all connected clients
