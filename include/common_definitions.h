@@ -97,7 +97,8 @@ enum AppMode {
   ARPEGGIATOR,
   GRID_PIANO,
   AUTO_CHORD,
-  LFO
+  LFO,
+  SLINK
 };
 
 // Music theory

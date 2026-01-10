@@ -20,6 +20,7 @@
 #include "remote_display.h"
 #include "sequencer_mode.h"
 #include "screenshot.h"
+#include "slink_mode.h"
 #include "ui_elements.h"
 #include "xy_pad_mode.h"
 
@@ -66,6 +67,7 @@ static const MenuItem kMenuItems[] = {
   {"GRID", GRID_PIANO, THEME_SUCCESS},
   {"CHORD", AUTO_CHORD, THEME_WARNING},
   {"LFO", LFO, THEME_SECONDARY},
+  {"SLINK", SLINK, THEME_ACCENT},
 };
 
 void setupBLE() {
@@ -165,6 +167,9 @@ static void render_event(lv_event_t *event) {
     case LFO:
       drawLFOMode();
       break;
+    case SLINK:
+      drawSlinkMode();
+      break;
     default:
       break;
   }
@@ -205,6 +210,9 @@ void switchMode(AppMode mode) {
       break;
     case LFO:
       initializeLFOMode();
+      break;
+    case SLINK:
+      initializeSlinkMode();
       break;
     default:
       break;
@@ -341,6 +349,9 @@ void loop() {
       break;
     case LFO:
       handleLFOMode();
+      break;
+    case SLINK:
+      handleSlinkMode();
       break;
     default:
       break;
