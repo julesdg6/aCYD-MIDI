@@ -11,6 +11,12 @@ static bool wifiConnected = false;
 static bool clientConnected = false;
 static uint32_t lastFrameUpdate = 0;
 
+// Frame buffer - static allocation to avoid fragmentation
+// For 320x240 RGB565 display = 153,600 bytes
+// Note: This is allocated only when REMOTE_DISPLAY_ENABLED
+// If memory is constrained, consider reducing resolution or using dynamic allocation
+static uint8_t frameBuffer[320 * 240 * 2];
+
 // HTML page for remote display viewer
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -201,12 +207,10 @@ void sendFrameUpdate() {
     // Calculate buffer size for RGB565 (2 bytes per pixel)
     size_t bufferSize = width * height * 2;
     
-    // Allocate temporary buffer for frame data
-    // Using malloc here as this is called periodically and size varies by display
-    uint8_t *frameBuffer = (uint8_t *)malloc(bufferSize);
-    if (!frameBuffer) {
-        Serial.println("Failed to allocate frame buffer for remote display");
-        return;  // Early return ensures no memory leak
+    // Verify buffer size matches our static allocation
+    if (bufferSize > sizeof(frameBuffer)) {
+        Serial.printf("Error: Display size %ux%u exceeds frame buffer capacity\n", width, height);
+        return;
     }
     
     // IMPLEMENTATION NOTE: Framebuffer Capture
@@ -230,10 +234,8 @@ void sendFrameUpdate() {
     memset(frameBuffer, 0, bufferSize);
     
     // Send frame data to all connected clients via WebSocket
+    // Using static buffer avoids malloc/free on every frame (20 FPS)
     ws.binaryAll(frameBuffer, bufferSize);
-    
-    // Free allocated memory - ensures no leak on any exit path
-    free(frameBuffer);
 }
 
 void handleRemoteDisplay() {

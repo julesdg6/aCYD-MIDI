@@ -165,7 +165,12 @@ To complete the implementation, developers can:
 ### Performance
 - Frame rate: ~20 FPS (configurable)
 - Latency: <100ms on local network
-- Memory usage: ~150KB buffer for frame capture
+- Memory usage: ~150KB static buffer for frame capture (allocated at compile time)
+
+**Note on Memory**: The remote display uses a 150KB static buffer to avoid memory fragmentation from repeated allocations. If you're experiencing memory constraints, you can:
+- Reduce the update rate by increasing `FRAME_UPDATE_INTERVAL`
+- Disable remote display when not needed by setting `REMOTE_DISPLAY_ENABLED 0`
+- Modify the code to use dynamic allocation if your use case benefits from it
 
 ## Future Enhancements
 
