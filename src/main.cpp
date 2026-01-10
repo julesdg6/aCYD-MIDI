@@ -75,7 +75,7 @@ void setupBLE() {
   BLEService *service = server->createService(SERVICE_UUID);
   pCharacteristic = service->createCharacteristic(
       CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ | 
+      BLECharacteristic::PROPERTY_READ |
       BLECharacteristic::PROPERTY_WRITE |
       BLECharacteristic::PROPERTY_WRITE_NO_RESPONSE |
       BLECharacteristic::PROPERTY_NOTIFY);
