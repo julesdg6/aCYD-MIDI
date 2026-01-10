@@ -25,3 +25,6 @@ env/
 # Backup files
 *~
 *.swp
+
+# WiFi credentials (keep example, ignore actual config)
+include/wifi_config.h
