@@ -59,7 +59,8 @@ inline void initHardwareMIDI() {
   
 #if HARDWARE_MIDI_UART == 0
   // UART0 - reconfigure Serial for MIDI
-  // Note: This must be called AFTER any Serial.begin(115200) has been skipped
+  // IMPORTANT: When using UART0, Serial.begin(115200) should NOT be called in setup()
+  // This will be called instead to configure UART0 for MIDI at 31,250 baud
   Serial.begin(MIDI_BAUD_RATE, SERIAL_8N1, MIDI_RX_PIN, MIDI_TX_PIN);
 #elif HARDWARE_MIDI_UART == 2
   // UART2 - initialize separate MIDI serial

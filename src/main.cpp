@@ -32,6 +32,7 @@ TouchState touch;
 AppMode currentMode = MENU;
 
 // UART2 instance for hardware MIDI (only used when HARDWARE_MIDI_UART == 2)
+// This definition matches the extern declaration in hardware_midi.h
 #if HARDWARE_MIDI_UART == 2
 HardwareSerial MIDISerial(2);
 #endif
