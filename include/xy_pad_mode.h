@@ -14,11 +14,11 @@ bool padPressed = false;
 int padX = 0, padY = 0;  // Touch position on pad
 bool xyPadNeedsReset = false;  // Flag to reset static variables
 
-// Pad area dimensions
-#define PAD_X 20
-#define PAD_Y 60
-#define PAD_WIDTH 200
-#define PAD_HEIGHT 140
+// Pad area dimensions - using scaled dimensions
+#define PAD_X SCALE_X(20)
+#define PAD_Y (HEADER_HEIGHT + SCALE_Y(15))
+#define PAD_WIDTH SCALE_X(200)
+#define PAD_HEIGHT SCALE_Y(140)
 #define PAD_CENTER_X (PAD_X + PAD_WIDTH/2)
 #define PAD_CENTER_Y (PAD_Y + PAD_HEIGHT/2)
 
@@ -109,12 +109,12 @@ void drawXYPad() {
   // Update value display only if values changed
   if (lastXValue != xValue || lastYValue != yValue) {
     // Clear previous text
-    tft.fillRect(PAD_X, PAD_Y + PAD_HEIGHT + 10, 160, 16, THEME_BG);
+    tft.fillRect(PAD_X, PAD_Y + PAD_HEIGHT + SCALE_Y(10), SCALE_X(160), SCALE_Y(16), THEME_BG);
     
     // Draw new values
     tft.setTextColor(THEME_TEXT, THEME_BG);
-    tft.drawString("X: " + String(xValue), PAD_X, PAD_Y + PAD_HEIGHT + 10, 2);
-    tft.drawString("Y: " + String(yValue), PAD_X + 80, PAD_Y + PAD_HEIGHT + 10, 2);
+    tft.drawString("X: " + String(xValue), PAD_X, PAD_Y + PAD_HEIGHT + SCALE_Y(10), 2);
+    tft.drawString("Y: " + String(yValue), PAD_X + SCALE_X(80), PAD_Y + PAD_HEIGHT + SCALE_Y(10), 2);
     
     lastXValue = xValue;
     lastYValue = yValue;
@@ -123,34 +123,34 @@ void drawXYPad() {
 
 void drawCCControls() {
   // CC assignment controls
-  int controlsX = PAD_X + PAD_WIDTH + 20;
+  int controlsX = PAD_X + PAD_WIDTH + SCALE_X(20);
   
   // X CC controls
   tft.setTextColor(THEME_PRIMARY, THEME_BG);
   tft.drawString("X CC", controlsX, PAD_Y, 2);
   
-  drawRoundButton(controlsX, PAD_Y + 25, 30, 25, "-", THEME_SECONDARY);
-  drawRoundButton(controlsX + 35, PAD_Y + 25, 30, 25, "+", THEME_SECONDARY);
+  drawRoundButton(controlsX, PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H, "-", THEME_SECONDARY);
+  drawRoundButton(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H, "+", THEME_SECONDARY);
   
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawCentreString(String(xCC), controlsX + 32, PAD_Y + 55, 2);
+  tft.drawCentreString(String(xCC), controlsX + SCALE_X(32), PAD_Y + SCALE_Y(55), 2);
   
   // Y CC controls
   tft.setTextColor(THEME_ACCENT, THEME_BG);
-  tft.drawString("Y CC", controlsX, PAD_Y + 80, 2);
+  tft.drawString("Y CC", controlsX, PAD_Y + SCALE_Y(80), 2);
   
-  drawRoundButton(controlsX, PAD_Y + 105, 30, 25, "-", THEME_SECONDARY);
-  drawRoundButton(controlsX + 35, PAD_Y + 105, 30, 25, "+", THEME_SECONDARY);
+  drawRoundButton(controlsX, PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H, "-", THEME_SECONDARY);
+  drawRoundButton(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H, "+", THEME_SECONDARY);
   
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawCentreString(String(yCC), controlsX + 32, PAD_Y + 135, 2);
+  tft.drawCentreString(String(yCC), controlsX + SCALE_X(32), PAD_Y + SCALE_Y(135), 2);
   
   // Reset button removed per user request
 }
 
 void handleXYPadMode() {
   // Back button
-  if (touch.justPressed && isButtonPressed(10, 10, 50, 25)) {
+  if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
     exitToMenu();
     return;
   }
@@ -173,27 +173,27 @@ void handleXYPadMode() {
   }
   
   if (touch.justPressed) {
-    int controlsX = PAD_X + PAD_WIDTH + 20;
+    int controlsX = PAD_X + PAD_WIDTH + SCALE_X(20);
     
     // X CC controls
-    if (isButtonPressed(controlsX, PAD_Y + 25, 30, 25)) {
+    if (isButtonPressed(controlsX, PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H)) {
       xCC = max(0, xCC - 1);
       drawCCControls();
       return;
     }
-    if (isButtonPressed(controlsX + 35, PAD_Y + 25, 30, 25)) {
+    if (isButtonPressed(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H)) {
       xCC = min(127, xCC + 1);
       drawCCControls();
       return;
     }
     
     // Y CC controls
-    if (isButtonPressed(controlsX, PAD_Y + 105, 30, 25)) {
+    if (isButtonPressed(controlsX, PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H)) {
       yCC = max(0, yCC - 1);
       drawCCControls();
       return;
     }
-    if (isButtonPressed(controlsX + 35, PAD_Y + 105, 30, 25)) {
+    if (isButtonPressed(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H)) {
       yCC = min(127, yCC + 1);
       drawCCControls();
       return;

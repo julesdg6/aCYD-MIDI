@@ -4,6 +4,62 @@
 #include "smartdisplay_compat.h"
 #include <BLEDevice.h>
 
+// ============================================================
+// Display Configuration and Autoscaling System
+// ============================================================
+// Reference display dimensions (ESP32-2432S028R default)
+#define DISPLAY_REF_WIDTH  320
+#define DISPLAY_REF_HEIGHT 240
+
+// Actual display dimensions (populated at runtime)
+struct DisplayConfig {
+  int width = DISPLAY_REF_WIDTH;
+  int height = DISPLAY_REF_HEIGHT;
+  float scaleX = 1.0f;
+  float scaleY = 1.0f;
+};
+
+extern DisplayConfig displayConfig;
+
+// Scaling macros - automatically scale coordinates and dimensions
+// Use these instead of hardcoded pixel values
+#define SCALE_X(x) ((int)((x) * displayConfig.scaleX))
+#define SCALE_Y(y) ((int)((y) * displayConfig.scaleY))
+#define SCALE_W(w) ((int)((w) * displayConfig.scaleX))
+#define SCALE_H(h) ((int)((h) * displayConfig.scaleY))
+
+// Common scaled dimensions (based on 320x240 reference)
+#define DISPLAY_WIDTH  (displayConfig.width)
+#define DISPLAY_HEIGHT (displayConfig.height)
+#define DISPLAY_CENTER_X (displayConfig.width / 2)
+#define DISPLAY_CENTER_Y (displayConfig.height / 2)
+
+// Header dimensions
+#define HEADER_HEIGHT SCALE_Y(45)
+#define HEADER_TITLE_Y SCALE_Y(8)
+#define HEADER_SUBTITLE_Y SCALE_Y(28)
+#define BACK_BUTTON_X SCALE_X(10)
+#define BACK_BUTTON_Y SCALE_Y(10)
+#define BACK_BUTTON_W SCALE_X(50)
+#define BACK_BUTTON_H SCALE_Y(25)
+
+// Common button dimensions
+#define BTN_SMALL_W SCALE_X(40)
+#define BTN_SMALL_H SCALE_Y(25)
+#define BTN_MEDIUM_W SCALE_X(50)
+#define BTN_MEDIUM_H SCALE_Y(25)
+#define BTN_LARGE_W SCALE_X(60)
+#define BTN_LARGE_H SCALE_Y(25)
+
+// Common spacing
+#define MARGIN_SMALL SCALE_X(10)
+#define MARGIN_MEDIUM SCALE_X(20)
+#define GAP_SMALL SCALE_X(5)
+#define GAP_MEDIUM SCALE_X(8)
+
+// Initialize display configuration
+void initDisplayConfig();
+
 // Color scheme
 #define THEME_BG         0x0000
 #define THEME_SURFACE    0x2945

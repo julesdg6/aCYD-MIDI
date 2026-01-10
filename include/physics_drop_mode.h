@@ -67,10 +67,10 @@ void initializePhysicsDropMode() {
     dropBalls[i].active = false;
   }
   
-  // Create some default platforms
-  platforms[0] = {80, 160, 60, 8, 0.2, THEME_PRIMARY, false, 60, "C4", 0};
-  platforms[1] = {180, 140, 50, 8, -0.3, THEME_SECONDARY, false, 64, "E4", 0};
-  platforms[2] = {120, 120, 40, 8, 0.1, THEME_ACCENT, false, 67, "G4", 0};
+  // Create some default platforms (with scaled positions)
+  platforms[0] = {(float)SCALE_X(80), (float)SCALE_Y(160), (float)SCALE_X(60), (float)SCALE_Y(8), 0.2, THEME_PRIMARY, false, 60, "C4", 0};
+  platforms[1] = {(float)SCALE_X(180), (float)SCALE_Y(140), (float)SCALE_X(50), (float)SCALE_Y(8), -0.3, THEME_SECONDARY, false, 64, "E4", 0};
+  platforms[2] = {(float)SCALE_X(120), (float)SCALE_Y(120), (float)SCALE_X(40), (float)SCALE_Y(8), 0.1, THEME_ACCENT, false, 67, "G4", 0};
   numPlatforms = 3;
 }
 
@@ -79,19 +79,19 @@ void drawPhysicsDropMode() {
   drawHeader("DROP", platformMode ? "Platform Edit" : "Tap to Drop");
   
   // Controls
-  drawRoundButton(10, 200, 40, 25, platformMode ? "DROP" : "EDIT", THEME_WARNING);
-  drawRoundButton(60, 200, 40, 25, "CLEAR", THEME_ERROR);
-  drawRoundButton(110, 200, 50, 25, "SCALE", THEME_ACCENT);
-  drawRoundButton(170, 200, 40, 25, "KEY-", THEME_SECONDARY);
-  drawRoundButton(220, 200, 40, 25, "KEY+", THEME_SECONDARY);
-  drawRoundButton(270, 200, 40, 25, "OCT", THEME_PRIMARY);
+  drawRoundButton(SCALE_X(10), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H, platformMode ? "DROP" : "EDIT", THEME_WARNING);
+  drawRoundButton(SCALE_X(60), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H, "CLEAR", THEME_ERROR);
+  drawRoundButton(SCALE_X(110), SCALE_Y(200), BTN_MEDIUM_W, BTN_SMALL_H, "SCALE", THEME_ACCENT);
+  drawRoundButton(SCALE_X(170), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H, "KEY-", THEME_SECONDARY);
+  drawRoundButton(SCALE_X(220), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H, "KEY+", THEME_SECONDARY);
+  drawRoundButton(SCALE_X(270), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H, "OCT", THEME_PRIMARY);
   
   // Status display
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   String keyName = getNoteNameFromMIDI(dropKey);
-  tft.drawString(keyName + " " + scales[dropScale].name, 10, 180, 1);
-  tft.drawString("Oct:" + String(dropOctave), 150, 180, 1);
-  tft.drawString("Balls:" + String(numActiveDropBalls), 220, 180, 1);
+  tft.drawString(keyName + " " + scales[dropScale].name, MARGIN_SMALL, SCALE_Y(180), 1);
+  tft.drawString("Oct:" + String(dropOctave), SCALE_X(150), SCALE_Y(180), 1);
+  tft.drawString("Balls:" + String(numActiveDropBalls), SCALE_X(220), SCALE_Y(180), 1);
   
   drawPlatforms();
   drawDropBalls();
@@ -142,21 +142,21 @@ void drawPlatforms() {
 
 void handlePhysicsDropMode() {
   // Back button
-  if (touch.justPressed && isButtonPressed(10, 10, 50, 25)) {
+  if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
     exitToMenu();
     return;
   }
   
   if (touch.justPressed) {
     // Mode toggle
-    if (isButtonPressed(10, 200, 40, 25)) {
+    if (isButtonPressed(SCALE_X(10), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       platformMode = !platformMode;
       drawPhysicsDropMode();
       return;
     }
     
     // Clear button
-    if (isButtonPressed(60, 200, 40, 25)) {
+    if (isButtonPressed(SCALE_X(60), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       for (int i = 0; i < MAX_DROP_BALLS; i++) {
         dropBalls[i].active = false;
       }
@@ -167,27 +167,27 @@ void handlePhysicsDropMode() {
     }
     
     // Scale button
-    if (isButtonPressed(110, 200, 50, 25)) {
+    if (isButtonPressed(SCALE_X(110), SCALE_Y(200), BTN_MEDIUM_W, BTN_SMALL_H)) {
       dropScale = (dropScale + 1) % NUM_SCALES;
       drawPhysicsDropMode();
       return;
     }
     
     // Key controls
-    if (isButtonPressed(170, 200, 40, 25)) {
+    if (isButtonPressed(SCALE_X(170), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropKey = (dropKey - 1 + 12) % 12;
       drawPhysicsDropMode();
       return;
     }
     
-    if (isButtonPressed(220, 200, 40, 25)) {
+    if (isButtonPressed(SCALE_X(220), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropKey = (dropKey + 1) % 12;
       drawPhysicsDropMode();
       return;
     }
     
     // Octave button
-    if (isButtonPressed(270, 200, 40, 25)) {
+    if (isButtonPressed(SCALE_X(270), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropOctave = (dropOctave == 7) ? 2 : dropOctave + 1;
       drawPhysicsDropMode();
       return;

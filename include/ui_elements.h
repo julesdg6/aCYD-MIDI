@@ -45,18 +45,18 @@ void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bo
 }
 
 void drawHeader(String title, String subtitle) {
-  tft.fillRect(0, 0, 320, 45, THEME_SURFACE);
-  tft.drawFastHLine(0, 45, 320, THEME_PRIMARY);
+  tft.fillRect(0, 0, DISPLAY_WIDTH, HEADER_HEIGHT, THEME_SURFACE);
+  tft.drawFastHLine(0, HEADER_HEIGHT, DISPLAY_WIDTH, THEME_PRIMARY);
   
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);
-  tft.drawCentreString(title, 160, 8, 4);
+  tft.drawCentreString(title, DISPLAY_CENTER_X, HEADER_TITLE_Y, 4);
   
   if (subtitle.length() > 0) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    tft.drawCentreString(subtitle, 160, 28, 2);
+    tft.drawCentreString(subtitle, DISPLAY_CENTER_X, HEADER_SUBTITLE_Y, 2);
   }
   
-  drawRoundButton(10, 10, 50, 25, "BACK", THEME_ERROR);
+  drawRoundButton(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H, "BACK", THEME_ERROR);
 }
 
 void updateStatus() {
