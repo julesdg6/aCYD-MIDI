@@ -75,14 +75,17 @@ void setupBLE() {
   BLEService *service = server->createService(SERVICE_UUID);
   pCharacteristic = service->createCharacteristic(
       CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+      BLECharacteristic::PROPERTY_READ | 
+      BLECharacteristic::PROPERTY_WRITE |
+      BLECharacteristic::PROPERTY_WRITE_NO_RESPONSE |
+      BLECharacteristic::PROPERTY_NOTIFY);
   pCharacteristic->addDescriptor(new BLE2902());
   service->start();
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->setScanResponse(false);
   advertising->setMinPreferred(0x06);
-  advertising->setMinPreferred(0x12);
+  advertising->setMaxPreferred(0x12);
   BLEDevice::startAdvertising();
 }
 
