@@ -25,6 +25,7 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
 - **Visual Feedback** - Responsive graphics
+- **Remote Display** - View the display over WiFi in your web browser (see [REMOTE_DISPLAY.md](REMOTE_DISPLAY.md))
 
 ## What You Need
 

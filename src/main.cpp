@@ -16,6 +16,7 @@
 #include "midi_utils.h"
 #include "physics_drop_mode.h"
 #include "random_generator_mode.h"
+#include "remote_display.h"
 #include "sequencer_mode.h"
 #include "ui_elements.h"
 #include "xy_pad_mode.h"
@@ -240,6 +241,7 @@ void setup() {
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
   setupBLE();
+  initRemoteDisplay();  // Initialize remote display capability
   switchMode(MENU);
   lv_last_tick = millis();
 }
@@ -290,4 +292,5 @@ void loop() {
       break;
   }
   requestRedraw();
+  handleRemoteDisplay();  // Handle remote display updates
 }
