@@ -33,7 +33,7 @@ bool initializeSD() {
     }
     
     // Initialize SD card with SPI
-    if (!SD.begin(SD_CS)) {
+    if (!SD.begin(SD_CS_PIN)) {
         Serial.println("SD Card initialization failed!");
         return false;
     }
@@ -86,13 +86,13 @@ bool takeScreenshot() {
     
     // Allocate buffer for snapshot (RGB565 format)
     size_t buf_size = width * height * sizeof(lv_color_t);
-    lv_color_t* buf = (lv_color_t*)malloc(buf_size);
+    void* buf = malloc(buf_size);
     if (!buf) {
         Serial.println("Failed to allocate snapshot buffer");
         return false;
     }
     
-    // Take snapshot
+    // Take snapshot to buffer
     lv_obj_t* screen = lv_screen_active();
     lv_result_t res = lv_snapshot_take_to_buf(screen, LV_COLOR_FORMAT_RGB565, buf, buf_size);
     
@@ -101,6 +101,8 @@ bool takeScreenshot() {
         free(buf);
         return false;
     }
+    
+    lv_color_t* color_buf = (lv_color_t*)buf;
     
     Serial.println("Snapshot captured, saving to BMP...");
     
@@ -154,7 +156,7 @@ bool takeScreenshot() {
     for (int y = height - 1; y >= 0; y--) {
         for (int x = 0; x < width; x++) {
             int index = y * width + x;
-            uint16_t pixel = buf[index].full;
+            uint16_t pixel = color_buf[index].full;
             
             uint8_t r, g, b;
             rgb565ToRgb888(pixel, &r, &g, &b);
