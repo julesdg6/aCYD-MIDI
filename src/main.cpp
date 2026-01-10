@@ -11,6 +11,7 @@
 #include "bouncing_ball_mode.h"
 #include "common_definitions.h"
 #include "grid_piano_mode.h"
+#include "hardware_midi.h"
 #include "keyboard_mode.h"
 #include "lfo_mode.h"
 #include "midi_utils.h"
@@ -31,6 +32,12 @@ bool deviceConnected = false;
 uint8_t midiPacket[] = {0x80, 0x80, 0, 0, 0};
 TouchState touch;
 AppMode currentMode = MENU;
+
+// UART2 instance for hardware MIDI (only used when HARDWARE_MIDI_UART == 2)
+// This definition matches the extern declaration in hardware_midi.h
+#if HARDWARE_MIDI_UART == 2
+HardwareSerial MIDISerial(2);
+#endif
 
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override { deviceConnected = true; }
@@ -238,8 +245,16 @@ void exitToMenu() {
 }
 
 void setup() {
+  // Initialize USB Serial for debugging (only if not using UART0 for MIDI)
+#if DEBUG_ENABLED
   Serial.begin(115200);
   delay(200);
+  Serial.println("aCYD MIDI Controller Starting...");
+  Serial.printf("Hardware MIDI: %s (UART%d)\n", 
+                HARDWARE_MIDI_ENABLED ? "Enabled" : "Disabled",
+                HARDWARE_MIDI_UART);
+#endif
+
   smartdisplay_init();
   lv_display_t *display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
@@ -250,12 +265,19 @@ void setup() {
                   lv_display_get_vertical_resolution(display));
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
+  
   setupBLE();
+  initHardwareMIDI();  // Initialize hardware MIDI output
+  
 #if REMOTE_DISPLAY_ENABLED
   initRemoteDisplay();  // Initialize remote display capability
 #endif
   switchMode(MENU);
   lv_last_tick = millis();
+  
+#if DEBUG_ENABLED
+  Serial.println("Setup complete!");
+#endif
 }
 
 void loop() {
