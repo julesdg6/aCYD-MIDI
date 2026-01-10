@@ -1,0 +1,27 @@
+# PlatformIO
+.pio/
+.ccls-cache/
+.clangd/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Build artifacts
+*.elf
+*.bin
+*.hex
+*.map
+
+# Logs
+*.log
+
+# Python virtual envs
+.venv/
+env/
+
+# Backup files
+*~
+*.swp
