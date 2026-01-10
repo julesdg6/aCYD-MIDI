@@ -2,6 +2,7 @@
 #define MIDI_UTILS_H
 
 #include "common_definitions.h"
+#include "hardware_midi.h"
 
 // Scale definitions
 Scale scales[] = {
@@ -16,13 +17,17 @@ const int NUM_SCALES = 6;
 
 // MIDI utility functions
 void sendMIDI(byte cmd, byte note, byte vel) {
-  if (!deviceConnected) return;
+  // Send via BLE MIDI
+  if (deviceConnected) {
+    midiPacket[2] = cmd;
+    midiPacket[3] = note;
+    midiPacket[4] = vel;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
-  midiPacket[2] = cmd;
-  midiPacket[3] = note;
-  midiPacket[4] = vel;
-  pCharacteristic->setValue(midiPacket, 5);
-  pCharacteristic->notify();
+  // Send via Hardware MIDI (DIN-5 connector)
+  sendHardwareMIDI(cmd, note, vel);
 }
 
 int getNoteInScale(int scaleIndex, int degree, int octave) {

@@ -11,12 +11,15 @@
 #include "bouncing_ball_mode.h"
 #include "common_definitions.h"
 #include "grid_piano_mode.h"
+#include "hardware_midi.h"
 #include "keyboard_mode.h"
 #include "lfo_mode.h"
 #include "midi_utils.h"
 #include "physics_drop_mode.h"
 #include "random_generator_mode.h"
+#include "remote_display.h"
 #include "sequencer_mode.h"
+#include "screenshot.h"
 #include "ui_elements.h"
 #include "xy_pad_mode.h"
 
@@ -32,6 +35,11 @@ AppMode currentMode = MENU;
 
 // Display configuration for autoscaling
 DisplayConfig displayConfig;
+// UART2 instance for hardware MIDI (only used when HARDWARE_MIDI_UART == 2)
+// This definition matches the extern declaration in hardware_midi.h
+#if HARDWARE_MIDI_UART == 2
+HardwareSerial MIDISerial(2);
+#endif
 
 class ServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override { deviceConnected = true; }
@@ -102,6 +110,9 @@ void drawMenu() {
     int y = startY + row * (btnH + gapY);
     drawRoundButton(x, y, btnW, btnH, kMenuItems[i].label, kMenuItems[i].color);
   }
+  
+  // Screenshot button at the bottom
+  drawRoundButton(85, 215, 150, 28, "SCREENSHOT", THEME_SECONDARY);
 }
 
 void requestRedraw() {
@@ -213,6 +224,12 @@ void handleMenu() {
   const int startX = MARGIN_SMALL;
   const int startY = SCALE_Y(55);
 
+  // Check screenshot button
+  if (isButtonPressed(85, 215, 150, 28)) {
+    takeScreenshot();
+    return;
+  }
+
   for (size_t i = 0; i < sizeof(kMenuItems) / sizeof(kMenuItems[0]); i++) {
     int col = i % cols;
     int row = i / cols;
@@ -244,8 +261,16 @@ void initDisplayConfig() {
 }
 
 void setup() {
+  // Initialize USB Serial for debugging (only if not using UART0 for MIDI)
+#if DEBUG_ENABLED
   Serial.begin(115200);
   delay(200);
+  Serial.println("aCYD MIDI Controller Starting...");
+  Serial.printf("Hardware MIDI: %s (UART%d)\n", 
+                HARDWARE_MIDI_ENABLED ? "Enabled" : "Disabled",
+                HARDWARE_MIDI_UART);
+#endif
+
   smartdisplay_init();
   lv_display_t *display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
@@ -260,9 +285,19 @@ void setup() {
                   lv_display_get_vertical_resolution(display));
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
+  
   setupBLE();
+  initHardwareMIDI();  // Initialize hardware MIDI output
+  
+#if REMOTE_DISPLAY_ENABLED
+  initRemoteDisplay();  // Initialize remote display capability
+#endif
   switchMode(MENU);
   lv_last_tick = millis();
+  
+#if DEBUG_ENABLED
+  Serial.println("Setup complete!");
+#endif
 }
 
 void loop() {
@@ -311,4 +346,7 @@ void loop() {
       break;
   }
   requestRedraw();
+#if REMOTE_DISPLAY_ENABLED
+  handleRemoteDisplay();  // Handle remote display updates
+#endif
 }
