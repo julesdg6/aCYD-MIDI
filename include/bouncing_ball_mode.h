@@ -291,7 +291,7 @@ void drawWalls() {
     // Bright flash when active
     if (walls[i].active) {
       unsigned long elapsed = millis() - walls[i].activeTime;
-      if (elapsed < SCALE_Y(200)) {
+      if (elapsed < 200) {
         color = THEME_TEXT; // Bright white flash
       } else {
         walls[i].active = false;

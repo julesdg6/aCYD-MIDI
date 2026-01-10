@@ -121,7 +121,7 @@ void drawPlatforms() {
     // Flash when hit
     if (platforms[i].active) {
       unsigned long elapsed = millis() - platforms[i].activeTime;
-      if (elapsed < SCALE_Y(200)) {
+      if (elapsed < 200) {
         color = THEME_TEXT;
       } else {
         platforms[i].active = false;
