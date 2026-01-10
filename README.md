@@ -27,12 +27,16 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
 - **Visual Feedback** - Responsive graphics
+- **Screenshot Capture** - Save screenshots to SD card as BMP files (from main menu)
+- **Remote Display** - View the display over WiFi in your web browser (see [REMOTE_DISPLAY.md](REMOTE_DISPLAY.md))
 
 ## What You Need
 
 - **ESP32-2432S028R (CYD)** - ~$15 from AliExpress/Amazon
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [HARDWARE_MIDI.md](HARDWARE_MIDI.md))
+- **MicroSD Card** (optional) - For screenshot capture feature
+- Arduino IDE with ESP32 support or PlatformIO
 
 ## Installation
 
@@ -69,6 +73,22 @@ For traditional DIN-5 MIDI output with lower latency, see the complete guide:
 - Supports simultaneous BLE + Hardware MIDI
 - Two UART options: UART0 (serial breakout) or UART2 (expansion GPIOs)
 - Circuit components ~$5-10
+## Usage
+
+### Taking Screenshots
+1. Insert a MicroSD card into the CYD's SD card slot
+2. From the main menu, tap the "SCREENSHOT" button
+3. Screenshots are saved as BMP files (screen000.bmp, screen001.bmp, etc.) to the SD card
+4. View the serial monitor for confirmation messages
+### 6. Optional: Enable Remote Display
+To view the CYD display in your web browser:
+1. Copy `include/wifi_config.h.example` to `include/wifi_config.h`
+2. Edit the file and enter your WiFi credentials
+3. Rebuild and upload
+4. Check Serial Monitor for the IP address
+5. Open the IP address in your browser
+
+For full details, see [REMOTE_DISPLAY.md](REMOTE_DISPLAY.md)
 
 ## Troubleshooting
 
@@ -76,6 +96,8 @@ For traditional DIN-5 MIDI output with lower latency, see the complete guide:
 - **Blank screen**: Check TFT_eSPI pin configuration
 - **No touch**: Verify touchscreen library installation
 - **No Bluetooth**: Restart device and re-pair
+- **Screenshot fails**: Ensure SD card is properly inserted and formatted (FAT32)
+- **Remote Display not working**: Ensure WiFi credentials are correct and your network is 2.4GHz (ESP32 doesn't support 5GHz)
 
 ## License
 

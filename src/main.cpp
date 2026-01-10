@@ -17,7 +17,9 @@
 #include "midi_utils.h"
 #include "physics_drop_mode.h"
 #include "random_generator_mode.h"
+#include "remote_display.h"
 #include "sequencer_mode.h"
+#include "screenshot.h"
 #include "ui_elements.h"
 #include "xy_pad_mode.h"
 
@@ -106,6 +108,9 @@ void drawMenu() {
     int y = startY + row * (btnH + gapY);
     drawRoundButton(x, y, btnW, btnH, kMenuItems[i].label, kMenuItems[i].color);
   }
+  
+  // Screenshot button at the bottom
+  drawRoundButton(85, 215, 150, 28, "SCREENSHOT", THEME_SECONDARY);
 }
 
 void requestRedraw() {
@@ -217,6 +222,12 @@ void handleMenu() {
   const int startX = 10;
   const int startY = 55;
 
+  // Check screenshot button
+  if (isButtonPressed(85, 215, 150, 28)) {
+    takeScreenshot();
+    return;
+  }
+
   for (size_t i = 0; i < sizeof(kMenuItems) / sizeof(kMenuItems[0]); i++) {
     int col = i % cols;
     int row = i / cols;
@@ -258,6 +269,9 @@ void setup() {
   setupBLE();
   initHardwareMIDI();  // Initialize hardware MIDI output
   
+#if REMOTE_DISPLAY_ENABLED
+  initRemoteDisplay();  // Initialize remote display capability
+#endif
   switchMode(MENU);
   lv_last_tick = millis();
   
@@ -312,4 +326,7 @@ void loop() {
       break;
   }
   requestRedraw();
+#if REMOTE_DISPLAY_ENABLED
+  handleRemoteDisplay();  // Handle remote display updates
+#endif
 }
