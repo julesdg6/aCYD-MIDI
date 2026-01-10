@@ -241,7 +241,9 @@ void setup() {
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
   setupBLE();
+#if REMOTE_DISPLAY_ENABLED
   initRemoteDisplay();  // Initialize remote display capability
+#endif
   switchMode(MENU);
   lv_last_tick = millis();
 }
@@ -292,5 +294,7 @@ void loop() {
       break;
   }
   requestRedraw();
+#if REMOTE_DISPLAY_ENABLED
   handleRemoteDisplay();  // Handle remote display updates
+#endif
 }

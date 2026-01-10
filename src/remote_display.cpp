@@ -11,11 +11,12 @@ static bool wifiConnected = false;
 static bool clientConnected = false;
 static uint32_t lastFrameUpdate = 0;
 
+#if REMOTE_DISPLAY_ENABLED
 // Frame buffer - static allocation to avoid fragmentation
 // For 320x240 RGB565 display = 153,600 bytes
-// Note: This is allocated only when REMOTE_DISPLAY_ENABLED
-// If memory is constrained, consider reducing resolution or using dynamic allocation
+// Only allocated when REMOTE_DISPLAY_ENABLED is set to 1
 static uint8_t frameBuffer[320 * 240 * 2];
+#endif
 
 // HTML page for remote display viewer
 const char index_html[] PROGMEM = R"rawliteral(
@@ -147,9 +148,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 void initRemoteDisplay() {
     Serial.println("Initializing Remote Display...");
     
-    // Connect to WiFi (non-blocking approach would be better for production)
-    // Note: This uses a simple blocking approach during initialization
-    // For production, consider using WiFi.onEvent() for non-blocking connection
+    // Connect to WiFi (blocking approach during initialization)
+    // Note: This uses a simple blocking approach during initialization.
+    // yield() is called in the loop to prevent watchdog timer issues.
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     
@@ -157,7 +158,8 @@ void initRemoteDisplay() {
     int attempts = 0;
     const int maxAttempts = 20;  // 10 second timeout
     while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
-        delay(500);  // Blocking delay during init only - acceptable during setup
+        delay(500);
+        yield();  // Prevent watchdog timer reset
         Serial.print(".");
         attempts++;
     }
@@ -190,6 +192,9 @@ void initRemoteDisplay() {
 }
 
 void sendFrameUpdate() {
+#if !REMOTE_DISPLAY_ENABLED
+    return;  // Do nothing if remote display is disabled
+#else
     if (!wifiConnected || !clientConnected || ws.count() == 0) {
         return;
     }
@@ -236,6 +241,7 @@ void sendFrameUpdate() {
     // Send frame data to all connected clients via WebSocket
     // Using static buffer avoids malloc/free on every frame (20 FPS)
     ws.binaryAll(frameBuffer, bufferSize);
+#endif
 }
 
 void handleRemoteDisplay() {

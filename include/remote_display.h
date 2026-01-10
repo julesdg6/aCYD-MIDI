@@ -6,16 +6,19 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-// Try to include wifi_config.h, use defaults if not found
+// Try to include wifi_config.h, generate error if not found and defaults would be used
 #if __has_include("wifi_config.h")
 #include "wifi_config.h"
 #else
-// Default WiFi configuration - update these or create wifi_config.h
+// WiFi configuration not found - you must create wifi_config.h
+// Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials
 #ifndef WIFI_SSID
-#define WIFI_SSID "YourWiFiSSID"
+#warning "wifi_config.h not found - using placeholder WiFi credentials"
+#warning "Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials"
+#define WIFI_SSID "CONFIGURE_WIFI_SSID"
 #endif
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "YourWiFiPassword"
+#define WIFI_PASSWORD "CONFIGURE_WIFI_PASSWORD"
 #endif
 #ifndef REMOTE_DISPLAY_ENABLED
 #define REMOTE_DISPLAY_ENABLED 1
