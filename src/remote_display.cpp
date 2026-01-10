@@ -13,9 +13,10 @@ static uint32_t lastFrameUpdate = 0;
 
 #if REMOTE_DISPLAY_ENABLED
 // Frame buffer - static allocation to avoid fragmentation
-// For 320x240 RGB565 display = 153,600 bytes
+// Size calculated based on display dimensions and color format
+// REMOTE_DISPLAY_WIDTH (320) × REMOTE_DISPLAY_HEIGHT (240) × RGB565 (2 bytes) = 153,600 bytes
 // Only allocated when REMOTE_DISPLAY_ENABLED is set to 1
-static uint8_t frameBuffer[320 * 240 * 2];
+static uint8_t frameBuffer[REMOTE_DISPLAY_WIDTH * REMOTE_DISPLAY_HEIGHT * REMOTE_DISPLAY_BYTES_PER_PIXEL];
 #endif
 
 // HTML page for remote display viewer
@@ -156,7 +157,7 @@ void initRemoteDisplay() {
     
     Serial.print("Connecting to WiFi");
     int attempts = 0;
-    const int maxAttempts = 20;  // 10 second timeout
+    const int maxAttempts = WIFI_CONNECT_TIMEOUT_MS / 500;  // Calculate attempts from timeout
     while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
         delay(500);
         yield();  // Prevent watchdog timer reset

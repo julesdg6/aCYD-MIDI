@@ -13,12 +13,12 @@
 // WiFi configuration not found - you must create wifi_config.h
 // Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials
 #ifndef WIFI_SSID
-#warning "wifi_config.h not found - using placeholder WiFi credentials"
+#warning "wifi_config.h not found - using obviously invalid WiFi credentials"
 #warning "Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials"
-#define WIFI_SSID "CONFIGURE_WIFI_SSID"
+#define WIFI_SSID "INVALID_SSID_CONFIGURE_ME"
 #endif
 #ifndef WIFI_PASSWORD
-#define WIFI_PASSWORD "CONFIGURE_WIFI_PASSWORD"
+#define WIFI_PASSWORD "INVALID_PASSWORD_CONFIGURE_ME"
 #endif
 #ifndef REMOTE_DISPLAY_ENABLED
 #define REMOTE_DISPLAY_ENABLED 1
@@ -29,6 +29,12 @@
 #define REMOTE_DISPLAY_PORT 80
 #define WEBSOCKET_PATH "/ws"
 #define FRAME_UPDATE_INTERVAL 50  // Update every 50ms (20 FPS)
+#define WIFI_CONNECT_TIMEOUT_MS 10000  // 10 second WiFi connection timeout
+
+// Display dimensions for framebuffer
+#define REMOTE_DISPLAY_WIDTH 320
+#define REMOTE_DISPLAY_HEIGHT 240
+#define REMOTE_DISPLAY_BYTES_PER_PIXEL 2  // RGB565 format
 
 // Function declarations
 void initRemoteDisplay();
