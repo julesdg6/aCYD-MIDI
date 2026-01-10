@@ -54,7 +54,7 @@ void sendHardwareMIDI(uint8_t byte1, uint8_t byte2);
 #endif
 
 // Initialize hardware MIDI output
-void initHardwareMIDI() {
+inline void initHardwareMIDI() {
   if (!HARDWARE_MIDI_ENABLED) return;
   
 #if HARDWARE_MIDI_UART == 0
@@ -68,7 +68,7 @@ void initHardwareMIDI() {
 }
 
 // Send 3-byte MIDI message to hardware output
-void sendHardwareMIDI(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
+inline void sendHardwareMIDI(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
   if (!HARDWARE_MIDI_ENABLED) return;
   
 #if HARDWARE_MIDI_UART == 0
@@ -83,7 +83,7 @@ void sendHardwareMIDI(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
 }
 
 // Send 2-byte MIDI message to hardware output (e.g., program change)
-void sendHardwareMIDI(uint8_t byte1, uint8_t byte2) {
+inline void sendHardwareMIDI(uint8_t byte1, uint8_t byte2) {
   if (!HARDWARE_MIDI_ENABLED) return;
   
 #if HARDWARE_MIDI_UART == 0
