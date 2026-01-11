@@ -90,6 +90,22 @@ public:
     lv_draw_rect(layer_, &dsc, &coords);
   }
 
+  void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+    if (!layer_) {
+      return;
+    }
+    lv_draw_line_dsc_t dsc;
+    lv_draw_line_dsc_init(&dsc);
+    dsc.color = colorFrom565_(color);
+    dsc.opa = LV_OPA_COVER;
+    dsc.width = 1;
+    dsc.p1.x = x0;
+    dsc.p1.y = y0;
+    dsc.p2.x = x1;
+    dsc.p2.y = y1;
+    lv_draw_line(layer_, &dsc);
+  }
+
   void fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color) {
     if (!layer_) {
       return;

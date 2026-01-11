@@ -1,5 +1,7 @@
 # PlatformIO
 .pio/
+boards/
+.platformio/
 .ccls-cache/
 .clangd/
 

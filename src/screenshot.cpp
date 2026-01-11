@@ -89,7 +89,7 @@ bool takeScreenshot() {
     // Allocate buffer for snapshot (RGB565 format)
     // Check for potential overflow in buffer size calculation
     size_t pixels = (size_t)width * (size_t)height;
-    size_t buf_size = pixels * sizeof(lv_color_t);
+    size_t buf_size = pixels * LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565);
     
     // Sanity check: ensure buffer size is reasonable (max ~1MB for typical displays)
     if (buf_size == 0 || buf_size > 1024 * 1024) {
@@ -105,7 +105,9 @@ bool takeScreenshot() {
     
     // Take snapshot to buffer
     lv_obj_t* screen = lv_screen_active();
-    lv_result_t res = lv_snapshot_take_to_buf(screen, LV_COLOR_FORMAT_RGB565, buf, buf_size);
+    lv_image_dsc_t snapshot;
+    memset(&snapshot, 0, sizeof(snapshot));
+    lv_result_t res = lv_snapshot_take_to_buf(screen, LV_COLOR_FORMAT_RGB565, &snapshot, buf, buf_size);
     
     if (res != LV_RESULT_OK) {
         Serial.printf("Failed to take snapshot: %d\n", res);
@@ -113,7 +115,7 @@ bool takeScreenshot() {
         return false;
     }
     
-    lv_color_t* color_buf = (lv_color_t*)buf;
+    const lv_color16_t* color_buf = (const lv_color16_t*)snapshot.data;
     
     Serial.println("Snapshot captured, saving to BMP...");
     
@@ -169,7 +171,9 @@ bool takeScreenshot() {
     for (int y = height - 1; y >= 0; y--) {
         for (int x = 0; x < width; x++) {
             int index = y * width + x;
-            uint16_t pixel = color_buf[index].full;
+            uint16_t pixel = (color_buf[index].red << 11) |
+                             (color_buf[index].green << 5) |
+                             (color_buf[index].blue);
             
             uint8_t r, g, b;
             rgb565ToRgb888(pixel, &r, &g, &b);
