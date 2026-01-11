@@ -7,8 +7,8 @@ This is an ESP32-based Bluetooth MIDI controller for the ESP32-2432S028R "Cheap 
 **Key Technologies:**
 - ESP32 microcontroller (Arduino framework)
 - PlatformIO build system
-- LVGL graphics library for UI
-- TFT_eSPI for display rendering
+- LVGL v9.2.2 graphics library (via esp32_smartdisplay)
+- TFT_eSPI-compatible API (compatibility layer over LVGL)
 - BLE MIDI for wireless connectivity
 - Optional Hardware MIDI via UART (DIN-5 connector)
 
@@ -197,17 +197,22 @@ Keep documentation in sync with code changes.
 ## Dependencies
 
 **PlatformIO libraries** (in `platformio.ini` lib_deps):
-- `BLE` - Bluetooth Low Energy (Arduino framework built-in)
+- `BLE` - Bluetooth Low Energy (ESP32-specific library)
 - `me-no-dev/AsyncTCP` - Async networking (optional, for remote display)
 - `me-no-dev/ESP Async WebServer` - Web server for remote display (optional)
 
 **Local libraries** (in `lib/` directory):
 - `esp32_smartdisplay` - Display abstraction library for CYD boards
-  - Includes LVGL v9.2.2 graphics library
+  - Includes LVGL v9.2.2 graphics library as a dependency
   - Provides hardware-specific display and touch drivers
   - Located in `lib/esp32_smartdisplay/`
 
-**Note**: The `esp32_smartdisplay` library bundles TFT_eSPI, XPT2046_Touchscreen, and LVGL as transitive dependencies. These are not listed separately in `platformio.ini` because they come with the local library.
+**Compatibility Layer**:
+- The project includes `smartdisplay_compat.h` which provides a TFT_eSPI-compatible API on top of LVGL
+- This allows existing TFT_eSPI code to work with the LVGL-based display system
+- XPT2046_Touchscreen.h is also provided for touch input compatibility
+
+**Note**: While the README mentions Arduino IDE installation with TFT_eSPI and XPT2046_Touchscreen libraries, the PlatformIO build uses the `esp32_smartdisplay` library with compatibility wrappers instead.
 
 ## Security & Best Practices
 
