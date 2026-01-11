@@ -210,7 +210,7 @@ Keep documentation in sync with code changes.
 **Compatibility Layer**:
 - The project includes `smartdisplay_compat.h` which provides a TFT_eSPI-compatible API on top of LVGL
 - This allows existing TFT_eSPI code to work with the LVGL-based display system
-- XPT2046_Touchscreen.h is also provided for touch input compatibility
+- Touch input uses XPT2046_Touchscreen interface (implementation provided at build time)
 
 **Note**: While the README mentions Arduino IDE installation with TFT_eSPI and XPT2046_Touchscreen libraries, the PlatformIO build uses the `esp32_smartdisplay` library with compatibility wrappers instead.
 
