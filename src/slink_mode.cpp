@@ -1,13 +1,22 @@
 #include "slink_mode.h"
+#include <new>
 
 // Global state instance
-SlinkState slink_state;
+SlinkState *slink_state_ptr = nullptr;
 
 // ============================================================
 // Initialization
 // ============================================================
 
 void initializeSlinkMode() {
+    if (!slink_state_ptr) {
+        slink_state_ptr = new (std::nothrow) SlinkState();
+        if (!slink_state_ptr) {
+            return;
+        }
+    }
+    *slink_state_ptr = {};
+
     // Initialize Trigger Wave (Wave A)
     slink_state.wave_trigger.rate_hz = 0.5f;
     slink_state.wave_trigger.sync_mode = false;
@@ -131,6 +140,9 @@ void initializeSlinkMode() {
 // ============================================================
 
 void updateSlinkEngine() {
+    if (!slink_state_ptr) {
+        return;
+    }
     uint32_t now = millis();
     slink_state.current_time_ms = now;
     
@@ -729,6 +741,9 @@ void clearAllBands() {
 // ============================================================
 
 void drawSlinkMode() {
+    if (!slink_state_ptr) {
+        return;
+    }
     switch (slink_state.current_tab) {
         case SLINK_TAB_MAIN:
             drawMainTab();
@@ -755,6 +770,9 @@ void drawSlinkMode() {
 }
 
 void handleSlinkMode() {
+    if (!slink_state_ptr) {
+        return;
+    }
     // Update engine
     updateSlinkEngine();
     

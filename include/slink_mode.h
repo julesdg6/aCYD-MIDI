@@ -181,8 +181,9 @@ struct SlinkState {
     uint32_t current_time_ms;
 };
 
-// Global instance
-extern SlinkState slink_state;
+// Global instance (heap-allocated)
+extern SlinkState *slink_state_ptr;
+#define slink_state (*slink_state_ptr)
 
 // ============================================================
 // Function Declarations

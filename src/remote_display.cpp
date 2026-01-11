@@ -1,10 +1,13 @@
 #include "remote_display.h"
+#include <esp32-hal-psram.h>
+#include <esp_heap_caps.h>
+#include <new>
 #include <lvgl.h>
 #include <esp32_smartdisplay.h>
 
 // Web server and WebSocket
-AsyncWebServer server(REMOTE_DISPLAY_PORT);
-AsyncWebSocket ws(WEBSOCKET_PATH);
+static AsyncWebServer *server = nullptr;
+static AsyncWebSocket *ws = nullptr;
 
 // State tracking
 static bool wifiConnected = false;
@@ -12,12 +15,44 @@ static bool clientConnected = false;
 static uint32_t lastFrameUpdate = 0;
 
 #if REMOTE_DISPLAY_ENABLED
-// Frame buffer - static allocation to avoid fragmentation
-// Size calculated based on display dimensions and color format
-// REMOTE_DISPLAY_WIDTH (320) × REMOTE_DISPLAY_HEIGHT (240) × RGB565 (2 bytes) = 153,600 bytes
-// Only allocated when REMOTE_DISPLAY_ENABLED is set to 1
-static uint8_t frameBuffer[REMOTE_DISPLAY_WIDTH * REMOTE_DISPLAY_HEIGHT * REMOTE_DISPLAY_BYTES_PER_PIXEL];
+// Frame buffer - allocated at runtime to avoid DRAM overflow.
+static uint8_t *frameBuffer = nullptr;
+static size_t frameBufferSize = 0;
 #endif
+
+static bool ensureFrameBuffer(size_t bufferSize) {
+#if !REMOTE_DISPLAY_ENABLED
+    (void)bufferSize;
+    return false;
+#else
+    if (frameBuffer && frameBufferSize >= bufferSize) {
+        return true;
+    }
+
+    if (frameBuffer) {
+        heap_caps_free(frameBuffer);
+        frameBuffer = nullptr;
+        frameBufferSize = 0;
+    }
+
+    uint8_t *buffer = static_cast<uint8_t *>(
+        heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+    if (!buffer) {
+        buffer = static_cast<uint8_t *>(
+            heap_caps_malloc(bufferSize, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+    }
+    if (!buffer) {
+        Serial.printf("Remote Display disabled: unable to allocate %u bytes\n",
+                      static_cast<unsigned>(bufferSize));
+        return false;
+    }
+
+    frameBuffer = buffer;
+    frameBufferSize = bufferSize;
+    memset(frameBuffer, 0, frameBufferSize);
+    return true;
+#endif
+}
 
 // HTML page for remote display viewer
 const char index_html[] PROGMEM = R"rawliteral(
@@ -148,6 +183,21 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 
 void initRemoteDisplay() {
     Serial.println("Initializing Remote Display...");
+
+    if (!ensureFrameBuffer(REMOTE_DISPLAY_WIDTH * REMOTE_DISPLAY_HEIGHT * REMOTE_DISPLAY_BYTES_PER_PIXEL)) {
+        return;
+    }
+
+    if (!server) {
+        server = new (std::nothrow) AsyncWebServer(REMOTE_DISPLAY_PORT);
+    }
+    if (!ws) {
+        ws = new (std::nothrow) AsyncWebSocket(WEBSOCKET_PATH);
+    }
+    if (!server || !ws) {
+        Serial.println("Remote Display disabled: unable to allocate server resources.");
+        return;
+    }
     
     // Connect to WiFi (blocking approach during initialization)
     // Note: This uses a simple blocking approach during initialization.
@@ -174,16 +224,16 @@ void initRemoteDisplay() {
         Serial.println(WiFi.localIP());
         
         // Setup WebSocket
-        ws.onEvent(onWsEvent);
-        server.addHandler(&ws);
+        ws->onEvent(onWsEvent);
+        server->addHandler(ws);
         
         // Setup HTTP server
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send_P(200, "text/html", index_html);
+        server->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(200, "text/html", index_html);
         });
         
         // Start server
-        server.begin();
+        server->begin();
         Serial.println("Remote Display server started!");
     } else {
         wifiConnected = false;
@@ -196,7 +246,7 @@ void sendFrameUpdate() {
 #if !REMOTE_DISPLAY_ENABLED
     return;  // Do nothing if remote display is disabled
 #else
-    if (!wifiConnected || !clientConnected || ws.count() == 0) {
+    if (!wifiConnected || !clientConnected || !ws || ws->count() == 0) {
         return;
     }
     
@@ -213,9 +263,7 @@ void sendFrameUpdate() {
     // Calculate buffer size for RGB565 (2 bytes per pixel)
     size_t bufferSize = width * height * 2;
     
-    // Verify buffer size matches our static allocation
-    if (bufferSize > sizeof(frameBuffer)) {
-        Serial.printf("Error: Display size %ux%u exceeds frame buffer capacity\n", width, height);
+    if (!ensureFrameBuffer(bufferSize)) {
         return;
     }
     
@@ -241,7 +289,7 @@ void sendFrameUpdate() {
     
     // Send frame data to all connected clients via WebSocket
     // Using static buffer avoids malloc/free on every frame (20 FPS)
-    ws.binaryAll(frameBuffer, bufferSize);
+    ws->binaryAll(frameBuffer, bufferSize);
 #endif
 }
 
@@ -251,7 +299,10 @@ void handleRemoteDisplay() {
     }
     
     // Cleanup WebSocket clients
-    ws.cleanupClients();
+    if (!ws) {
+        return;
+    }
+    ws->cleanupClients();
     
     // Send frame updates at specified interval
     uint32_t now = millis();

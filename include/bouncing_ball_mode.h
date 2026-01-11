@@ -4,6 +4,7 @@
 #include "common_definitions.h"
 #include "ui_elements.h"
 #include "midi_utils.h"
+#include <new>
 
 // Pong-style Ambient MIDI mode variables
 struct Ball {
@@ -15,7 +16,7 @@ struct Ball {
 };
 
 #define MAX_BALLS 4
-Ball balls[MAX_BALLS];
+static Ball *balls = nullptr;
 int numActiveBalls = 1;
 
 // Simple wall system - notes triggered by wall hits
@@ -30,7 +31,7 @@ struct Wall {
 };
 
 #define NUM_WALLS 24  // 8 top + 8 bottom + 4 left + 4 right
-Wall walls[NUM_WALLS];
+static Wall *walls = nullptr;
 int ballScale = 0;  // Scale selection
 int ballKey = 0;    // Key selection
 int ballOctave = 4;
@@ -58,6 +59,9 @@ void initializeBouncingBallMode() {
 }
 
 void drawBouncingBallMode() {
+  if (!balls || !walls) {
+    return;
+  }
   tft.fillScreen(THEME_BG);
   drawHeader("ZEN", "Ambient Bouncing");
   
@@ -81,6 +85,12 @@ void drawBouncingBallMode() {
 }
 
 void initializeBalls() {
+  if (!balls) {
+    balls = new (std::nothrow) Ball[MAX_BALLS];
+  }
+  if (!balls) {
+    return;
+  }
   for (int i = 0; i < MAX_BALLS; i++) {
     balls[i].x = random(SCALE_X(80), SCALE_X(240));
     balls[i].y = random(SCALE_Y(80), SCALE_Y(150));
@@ -98,6 +108,12 @@ void initializeBalls() {
 }
 
 void initializeWalls() {
+  if (!walls) {
+    walls = new (std::nothrow) Wall[NUM_WALLS];
+  }
+  if (!walls) {
+    return;
+  }
   int wallIndex = 0;
   
   // Top wall - 8 segments
@@ -220,6 +236,9 @@ void handleBouncingBallMode() {
 }
 
 void updateBouncingBall() {
+  if (!balls || !walls) {
+    return;
+  }
   // Smooth 60 FPS animation
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate > 16) {
@@ -244,6 +263,9 @@ void updateBouncingBall() {
 }
 
 void updateBalls() {
+  if (!balls) {
+    return;
+  }
   int minX = SCALE_X(53);
   int maxX = DISPLAY_WIDTH - SCALE_X(48);
   int minY = HEADER_HEIGHT + SCALE_Y(18);
@@ -277,6 +299,9 @@ void updateBalls() {
 }
 
 void drawBalls() {
+  if (!balls) {
+    return;
+  }
   for (int i = 0; i < numActiveBalls; i++) {
     if (!balls[i].active) continue;
     tft.fillCircle(balls[i].x, balls[i].y, balls[i].size, balls[i].color);
@@ -285,6 +310,9 @@ void drawBalls() {
 }
 
 void drawWalls() {
+  if (!walls) {
+    return;
+  }
   for (int i = 0; i < NUM_WALLS; i++) {
     uint16_t color = walls[i].color;
     

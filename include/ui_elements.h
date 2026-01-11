@@ -3,16 +3,10 @@
 
 #include "common_definitions.h"
 
-// UI function declarations
-void updateTouch();
-void updateStatus();
-bool isButtonPressed(int x, int y, int w, int h);
-void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bool pressed = false);
-void drawHeader(String title, String subtitle = "");
 void exitToMenu();
 
 // UI implementations
-void updateTouch() {
+inline void updateTouch() {
   touch.wasPressed = touch.isPressed;
   lv_indev_t *indev = lv_indev_get_next(NULL);
   touch.isPressed = indev && (lv_indev_get_state(indev) == LV_INDEV_STATE_PRESSED);
@@ -27,11 +21,11 @@ void updateTouch() {
   }
 }
 
-bool isButtonPressed(int x, int y, int w, int h) {
+inline bool isButtonPressed(int x, int y, int w, int h) {
   return touch.x >= x && touch.x <= x + w && touch.y >= y && touch.y <= y + h;
 }
 
-void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bool pressed) {
+inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bool pressed = false) {
   uint16_t bgColor = pressed ? color : THEME_SURFACE;
   uint16_t borderColor = color;
   uint16_t textColor = pressed ? THEME_BG : color;
@@ -44,7 +38,7 @@ void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bo
   tft.drawCentreString(text, x + w/2, y + h/2 - 8, 2);
 }
 
-void drawHeader(String title, String subtitle) {
+inline void drawHeader(String title, String subtitle) {
   tft.fillRect(0, 0, DISPLAY_WIDTH, HEADER_HEIGHT, THEME_SURFACE);
   tft.drawFastHLine(0, HEADER_HEIGHT, DISPLAY_WIDTH, THEME_PRIMARY);
   
@@ -59,7 +53,7 @@ void drawHeader(String title, String subtitle) {
   drawRoundButton(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H, "BACK", THEME_ERROR);
 }
 
-void updateStatus() {
+inline void updateStatus() {
   // Status bar removed - no more BLE connection alerts on every screen
 }
 

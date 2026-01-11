@@ -4,6 +4,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <esp32_smartdisplay.h>
+#include <esp_bt.h>
 #include <lvgl.h>
 
 #include "arpeggiator_mode.h"
@@ -26,6 +27,8 @@
 
 static uint32_t lv_last_tick = 0;
 static lv_obj_t *render_obj = nullptr;
+static bool ble_initialized = false;
+static uint32_t ble_init_start_ms = 0;
 
 TFT_eSPI tft;
 BLECharacteristic *pCharacteristic = nullptr;
@@ -71,6 +74,11 @@ static const MenuItem kMenuItems[] = {
 };
 
 void setupBLE() {
+  static bool bt_mem_released = false;
+  if (!bt_mem_released) {
+    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    bt_mem_released = true;
+  }
   BLEDevice::init("aCYD MIDI");
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new ServerCallbacks());
@@ -297,7 +305,7 @@ void setup() {
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
   
-  setupBLE();
+  ble_init_start_ms = millis();
   initHardwareMIDI();  // Initialize hardware MIDI output
   
 #if REMOTE_DISPLAY_ENABLED
@@ -316,6 +324,11 @@ void loop() {
   lv_tick_inc(now - lv_last_tick);
   lv_last_tick = now;
   lv_timer_handler();
+
+  if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
+    setupBLE();
+    ble_initialized = true;
+  }
 
   updateTouch();
 

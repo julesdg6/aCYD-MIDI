@@ -4,6 +4,7 @@
 #include "common_definitions.h"
 #include "ui_elements.h"
 #include "midi_utils.h"
+#include <new>
 
 // Physics Drop mode variables
 struct DropBall {
@@ -33,8 +34,8 @@ struct Platform {
 
 #define MAX_DROP_BALLS 8
 #define MAX_PLATFORMS 6
-DropBall dropBalls[MAX_DROP_BALLS];
-Platform platforms[MAX_PLATFORMS];
+static DropBall *dropBalls = nullptr;
+static Platform *platforms = nullptr;
 int numActiveDropBalls = 0;
 int numPlatforms = 0;
 int dropScale = 0;
@@ -55,6 +56,15 @@ void checkPlatformCollisions();
 
 // Implementations
 void initializePhysicsDropMode() {
+  if (!dropBalls) {
+    dropBalls = new (std::nothrow) DropBall[MAX_DROP_BALLS];
+  }
+  if (!platforms) {
+    platforms = new (std::nothrow) Platform[MAX_PLATFORMS];
+  }
+  if (!dropBalls || !platforms) {
+    return;
+  }
   numActiveDropBalls = 0;
   numPlatforms = 0;
   dropScale = 0;
@@ -75,6 +85,9 @@ void initializePhysicsDropMode() {
 }
 
 void drawPhysicsDropMode() {
+  if (!dropBalls || !platforms) {
+    return;
+  }
   tft.fillScreen(THEME_BG);
   drawHeader("DROP", platformMode ? "Platform Edit" : "Tap to Drop");
   
@@ -98,6 +111,9 @@ void drawPhysicsDropMode() {
 }
 
 void drawDropBalls() {
+  if (!dropBalls) {
+    return;
+  }
   for (int i = 0; i < MAX_DROP_BALLS; i++) {
     if (!dropBalls[i].active) continue;
     
@@ -115,6 +131,9 @@ void drawDropBalls() {
 }
 
 void drawPlatforms() {
+  if (!platforms) {
+    return;
+  }
   for (int i = 0; i < numPlatforms; i++) {
     uint16_t color = platforms[i].color;
     
@@ -211,6 +230,9 @@ void handlePhysicsDropMode() {
 }
 
 void spawnDropBall(int x, int y) {
+  if (!dropBalls) {
+    return;
+  }
   if (numActiveDropBalls >= MAX_DROP_BALLS) return;
   
   // Find inactive ball slot
@@ -233,6 +255,9 @@ void spawnDropBall(int x, int y) {
 }
 
 void addPlatform(int x, int y) {
+  if (!platforms) {
+    return;
+  }
   if (numPlatforms >= MAX_PLATFORMS) return;
   
   platforms[numPlatforms].x = x - 25;
@@ -251,6 +276,9 @@ void addPlatform(int x, int y) {
 }
 
 void updatePhysics() {
+  if (!dropBalls || !platforms) {
+    return;
+  }
   static unsigned long lastUpdate = 0;
   static float lastX[MAX_DROP_BALLS], lastY[MAX_DROP_BALLS];
   static bool initialized = false;
@@ -322,6 +350,9 @@ void updatePhysics() {
 }
 
 void checkPlatformCollisions() {
+  if (!dropBalls || !platforms) {
+    return;
+  }
   for (int b = 0; b < MAX_DROP_BALLS; b++) {
     if (!dropBalls[b].active) continue;
     

@@ -29,6 +29,12 @@ extern DisplayConfig displayConfig;
 #define SCALE_H(h) ((int)((h) * displayConfig.scaleY))
 
 // Common scaled dimensions (based on 320x240 reference)
+#ifdef DISPLAY_WIDTH
+#undef DISPLAY_WIDTH
+#endif
+#ifdef DISPLAY_HEIGHT
+#undef DISPLAY_HEIGHT
+#endif
 #define DISPLAY_WIDTH  (displayConfig.width)
 #define DISPLAY_HEIGHT (displayConfig.height)
 #define DISPLAY_CENTER_X (displayConfig.width / 2)
