@@ -196,16 +196,18 @@ Keep documentation in sync with code changes.
 
 ## Dependencies
 
-**PlatformIO libraries** (in `platformio.ini`):
-- `BLE` - Bluetooth Low Energy
-- `me-no-dev/AsyncTCP` - Async networking
-- `me-no-dev/ESP Async WebServer` - Web server for remote display
+**PlatformIO libraries** (in `platformio.ini` lib_deps):
+- `BLE` - Bluetooth Low Energy (Arduino framework built-in)
+- `me-no-dev/AsyncTCP` - Async networking (optional, for remote display)
+- `me-no-dev/ESP Async WebServer` - Web server for remote display (optional)
 
-**Platform libraries** (Arduino framework):
-- `TFT_eSPI` - Display driver
-- `XPT2046_Touchscreen` - Touch controller
-- `LVGL` - Graphics library
-- `esp32_smartdisplay` - Display abstraction
+**Local libraries** (in `lib/` directory):
+- `esp32_smartdisplay` - Display abstraction library for CYD boards
+  - Includes LVGL v9.2.2 graphics library
+  - Provides hardware-specific display and touch drivers
+  - Located in `lib/esp32_smartdisplay/`
+
+**Note**: The `esp32_smartdisplay` library bundles TFT_eSPI, XPT2046_Touchscreen, and LVGL as transitive dependencies. These are not listed separately in `platformio.ini` because they come with the local library.
 
 ## Security & Best Practices
 
