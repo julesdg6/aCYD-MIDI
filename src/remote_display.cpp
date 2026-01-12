@@ -199,6 +199,7 @@ void initRemoteDisplay() {
         return;
     }
     
+#if WIFI_ENABLED
     // Connect to WiFi (blocking approach during initialization)
     // Note: This uses a simple blocking approach during initialization.
     // yield() is called in the loop to prevent watchdog timer issues.
@@ -240,6 +241,10 @@ void initRemoteDisplay() {
         Serial.println("\nWiFi connection failed!");
         Serial.println("Remote Display disabled.");
     }
+#else
+    wifiConnected = false;
+    Serial.println("Remote Display disabled: WiFi disabled.");
+#endif
 }
 
 void sendFrameUpdate() {
@@ -294,6 +299,9 @@ void sendFrameUpdate() {
 }
 
 void handleRemoteDisplay() {
+#if !WIFI_ENABLED
+    return;
+#else
     if (!wifiConnected) {
         return;
     }
@@ -310,6 +318,7 @@ void handleRemoteDisplay() {
         sendFrameUpdate();
         lastFrameUpdate = now;
     }
+#endif
 }
 
 bool isRemoteDisplayConnected() {
@@ -317,8 +326,12 @@ bool isRemoteDisplayConnected() {
 }
 
 String getRemoteDisplayIP() {
+#if !WIFI_ENABLED
+    return "WiFi disabled";
+#else
     if (wifiConnected) {
         return WiFi.localIP().toString();
     }
     return "Not connected";
+#endif
 }

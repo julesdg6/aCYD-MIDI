@@ -2,7 +2,6 @@
 #define REMOTE_DISPLAY_H
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
@@ -20,9 +19,18 @@
 #ifndef WIFI_PASSWORD
 #define WIFI_PASSWORD "INVALID_PASSWORD_CONFIGURE_ME"
 #endif
+#endif
+
+#ifndef WIFI_ENABLED
+#define WIFI_ENABLED 1
+#endif
+
 #ifndef REMOTE_DISPLAY_ENABLED
 #define REMOTE_DISPLAY_ENABLED 1
 #endif
+
+#if WIFI_ENABLED
+#include <WiFi.h>
 #endif
 
 // Remote Display Settings

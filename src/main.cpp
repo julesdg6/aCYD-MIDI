@@ -6,6 +6,7 @@
 #include <esp32_smartdisplay.h>
 #include <esp_bt.h>
 #include <lvgl.h>
+#include <esp32-hal-psram.h>
 
 #include "arpeggiator_mode.h"
 #include "auto_chord_mode.h"
@@ -288,14 +289,43 @@ void setup() {
   Serial.printf("Hardware MIDI: %s (UART%d)\n", 
                 HARDWARE_MIDI_ENABLED ? "Enabled" : "Disabled",
                 HARDWARE_MIDI_UART);
+  Serial.printf("PSRAM: found=%s size=%u free=%u\n",
+                psramFound() ? "yes" : "no",
+                ESP.getPsramSize(),
+                ESP.getFreePsram());
+  Serial.printf("Heap pre-init: dma_free=%u dma_largest=%u int_free=%u int_largest=%u\n",
+                heap_caps_get_free_size(MALLOC_CAP_DMA),
+                heap_caps_get_largest_free_block(MALLOC_CAP_DMA),
+                heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 #endif
 
   smartdisplay_init();
+#if DEBUG_ENABLED
+  Serial.printf("Heap post-init: dma_free=%u dma_largest=%u int_free=%u int_largest=%u\n",
+                heap_caps_get_free_size(MALLOC_CAP_DMA),
+                heap_caps_get_largest_free_block(MALLOC_CAP_DMA),
+                heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+#endif
   lv_display_t *display = lv_display_get_default();
   lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
   
   // Initialize display configuration for autoscaling
   initDisplayConfig();
+
+#if DEBUG_ENABLED
+  Serial.printf("LVGL buffer pixels: %d\n", LVGL_BUFFER_PIXELS);
+#ifdef ILI9341_SPI_CONFIG_PCLK_HZ
+  Serial.printf("ILI9341 PCLK Hz: %d\n", ILI9341_SPI_CONFIG_PCLK_HZ);
+#endif
+#ifdef ILI9341_SPI_CONFIG_TRANS_QUEUE_DEPTH
+  Serial.printf("ILI9341 queue depth: %d\n", ILI9341_SPI_CONFIG_TRANS_QUEUE_DEPTH);
+#endif
+#ifdef ILI9341_SPI_BUS_MAX_TRANSFER_SZ
+  Serial.printf("ILI9341 max transfer: %d\n", ILI9341_SPI_BUS_MAX_TRANSFER_SZ);
+#endif
+#endif
   
   tft.init();
   render_obj = lv_obj_create(lv_screen_active());
@@ -325,10 +355,12 @@ void loop() {
   lv_last_tick = now;
   lv_timer_handler();
 
+#if BLE_ENABLED
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
     setupBLE();
     ble_initialized = true;
   }
+#endif
 
   updateTouch();
 
