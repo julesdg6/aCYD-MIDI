@@ -3,12 +3,15 @@
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
+#include <BLESecurity.h>
 #include <esp32_smartdisplay.h>
 #include <esp_bt.h>
 #include <lvgl.h>
 #include <esp32-hal-psram.h>
 #include <algorithm>
 #include <cmath>
+#include <esp_task_wdt.h>
+#include "esp_log.h"
 
 #include "module_arpeggiator_mode.h"
 #include "module_auto_chord_mode.h"
@@ -42,16 +45,22 @@ static uint32_t ble_init_start_ms = 0;
 TFT_eSPI tft;
 BLECharacteristic *pCharacteristic = nullptr;
 bool deviceConnected = false;
+volatile bool ble_request_redraw = false;
+volatile bool ble_disconnect_action = false;
 uint8_t midiPacket[] = {0x80, 0x80, 0, 0, 0};
 TouchState touch;
 AppMode currentMode = MENU;
 
 #define RGB565(r, g, b) (uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
 
-static constexpr uint16_t MENU_COLOR_TL = RGB565(140, 30, 60);
-static constexpr uint16_t MENU_COLOR_TR = RGB565(190, 110, 40);
-static constexpr uint16_t MENU_COLOR_BL = RGB565(20, 90, 130);
-static constexpr uint16_t MENU_COLOR_BR = RGB565(110, 30, 150);
+static constexpr uint16_t MENU_COLOR_TL = RGB565(255, 0, 0);    // Red (keys)
+static constexpr uint16_t MENU_COLOR_TR = RGB565(255, 255, 0);  // Yellow (drop)
+static constexpr uint16_t MENU_COLOR_BL = RGB565(0, 0, 255);    // Blue (raga)
+static constexpr uint16_t MENU_COLOR_BR = RGB565(0, 255, 0);    // Green (slink)
+static constexpr uint16_t MENU_COLOR_DROP = MENU_COLOR_TR;
+static constexpr uint16_t MENU_COLOR_KEYS = MENU_COLOR_TL;
+static constexpr uint16_t MENU_COLOR_RAGA = MENU_COLOR_BL;
+static constexpr uint16_t MENU_COLOR_SLINK = RGB565(0, 255, 0);
 
 enum MenuIcon {
   ICON_KEYS,
@@ -136,11 +145,25 @@ DisplayConfig displayConfig;
 HardwareSerial MIDISerial(2);
 #endif
 
-class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *server) override { deviceConnected = true; }
+// Forward declarations for functions used before their definitions
+void switchMode(AppMode mode);
+void requestRedraw();
+
+class MIDICallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *server) override {
+    deviceConnected = true;
+    Serial.println("BLE connected");
+    if (currentMode == MENU) {
+      ble_request_redraw = true;
+    }
+  }
+
   void onDisconnect(BLEServer *server) override {
     deviceConnected = false;
-    server->startAdvertising();
+    Serial.println("BLE disconnected - sending All Notes Off");
+    // Defer heavy disconnect handling to main loop to avoid doing work
+    // inside the BLE callback/task context.
+    ble_disconnect_action = true;
   }
 };
 
@@ -151,8 +174,39 @@ void setupBLE() {
     bt_mem_released = true;
   }
   BLEDevice::init("aCYD MIDI");
+  Serial.println("Configuring BLE security...");
+  // Configure BLE security for "Just Works" pairing (no PIN/passkey) and
+  // also provide a static PIN for clients that require one.
+  BLESecurity *pSecurity = new BLESecurity();
+  pSecurity->setCapability(0x03); // IO_CAPS_NONE
+  pSecurity->setStaticPIN(123456);
+  Serial.println("BLESecurity: IO_CAPS_NONE, static PIN=123456 set");
+
+  // Register security callbacks to log authentication events
+  class MyBLESecurityCallbacks : public BLESecurityCallbacks {
+  public:
+    uint32_t onPassKeyRequest() override {
+      Serial.println("BLESecurityCallbacks: onPassKeyRequest()");
+      return 0;
+    }
+    void onPassKeyNotify(uint32_t pass_key) override {
+      Serial.printf("BLESecurityCallbacks: onPassKeyNotify: %06u\n", pass_key);
+    }
+    bool onConfirmPIN(uint32_t pass_key) override {
+      Serial.printf("BLESecurityCallbacks: onConfirmPIN: %06u\n", pass_key);
+      return true;
+    }
+    bool onSecurityRequest() override {
+      Serial.println("BLESecurityCallbacks: onSecurityRequest()");
+      return true;
+    }
+    void onAuthenticationComplete(esp_ble_auth_cmpl_t) override {
+      Serial.println("BLESecurityCallbacks: onAuthenticationComplete()");
+    }
+  };
+  BLEDevice::setSecurityCallbacks(new MyBLESecurityCallbacks());
   BLEServer *server = BLEDevice::createServer();
-  server->setCallbacks(new ServerCallbacks());
+  server->setCallbacks(new MIDICallbacks());
   BLEService *service = server->createService(SERVICE_UUID);
   pCharacteristic = service->createCharacteristic(
       CHARACTERISTIC_UUID,
@@ -164,10 +218,11 @@ void setupBLE() {
   service->start();
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
-  advertising->setScanResponse(false);
+  advertising->setScanResponse(true);
   advertising->setMinPreferred(0x06);
-  advertising->setMaxPreferred(0x12);
+  advertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
+  Serial.println("BLE advertising initialized for aCYD MIDI");
 }
 
 inline uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio) {
@@ -460,6 +515,22 @@ void drawMenu() {
     uint16_t topBlend = blendColor(MENU_COLOR_TL, MENU_COLOR_TR, fx);
     uint16_t bottomBlend = blendColor(MENU_COLOR_BL, MENU_COLOR_BR, fx);
     uint16_t accent = blendColor(topBlend, bottomBlend, fy);
+    switch (kMenuTiles[i].icon) {
+      case ICON_KEYS:
+        accent = MENU_COLOR_KEYS;
+        break;
+      case ICON_DROP:
+        accent = MENU_COLOR_DROP;
+        break;
+      case ICON_RAGA:
+        accent = MENU_COLOR_RAGA;
+        break;
+      case ICON_SLINK:
+        accent = MENU_COLOR_SLINK;
+        break;
+      default:
+        break;
+    }
     drawMenuTile(x, y, tileW, tileH, kMenuTiles[i], accent);
   }
 }
@@ -701,6 +772,15 @@ void setup() {
                 heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 #endif
 
+  // Increase task watchdog timeout to 10s to allow diagnostic logging
+  esp_task_wdt_init(10, true);
+  Serial.println("Task WDT timeout set to 10s for diagnostics");
+
+  // Increase ESP log verbosity to capture BT stack debug output for diagnosis
+  esp_log_level_set("*", ESP_LOG_DEBUG);
+  esp_log_level_set("BT", ESP_LOG_DEBUG);
+  Serial.println("ESP log level set to DEBUG for BT stack");
+
   smartdisplay_init();
 #if DEBUG_ENABLED
   Serial.printf("Heap post-init: dma_free=%u dma_largest=%u int_free=%u int_largest=%u\n",
@@ -765,6 +845,21 @@ void loop() {
 #endif
 
   updateTouch();
+
+  // Handle deferred BLE actions set by BLE callbacks (run in main loop)
+  if (ble_disconnect_action) {
+    ble_disconnect_action = false;
+    Serial.println("Handling BLE disconnect in main loop: stopping modes and restarting advertising");
+    stopAllModes();
+    requestRedraw();
+    delay(500);
+    BLEDevice::startAdvertising();
+    Serial.println("BLE advertising restarted for reconnection");
+  }
+  if (ble_request_redraw) {
+    ble_request_redraw = false;
+    requestRedraw();
+  }
 
   switch (currentMode) {
     case MENU:

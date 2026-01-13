@@ -34,4 +34,8 @@ env/
 *.swp
 
 # WiFi credentials (keep template, ignore actual config)
-config/wifi_config.local.h
+config/wifi_config.h
+
+
+#legacy stuff we use to figure stuff out
+legacy/

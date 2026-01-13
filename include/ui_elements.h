@@ -29,13 +29,17 @@ inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t co
   uint16_t bgColor = pressed ? color : THEME_SURFACE;
   uint16_t borderColor = color;
   uint16_t textColor = pressed ? THEME_BG : color;
-  
+
   tft.fillRoundRect(x, y, w, h, 8, bgColor);
   tft.drawRoundRect(x, y, w, h, 8, borderColor);
   tft.drawRoundRect(x+1, y+1, w-2, h-2, 7, borderColor);
-  
+
   tft.setTextColor(textColor, bgColor);
-  tft.drawCentreString(text, x + w/2, y + h/2 - 8, textFont);
+  int textY = y + h/2 - SCALE_Y(2);
+  if (textFont == 0) {
+    textY = y + h/2 - SCALE_Y(3);
+  }
+  tft.drawCentreString(text, x + w/2, textY, textFont);
 }
 
 inline void drawHeader(String title, String subtitle, uint8_t titleFont = 4) {

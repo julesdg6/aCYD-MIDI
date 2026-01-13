@@ -1,24 +1,17 @@
 # aCYD MIDI Documentation
 
-This folder gathers every deep-dive doc for the current CYD MIDI experience, including the main menu flow, capture behavior, and Wi-Fi/remote display wiring. The top-level `README.md` links here for extra context.
+This folder groups the supporting docs that expand on the features summarized in the top-level `README.md`. Leave the feature list and menu coverage in the main README so this folder can stay focused on deeper implementation notes.
 
-## Main Menu & Modules
+## Document Map
 
-- **4×4 grid layout** – Every mode now lives in a dedicated tile (shown in `assets/screenshots/00_main_menu.bmp`) with a darker rainbow gradient, accurate module icons, and black button text for contrast.
-- **16 total modules** – The menu connects to KEYS, BEATS, ZEN, DROP, RNG, XY PAD, ARP, GRID, CHORD, LFO, TB3PO, GRIDS, RAGA, EUCLID, MORPH, and SLINK. Each module is isolated in a `module_*.h/.cpp` pair under `src/` so new behaviors can be worked on in one place.
-- **Splash screen** – Boot artwork pulls in `assets/aCYD-MIDI.png` and displays the Wi-Fi address (once connected) before landing back in the LVGL loop.
+- `CIRCUIT_DIAGRAMS.md` – Wiring diagrams for the board, hardware MIDI breakout, and sensor pinouts.
+- `CONFIG_RULES.md` – PlatformIO/configuration conventions and helper scripts that keep the ESP32 builds identical.
+- `HARDWARE_MIDI.md` / `HARDWARE_MIDI_CONFIG.md` – Hardware MIDI bus usage, UART selection, and debug handling.
+- `IMPLEMENTATION_SUMMARY.md` – Engine-level notes for the current code layout and key trade-offs.
+- `REMOTE_DISPLAY.md` – Wi-Fi + remote WebSocket viewer instructions (references `config/wifi_config.local.h.template`).
+- `SLINK_IMPLEMENTATION.md` – Deep dive into the SLINK generative mode, including tabbed UI and MIDI routing.
 
-## Capture Flow
+## Keeping Docs Focused
 
-- **Back-button capture** – Holding the BACK button on the main menu for ~1.5 s runs `captureAllScreenshots()`; it visits MENU + every module and writes `/screenshots/<board>_<mode>_NNN.bmp` using the sanitized board/mode labels. That callback is shared by the USB shell, so every screenshot now follows the board-aware naming convention described in `README.md`.
-- **SD output** – The BMP writer now handles padding, row alignment, and incremental filenames, so keep the `/screenshots` folder on the card and watch the serial log for confirmation.
-
-## Wi-Fi & Remote Display
-
-- **Config files** – Copy `config/wifi_config.local.h.template` into `config/wifi_config.local.h`, update `WIFI_SSID` / `WIFI_PASSWORD`, and keep the new file ignored (`.gitignore` already references `config/wifi_config.local.h`). The main selector now includes `config/wifi_config.h` automatically so the remote display and splash screen can report the current IP.
-- **Remote viewer** – See `docs/REMOTE_DISPLAY.md` for the WebSocket viewer setup; it depends on the `config/wifi_config.local.h` credentials documented above.
-
-## Next Steps
-
-- Refer to `docs/SLINK_IMPLEMENTATION.md`, `docs/HARDWARE_MIDI.md`, and `docs/HARDWARE_MIDI_CONFIG.md` for mode-specific implementation notes.
-- The legacy modules for RAGA, EUCLID, and MORPH live in `legacy/` for now; move features into `src/module_*.cpp` if you want to mirror those behaviors exactly.
+1. Add new content under this folder only when it dives deeper than the overview in `README.md`.
+2. Link back to this document (or the main README) when the same topic is mentioned elsewhere so readers always land on the most relevant page.
