@@ -14,7 +14,7 @@
 
 // Screenshot functions
 bool initializeSD();
-bool takeScreenshot();
+bool takeScreenshot(const char *label = nullptr);
 void shutdownSD();
 
 #endif // SCREENSHOT_H

@@ -4,9 +4,14 @@ boards/
 .platformio/
 .ccls-cache/
 .clangd/
+.worktrees/
+_codeql_detected_source_root/
 
 # VSCode
 .vscode/
+
+# Git worktree metadata (avoid noise in VSCode)
+.worktrees/
 
 # macOS
 .DS_Store
@@ -28,5 +33,5 @@ env/
 *~
 *.swp
 
-# WiFi credentials (keep example, ignore actual config)
-include/wifi_config.h
+# WiFi credentials (keep template, ignore actual config)
+config/wifi_config.local.h

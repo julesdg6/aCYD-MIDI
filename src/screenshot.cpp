@@ -1,6 +1,33 @@
 #include "screenshot.h"
+#include "common_definitions.h"
+
+#include <cctype>
 
 static bool sdInitialized = false;
+static int screenshot_count = 0;
+
+static void sanitizeLabel(const char *src, char *dst, size_t len) {
+    size_t idx = 0;
+    while (*src && idx + 1 < len) {
+        char c = *src++;
+        if (isalnum((unsigned char)c) || c == '_' || c == '-') {
+            dst[idx++] = c;
+        } else if (c == ' ' || c == '/' || c == '\\' || c == '.' || c == ':' ) {
+            dst[idx++] = '_';
+        }
+    }
+    if (idx == 0 && len > 1) {
+        dst[idx++] = 'x';
+    }
+    dst[idx] = '\0';
+}
+
+static bool ensureScreenshotDirectory() {
+    if (SD.exists("/screenshots")) {
+        return true;
+    }
+    return SD.mkdir("/screenshots");
+}
 
 // BMP file header structures (Windows BMP format)
 #pragma pack(push, 1)
@@ -65,68 +92,66 @@ void rgb565ToRgb888(uint16_t rgb565, uint8_t* r, uint8_t* g, uint8_t* b) {
     *b = (rgb565 & 0x1F) << 3;
 }
 
-bool takeScreenshot() {
+bool takeScreenshot(const char* label) {
     Serial.println("Taking screenshot...");
     
-    // Initialize SD card
     if (!initializeSD()) {
         Serial.println("Failed to initialize SD card");
         return false;
     }
     
-    // Get display
+    if (!ensureScreenshotDirectory()) {
+        Serial.println("Failed to create screenshots directory");
+        return false;
+    }
+
     lv_display_t* disp = lv_display_get_default();
     if (!disp) {
         Serial.println("No display found");
         return false;
     }
-    
+
     int32_t width = lv_display_get_horizontal_resolution(disp);
     int32_t height = lv_display_get_vertical_resolution(disp);
-    
+
     Serial.printf("Display size: %dx%d\n", width, height);
-    
-    // Allocate buffer for snapshot (RGB565 format)
-    // Check for potential overflow in buffer size calculation
+
     size_t pixels = (size_t)width * (size_t)height;
     size_t buf_size = pixels * LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565);
-    
-    // Sanity check: ensure buffer size is reasonable (max ~1MB for typical displays)
     if (buf_size == 0 || buf_size > 1024 * 1024) {
         Serial.printf("Invalid buffer size: %zu bytes\n", buf_size);
         return false;
     }
-    
+
     void* buf = malloc(buf_size);
     if (!buf) {
         Serial.println("Failed to allocate snapshot buffer");
         return false;
     }
-    
-    // Take snapshot to buffer
+
     lv_obj_t* screen = lv_screen_active();
     lv_image_dsc_t snapshot;
     memset(&snapshot, 0, sizeof(snapshot));
     lv_result_t res = lv_snapshot_take_to_buf(screen, LV_COLOR_FORMAT_RGB565, &snapshot, buf, buf_size);
-    
     if (res != LV_RESULT_OK) {
         Serial.printf("Failed to take snapshot: %d\n", res);
         free(buf);
         return false;
     }
-    
+
     const lv_color16_t* color_buf = (const lv_color16_t*)snapshot.data;
-    
     Serial.println("Snapshot captured, saving to BMP...");
-    
-    // Generate filename with incrementing counter
-    // Note: Counter resets on device restart, which may overwrite existing files
-    // TODO: Consider checking for existing files or persisting counter to avoid overwrites
-    static int screenshot_count = 0;
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/screen%03d.bmp", screenshot_count++);
-    
-    // Open file for writing
+
+    char labelBuf[32];
+    const char* baseLabel = (label && label[0]) ? label : "screen";
+    sanitizeLabel(baseLabel, labelBuf, sizeof(labelBuf));
+
+    char boardBuf[32];
+    sanitizeLabel(BOARD_NAME, boardBuf, sizeof(boardBuf));
+
+    char filename[80];
+    snprintf(filename, sizeof(filename), "/screenshots/%s_%s_%03d.bmp", boardBuf, labelBuf, screenshot_count++);
+
     File file = SD.open(filename, FILE_WRITE);
     if (!file) {
         Serial.println("Failed to open file for writing");
