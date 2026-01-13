@@ -35,6 +35,9 @@ env/
 # WiFi credentials (keep template, ignore actual config)
 config/wifi_config.h
 
+# Local secrets (API keys, tokens)
+.secrets/
+
 
 #legacy stuff we use to figure stuff out
 legacy/
