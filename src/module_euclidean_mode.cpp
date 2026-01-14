@@ -79,12 +79,12 @@ void drawEuclideanMode() {
   int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
                   euclideanState.isPlaying ? "STOP" : "PLAY",
-                  euclideanState.isPlaying ? THEME_ERROR : THEME_SUCCESS);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32), "BPM-", THEME_SECONDARY);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32), "BPM+", THEME_SECONDARY);
+                  euclideanState.isPlaying ? THEME_ERROR : THEME_SUCCESS, false, 2);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32), "BPM-", THEME_SECONDARY, false, 1);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32), "BPM+", THEME_SECONDARY, false, 1);
   drawRoundButton(DISPLAY_WIDTH - SCALE_X(80), controlY, SCALE_X(70), SCALE_Y(32),
                   euclideanState.tripletMode ? "TRIP" : "2/4",
-                  euclideanState.tripletMode ? THEME_ACCENT : THEME_SURFACE);
+                  euclideanState.tripletMode ? THEME_ACCENT : THEME_SURFACE, false, 2);
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("BPM " + String(euclideanState.bpm), DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(20), 2);

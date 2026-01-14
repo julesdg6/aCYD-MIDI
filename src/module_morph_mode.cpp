@@ -73,10 +73,10 @@ void drawMorphMode() {
 
   int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
-                  "PLAY", morphState.recording ? THEME_ERROR : THEME_SUCCESS);
+                  "PLAY", morphState.recording ? THEME_ERROR : THEME_SUCCESS, false, 2);
   drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(64), controlY, SCALE_X(64), SCALE_Y(32),
                   morphState.recording ? "RECORDING" : "RECORD",
-                  morphState.recording ? THEME_ACCENT : THEME_SECONDARY);
+                  morphState.recording ? THEME_ACCENT : THEME_SECONDARY, false, 1);
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("X: " + String(static_cast<int>(morphState.morphX * 100)) + "%",
