@@ -1,6 +1,6 @@
-# Release v1.0.0 - Preparation Summary
+# Release v0.0.1 - Preparation Summary
 
-This document summarizes the release preparation work completed for aCYD-MIDI v1.0.0.
+This document summarizes the release preparation work completed for aCYD-MIDI v0.0.1.
 
 ## What Was Accomplished
 
@@ -8,7 +8,7 @@ This document summarizes the release preparation work completed for aCYD-MIDI v1
 
 Added version tracking to the codebase:
 - **File**: `common_definitions.h`
-- **Change**: Added `#define ACYD_MIDI_VERSION "1.0.0"`
+- **Change**: Added `#define ACYD_MIDI_VERSION "0.0.1"`
 - **Display**: Version shown on splash screen in dimmed text below logo
 
 ### 2. Comprehensive CHANGELOG ✅
@@ -54,10 +54,10 @@ git checkout main
 git pull origin main
 
 # Create annotated tag
-git tag -a v1.0.0 -m "Release v1.0.0 - Initial stable release with 16 interactive modes"
+git tag -a v0.0.1 -m "Release v0.0.1 - Initial pre-release with 16 interactive modes"
 
 # Push tag to trigger release
-git push origin v1.0.0
+git push origin v0.0.1
 ```
 
 ## What Happens Next
@@ -69,7 +69,7 @@ git push origin v1.0.0
 
 2. **Manual step: Edit release notes**
    - Go to: https://github.com/julesdg6/aCYD-MIDI/releases
-   - Edit the v1.0.0 release
+   - Edit the v0.0.1 release
    - Copy content from CHANGELOG.md
    - Add any additional notes
 
@@ -88,7 +88,7 @@ Modified:
   README.md                     - Added badges and download info
 
 Created:
-  CHANGELOG.md                  - Version 1.0.0 changelog
+  CHANGELOG.md                  - Version 0.0.1 changelog
   RELEASE.md                    - Release process guide
   .github/RELEASE_CHECKLIST.md  - Maintainer checklist
   .github/ISSUE_TEMPLATE/release.md - Issue template
@@ -115,7 +115,7 @@ Created:
 - **Now**: PR ready for review and merge
 - **After merge**: Tag can be created immediately
 - **~10 minutes**: GitHub Actions completes
-- **v1.0.0 Released**: Users can download firmware
+- **v0.0.1 Released**: Users can download firmware
 
 ## Future Releases
 

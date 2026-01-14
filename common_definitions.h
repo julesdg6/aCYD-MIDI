@@ -6,7 +6,7 @@
 #include <BLEDevice.h>
 
 // Version
-#define ACYD_MIDI_VERSION "1.0.0"
+#define ACYD_MIDI_VERSION "0.0.1"
 
 // Color scheme
 #define THEME_BG         0x0000

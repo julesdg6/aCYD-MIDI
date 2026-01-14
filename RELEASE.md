@@ -28,7 +28,7 @@ Before creating a release, ensure the version is updated:
 
 ```bash
 git add common_definitions.h CHANGELOG.md
-git commit -m "Prepare release v1.0.0"
+git commit -m "Prepare release v0.0.1"
 git push origin main
 ```
 
@@ -37,8 +37,8 @@ git push origin main
 Create a tag with the version number (must start with 'v'):
 
 ```bash
-git tag -a v1.0.0 -m "Release v1.0.0 - Initial stable release"
-git push origin v1.0.0
+git tag -a v0.0.1 -m "Release v0.0.1 - Initial pre-release"
+git push origin v0.0.1
 ```
 
 ### 4. Wait for GitHub Actions
@@ -79,11 +79,11 @@ aCYD-MIDI follows [Semantic Versioning](https://semver.org/):
 - **MINOR** version for new functionality (backwards compatible)
 - **PATCH** version for backwards compatible bug fixes
 
-Format: `MAJOR.MINOR.PATCH` (e.g., `1.0.0`, `1.1.0`, `1.1.1`)
+Format: `MAJOR.MINOR.PATCH` (e.g., `0.0.1`, `0.1.0`, `1.0.0`)
 
-## Example: Creating v1.0.0
+## Example: Creating v0.0.1
 
-For the initial v1.0.0 release:
+For the initial v0.0.1 pre-release:
 
 ```bash
 # Ensure you're on the main branch and up to date
@@ -91,10 +91,10 @@ git checkout main
 git pull origin main
 
 # Create the tag
-git tag -a v1.0.0 -m "Release v1.0.0 - Initial stable release with 16 interactive modes"
+git tag -a v0.0.1 -m "Release v0.0.1 - Initial pre-release with 16 interactive modes"
 
 # Push the tag
-git push origin v1.0.0
+git push origin v0.0.1
 ```
 
 The GitHub Actions workflow will handle the rest!
