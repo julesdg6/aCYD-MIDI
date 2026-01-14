@@ -615,7 +615,7 @@
         #undef LV_MEM_SIZE
         #define LV_MEM_SIZE (24 * 1024U)
     #endif
-#endif */
+#endif
 
 /*==================
  *   FONT USAGE
