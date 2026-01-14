@@ -597,6 +597,26 @@
     #define LV_USE_PRIVATE_API  0
 #endif
 
+/* --- Project overrides to ensure consistent build configuration --- */
+/* Prefer our project limits; only override if the existing setting is larger. */
+#ifndef LVGL_BUFFER_PIXELS
+    #define LVGL_BUFFER_PIXELS (DISPLAY_WIDTH * 12)
+#else
+    #if LVGL_BUFFER_PIXELS > (DISPLAY_WIDTH * 12)
+        #undef LVGL_BUFFER_PIXELS
+        #define LVGL_BUFFER_PIXELS (DISPLAY_WIDTH * 12)
+    #endif
+#endif
+
+#ifndef LV_MEM_SIZE
+    #define LV_MEM_SIZE (24 * 1024U)  /* Reduced LVGL RAM pool to fit on board */
+#else
+    #if LV_MEM_SIZE > (24 * 1024U)
+        #undef LV_MEM_SIZE
+        #define LV_MEM_SIZE (24 * 1024U)
+    #endif
+#endif */
+
 /*==================
  *   FONT USAGE
  *===================*/
