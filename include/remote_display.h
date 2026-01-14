@@ -5,15 +5,15 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-// Try to include wifi_config.h, generate error if not found and defaults would be used
-#if __has_include("wifi_config.h")
-#include "wifi_config.h"
+// Try to include config/wifi_config.h, generate error if not found and defaults would be used
+#if __has_include("../config/wifi_config.h")
+#include "../config/wifi_config.h"
 #else
-// WiFi configuration not found - you must create wifi_config.h
-// Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials
+// WiFi configuration not found - you must create config/wifi_config.local.h
+// Copy config/wifi_config.local.h.template to config/wifi_config.local.h and update the credentials
 #ifndef WIFI_SSID
-#warning "wifi_config.h not found - using obviously invalid WiFi credentials"
-#warning "Copy include/wifi_config.h.example to include/wifi_config.h and update with your credentials"
+#warning "config/wifi_config.h not found - using obviously invalid WiFi credentials"
+#warning "Copy config/wifi_config.local.h.template to config/wifi_config.local.h and update with your credentials"
 #define WIFI_SSID "INVALID_SSID_CONFIGURE_ME"
 #endif
 #ifndef WIFI_PASSWORD

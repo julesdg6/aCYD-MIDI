@@ -78,6 +78,10 @@ void initDisplayConfig();
 #define THEME_TEXT       0xFFFF
 #define THEME_TEXT_DIM   0x8410
 
+#ifndef BOARD_NAME
+#define BOARD_NAME "esp32-2432S028Rv2"
+#endif
+
 // BLE MIDI UUIDs
 #define SERVICE_UUID        "03b80e5a-ede8-4b33-a751-6ce34ec4c700"
 #define CHARACTERISTIC_UUID "7772e5db-3868-4112-a1a9-f2669d106bf3"
@@ -104,7 +108,12 @@ enum AppMode {
   GRID_PIANO,
   AUTO_CHORD,
   LFO,
-  SLINK
+  SLINK,
+  TB3PO,
+  GRIDS,
+  RAGA,
+  EUCLID,
+  MORPH
 };
 
 // Music theory
