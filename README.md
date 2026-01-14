@@ -2,7 +2,15 @@
 
 Touchscreen Bluetooth MIDI controller for the ESP32-2432S028R "Cheap Yellow Display" (CYD).
 
+[![Release](https://img.shields.io/github/v/release/julesdg6/aCYD-MIDI)](https://github.com/julesdg6/aCYD-MIDI/releases)
+[![Build](https://github.com/julesdg6/aCYD-MIDI/workflows/Build%20ESP32%20firmware%20(PlatformIO)/badge.svg)](https://github.com/julesdg6/aCYD-MIDI/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Special thanks to Brian Lough for putting together the resources on this board. Check out his repo for more examples: https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display
+
+## Quick Start
+
+**Download pre-built firmware:** Check the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page for ready-to-flash `.bin` files for your board configuration.
 
 ## Features
 
@@ -48,6 +56,36 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - Arduino IDE with ESP32 support or PlatformIO
 
 ## Installation
+
+### Option A: Flash Pre-built Firmware (Recommended)
+
+1. **Download firmware** from the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page
+   - Choose the appropriate `.bin` file for your needs:
+     - `firmware-esp32-2432S028Rv2` - Default (UART2 for development with debug)
+     - `firmware-esp32-2432S028Rv2-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-2432S028Rv2-uart2` - Explicit UART2 configuration
+
+2. **Flash using ESP32 Flash Tool** or **esptool.py**:
+   ```bash
+   esptool.py --chip esp32 --port /dev/ttyUSB0 write_flash 0x10000 firmware.bin
+   ```
+
+3. **Connect via Bluetooth**
+   - Pair "CYD MIDI" via Bluetooth
+   - Select as MIDI input in your DAW
+
+### Option B: Build from Source
+
+#### Using PlatformIO (Recommended)
+
+1. Install PlatformIO
+2. Clone this repository
+3. Build and upload:
+   ```bash
+   pio run -e esp32-2432S028Rv2 -t upload
+   ```
+
+#### Using Arduino IDE
 
 ### 1. Add ESP32 Board Support
 1. Go to `File` → `Preferences`
