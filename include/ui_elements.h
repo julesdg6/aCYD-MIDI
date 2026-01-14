@@ -25,10 +25,21 @@ inline bool isButtonPressed(int x, int y, int w, int h) {
   return touch.x >= x && touch.x <= x + w && touch.y >= y && touch.y <= y + h;
 }
 
-inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bool pressed = false, uint8_t textFont = 2) {
+inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t color, bool pressed = false, uint8_t textFont = 1) {
   uint16_t bgColor = pressed ? color : THEME_SURFACE;
   uint16_t borderColor = color;
-  uint16_t textColor = pressed ? THEME_BG : color;
+  uint16_t textColor;
+  
+  if (pressed) {
+    textColor = THEME_BG;
+  } else {
+    // For unpressed buttons with THEME_SURFACE background, use a lighter text color for contrast
+    if (color == THEME_SURFACE) {
+      textColor = THEME_TEXT_DIM;
+    } else {
+      textColor = color;
+    }
+  }
 
   tft.fillRoundRect(x, y, w, h, 8, bgColor);
   tft.drawRoundRect(x, y, w, h, 8, borderColor);
@@ -36,7 +47,7 @@ inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t co
 
   tft.setTextColor(textColor, bgColor);
   int textY = y + h/2 - SCALE_Y(2);
-  if (textFont == 0) {
+  if (textFont == 0 || textFont == 1) {
     textY = y + h/2 - SCALE_Y(3);
   }
   tft.drawCentreString(text, x + w/2, textY, textFont);
