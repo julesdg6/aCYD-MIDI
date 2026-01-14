@@ -25,7 +25,7 @@ void showSplashScreen(const String &status) {
   
   // Display version
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawCentreString("v" ACYD_MIDI_VERSION, DISPLAY_CENTER_X, HEADER_TITLE_Y + SCALE_Y(36), 2);
+  tft.drawCentreString(String("v") + ACYD_MIDI_VERSION, DISPLAY_CENTER_X, HEADER_TITLE_Y + SCALE_Y(36), 2);
 
   String message;
   if (status.length()) {
