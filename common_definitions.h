@@ -5,6 +5,9 @@
 #include <XPT2046_Touchscreen.h>
 #include <BLEDevice.h>
 
+// Version
+#define ACYD_MIDI_VERSION "0.0.1"
+
 // Color scheme
 #define THEME_BG         0x0000
 #define THEME_SURFACE    0x2945
