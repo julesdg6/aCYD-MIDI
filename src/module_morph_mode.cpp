@@ -74,6 +74,7 @@ void drawMorphMode() {
   int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
                   "PLAY", morphState.recording ? THEME_ERROR : THEME_SUCCESS, false, 2);
+  // RECORD/RECORDING button uses font 1 due to longer text ("RECORDING" = 9 chars)
   drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(64), controlY, SCALE_X(64), SCALE_Y(32),
                   morphState.recording ? "RECORDING" : "RECORD",
                   morphState.recording ? THEME_ACCENT : THEME_SECONDARY, false, 1);
