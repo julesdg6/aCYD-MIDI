@@ -70,7 +70,7 @@
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
     /** Size of memory available for `lv_malloc()` in bytes (>= 2kB) */
     #ifndef LV_MEM_SIZE
-        #define LV_MEM_SIZE (60 * 1024U)          /**< [bytes] */
+        #define LV_MEM_SIZE (24 * 1024U)          /**< [bytes] - Reduced for ESP32 */
     #endif
 
     /** Size of the memory expand for `lv_malloc()` in bytes */
@@ -597,26 +597,6 @@
 /** Include `lvgl_private.h` in `lvgl.h` to access internal data and functions by default */
 #ifndef LV_USE_PRIVATE_API
     #define LV_USE_PRIVATE_API  0
-#endif
-
-/* --- Project overrides to ensure consistent build configuration --- */
-/* Prefer our project limits; only override if the existing setting is larger. */
-#ifndef LVGL_BUFFER_PIXELS
-    #define LVGL_BUFFER_PIXELS (DISPLAY_WIDTH * 12)
-#else
-    #if LVGL_BUFFER_PIXELS > (DISPLAY_WIDTH * 12)
-        #undef LVGL_BUFFER_PIXELS
-        #define LVGL_BUFFER_PIXELS (DISPLAY_WIDTH * 12)
-    #endif
-#endif
-
-#ifndef LV_MEM_SIZE
-    #define LV_MEM_SIZE (24 * 1024U)  /* Reduced LVGL RAM pool to fit on board */
-#else
-    #if LV_MEM_SIZE > (24 * 1024U)
-        #undef LV_MEM_SIZE
-        #define LV_MEM_SIZE (24 * 1024U)
-    #endif
 #endif
 
 /*==================
