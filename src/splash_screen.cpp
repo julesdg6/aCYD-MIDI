@@ -22,6 +22,10 @@ void showSplashScreen(const String &status) {
   drawSplashBitmap();
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawCentreString("aCYD MIDI", DISPLAY_CENTER_X, HEADER_TITLE_Y + SCALE_Y(8), 5);
+  
+  // Display version
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawCentreString("v" ACYD_MIDI_VERSION, DISPLAY_CENTER_X, HEADER_TITLE_Y + SCALE_Y(36), 2);
 
   String message;
   if (status.length()) {
@@ -32,6 +36,7 @@ void showSplashScreen(const String &status) {
     message = "WiFi: Connecting...";
   }
 
+  tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawCentreString(message, DISPLAY_CENTER_X, DISPLAY_HEIGHT - SCALE_Y(32), 2);
   delay(800);
 }
