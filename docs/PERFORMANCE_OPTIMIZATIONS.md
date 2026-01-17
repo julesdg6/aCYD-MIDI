@@ -102,6 +102,12 @@ drawKey(key, true);
 
 **Impact**: Minimizes latency from touch to MIDI output.
 
+**Design Note**: Performance-critical modes (keyboard, XY pad, grid piano) use immediate partial draws for individual elements (keys, indicators) rather than deferred full redraws. This provides essential visual feedback for playability while keeping MIDI latency minimal. These partial draws are:
+- Very fast (single rectangle/circle)
+- Only update changed elements
+- Occur after MIDI is sent
+- Critical for musical feel and responsiveness
+
 ## Changes by File
 
 ### Infrastructure (3 files)

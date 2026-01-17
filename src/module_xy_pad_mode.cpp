@@ -139,9 +139,9 @@ void handleXYPadMode() {
         touch.y >= PAD_Y && touch.y <= PAD_Y + PAD_HEIGHT) {
       padPressed = true;
       updateXYValues(touch.x, touch.y);
-      // Send MIDI immediately
+      // CRITICAL PATH: Send MIDI immediately for minimum latency
       sendXYValues();
-      // Update visual after MIDI sent
+      // Immediate partial draw for visual feedback (optimized, only redraws changed parts)
       drawXYPad();
       return;
     }
