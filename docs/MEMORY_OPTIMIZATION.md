@@ -46,12 +46,12 @@ The ESP32's DRAM is shared among several consumers:
 In `include/lv_conf.h`:
 
 ```c
-#define LV_MEM_SIZE (44 * 1024U)                    // 44 KB - LVGL heap
-#define LV_DRAW_LAYER_SIMPLE_BUF_SIZE (20 * 1024)   // 20 KB - Layer buffer
-#define LV_DRAW_THREAD_STACK_SIZE (6 * 1024)        // 6 KB - Thread stack
+#define LV_MEM_SIZE (40 * 1024U)                    // 40 KB - LVGL heap
+#define LV_DRAW_LAYER_SIMPLE_BUF_SIZE (16 * 1024)   // 16 KB - Layer buffer
+#define LV_DRAW_THREAD_STACK_SIZE (4 * 1024)        // 4 KB - Thread stack
 ```
 
-**Total LVGL allocation**: ~70 KB
+**Total LVGL allocation**: ~60 KB
 
 ## Major Memory Consumers in aCYD-MIDI
 
