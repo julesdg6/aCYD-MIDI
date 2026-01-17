@@ -2,8 +2,6 @@
 #define REMOTE_DISPLAY_H
 
 #include <Arduino.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
 
 // Try to include config/wifi_config.h, generate error if not found and defaults would be used
 #if __has_include("../config/wifi_config.h")
@@ -31,6 +29,12 @@
 
 #if WIFI_ENABLED
 #include <WiFi.h>
+#endif
+
+// Only include AsyncTCP and WebServer headers when remote display is enabled
+#if REMOTE_DISPLAY_ENABLED && WIFI_ENABLED
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #endif
 
 // Remote Display Settings
