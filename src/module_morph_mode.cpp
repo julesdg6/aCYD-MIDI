@@ -7,7 +7,7 @@ uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio);
 
 MorphState morphState;
 
-static const uint16_t slotColors[MORPH_SLOTS] = {
+static const uint16_t PROGMEM slotColors[MORPH_SLOTS] = {
     THEME_ERROR,
     THEME_WARNING,
     THEME_SUCCESS,
@@ -15,7 +15,7 @@ static const uint16_t slotColors[MORPH_SLOTS] = {
 };
 
 static void drawSlot(int index, int x, int y, int size) {
-  uint16_t fill = slotColors[index];
+  uint16_t fill = pgm_read_word(&slotColors[index]);
   if (morphState.activeSlot == index) {
     fill = blendColor(fill, THEME_BG, 120);
   }
