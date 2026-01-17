@@ -118,12 +118,14 @@ void handleKeyboardMode() {
   
   if (touch.isPressed && key != -1 && row != -1) {
     if (key != lastKey || row != lastRow) {
-      // CRITICAL PATH: Send MIDI immediately for minimum latency
+      // ===== CRITICAL PATH: MIDI PROCESSING =====
+      // Send all MIDI messages first for minimum latency
       if (lastKey != -1 && lastRow != -1) {
-        playKeyboardNote(lastRow, lastKey, false);
+        playKeyboardNote(lastRow, lastKey, false);  // Release old key
       }
-      playKeyboardNote(row, key, true);
+      playKeyboardNote(row, key, true);  // Press new key
       
+      // ===== VISUAL FEEDBACK =====
       // Immediate partial draws for tactile feedback (fast, no full redraw)
       if (lastKey != -1 && lastRow != -1) {
         drawKeyboardKey(lastRow, lastKey, false);

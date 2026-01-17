@@ -142,6 +142,9 @@ void handleXYPadMode() {
       // CRITICAL PATH: Send MIDI immediately for minimum latency
       sendXYValues();
       // Immediate partial draw for visual feedback (optimized, only redraws changed parts)
+      // Note: Unlike button handlers which use requestRedraw(), this interactive element
+      // needs immediate visual tracking for playability. The partial draw is fast and
+      // occurs after MIDI is sent.
       drawXYPad();
       return;
     }
