@@ -96,19 +96,19 @@ void handleAutoChordMode() {
     // Octave controls
     if (isButtonPressed(SCALE_X(10), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       chordOctave = max(2, chordOctave - 1);
-      drawAutoChordMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(60), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       chordOctave = min(6, chordOctave + 1);
-      drawAutoChordMode();
+      requestRedraw();
       return;
     }
     
     // Scale selector
     if (isButtonPressed(SCALE_X(110), ctrlY, BTN_LARGE_W, BTN_SMALL_H)) {
       chordScale = (chordScale + 1) % NUM_SCALES;
-      drawAutoChordMode();
+      requestRedraw();
       return;
     }
     

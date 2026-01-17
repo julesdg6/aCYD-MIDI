@@ -102,7 +102,7 @@ void handleSequencerMode() {
         currentStep = 0;
         lastStepTime = millis();
       }
-      drawSequencerMode();
+      requestRedraw();
       return;
     }
     
@@ -120,14 +120,14 @@ void handleSequencerMode() {
     if (isButtonPressed(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       bpm = max(60, bpm - 1);
       stepInterval = 60000 / bpm / 4;
-      drawSequencerMode();
+      requestRedraw();
       return;
     }
     
     if (isButtonPressed(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       bpm = min(200, bpm + 1);
       stepInterval = 60000 / bpm / 4;
-      drawSequencerMode();
+      requestRedraw();
       return;
     }
     

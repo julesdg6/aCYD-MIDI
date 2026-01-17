@@ -142,7 +142,7 @@ void handleLFOMode() {
         lfo.phase = 0.0;
         lfo.lastUpdate = millis();
       }
-      drawLFOMode();
+      requestRedraw();
       return;
     }
     
@@ -161,7 +161,7 @@ void handleLFOMode() {
     // Waveform selector
     if (isButtonPressed(230, y, 60, 25)) {
       lfo.waveform = (lfo.waveform + 1) % 4;
-      drawLFOMode();
+      requestRedraw();
       return;
     }
     
@@ -189,21 +189,21 @@ void handleLFOMode() {
       } else {
         lfo.ccTarget = max(0, lfo.ccTarget - 1);
       }
-      drawLFOMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(140, y, 25, 25)) {
       if (!lfo.pitchWheelMode) {
         lfo.ccTarget = min(127, lfo.ccTarget + 1);
       }
-      drawLFOMode();
+      requestRedraw();
       return;
     }
     
     // Pitchwheel mode toggle
     if (isButtonPressed(180, y, 70, 25)) {
       lfo.pitchWheelMode = !lfo.pitchWheelMode;
-      drawLFOMode();
+      requestRedraw();
       return;
     }
   }

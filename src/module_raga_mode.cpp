@@ -73,7 +73,7 @@ void toggleRagaPlayback() {
   } else {
     sendMIDI(0x80, note, 0);
   }
-  drawRagaMode();
+  requestRedraw();
 }
 
 void handleRagaMode() {
@@ -93,7 +93,7 @@ void handleRagaMode() {
   if (touch.justPressed &&
       isButtonPressed(MARGIN_SMALL + BTN_MEDIUM_W + SCALE_X(12), controlY, BTN_MEDIUM_W, BTN_MEDIUM_H)) {
     raga.droneEnabled = !raga.droneEnabled;
-    drawRagaMode();
+    requestRedraw();
     return;
   }
 
@@ -114,7 +114,7 @@ void handleRagaMode() {
     if (isButtonPressed(x, y, buttonW, buttonH)) {
       if (raga.currentRaga != static_cast<RagaType>(index)) {
         raga.currentRaga = static_cast<RagaType>(index);
-        drawRagaMode();
+        requestRedraw();
       }
       return;
     }

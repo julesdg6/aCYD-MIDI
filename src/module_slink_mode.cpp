@@ -794,7 +794,7 @@ void handleSlinkMode() {
     for (int i = 0; i < 7; i++) {
         if (isButtonPressed(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH)) {
             slink_state.current_tab = (SlinkTab)i;
-            drawSlinkMode();
+            requestRedraw();
             return;
         }
     }
