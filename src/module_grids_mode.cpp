@@ -94,13 +94,14 @@ void updateGridsPlayback() {
   triggerDrum(grids.hatNote, hatTrigger, hatVel);
 
   grids.step = (grids.step + 1) % GRIDS_STEPS;
+  requestRedraw();  // Request redraw to show step progress
 }
 
 void drawGridsMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("GRIDS", "", 4);
+  drawHeader("GRIDS", "", 3);
 
-  const int padSize = SCALE_X(180);
+  const int padSize = SCALE_X(140);
   const int padX = (DISPLAY_WIDTH - padSize) / 2;
   const int padY = HEADER_HEIGHT + SCALE_Y(8);
 
@@ -113,12 +114,27 @@ void drawGridsMode() {
   int markerY = padY + (grids.patternY * padSize) / 255;
   tft.fillCircle(markerX, markerY, SCALE_X(5), THEME_TEXT);
   tft.drawCircle(markerX, markerY, SCALE_X(6), THEME_TEXT);
+  
+  // Show current step position if playing
+  if (grids.playing) {
+    int stepIndicatorY = padY + padSize + SCALE_Y(5);
+    int stepW = SCALE_X(18);
+    int stepSpacing = SCALE_X(1);
+    int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
+    
+    for (int i = 0; i < GRIDS_STEPS; i++) {
+      int x = stepStartX + i * (stepW + stepSpacing);
+      bool isCurrent = (i == grids.step);
+      uint16_t color = isCurrent ? THEME_ACCENT : THEME_SURFACE;
+      tft.fillRect(x, stepIndicatorY, stepW, SCALE_Y(4), color);
+    }
+  }
 
-  const int sliderY = padY + padSize + SCALE_Y(10);
-  const int sliderW = SCALE_X(120);
+  const int sliderY = padY + padSize + SCALE_Y(18);
+  const int sliderW = SCALE_X(80);
   const int sliderH = SCALE_Y(18);
-  const int sliderSpacing = SCALE_X(12);
-  const int sliderStartX = MARGIN_SMALL + SCALE_X(30);
+  const int sliderSpacing = SCALE_X(8);
+  const int sliderStartX = (DISPLAY_WIDTH - (3 * sliderW + 2 * sliderSpacing)) / 2;
   const int sliderPositions[3] = {
       sliderStartX,
       sliderStartX + sliderW + sliderSpacing,
@@ -132,7 +148,7 @@ void drawGridsMode() {
   for (int i = 0; i < 3; ++i) {
     int x = sliderPositions[i];
     tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-    tft.drawString(sliderLabels[i], x - SCALE_X(20), sliderY, 2);
+    tft.drawString(sliderLabels[i], x - SCALE_X(15), sliderY, 2);
     tft.drawRect(x, sliderY, sliderW, sliderH, THEME_TEXT);
     int fillWidth = (densities[i] * sliderW) / 255;
     if (fillWidth > 0) {
@@ -140,9 +156,9 @@ void drawGridsMode() {
     }
   }
 
-  const int btnY = DISPLAY_HEIGHT - SCALE_Y(60);
-  const int btnH = SCALE_Y(50);
-  const int btnSpacing = SCALE_X(10);
+  const int btnY = DISPLAY_HEIGHT - SCALE_Y(50);
+  const int btnH = SCALE_Y(40);
+  const int btnSpacing = SCALE_X(8);
   const int btnW = (DISPLAY_WIDTH - (5 * btnSpacing)) / 4;
 
   drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, grids.playing ? "STOP" : "PLAY", THEME_PRIMARY);
@@ -150,8 +166,8 @@ void drawGridsMode() {
   drawRoundButton(MARGIN_SMALL + 2 * (btnW + btnSpacing), btnY, btnW, btnH, "BPM+", THEME_SECONDARY);
   drawRoundButton(MARGIN_SMALL + 3 * (btnW + btnSpacing), btnY, btnW, btnH, "RNDM", THEME_ACCENT);
 
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("BPM: " + String((int)grids.bpm), DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), btnY - SCALE_Y(20), 2);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString("BPM: " + String((int)grids.bpm), MARGIN_SMALL, btnY - SCALE_Y(15), 2);
 }
 
 void initializeGridsMode() {
@@ -189,7 +205,7 @@ void handleGridsMode() {
     return;
   }
 
-  const int padSize = SCALE_X(180);
+  const int padSize = SCALE_X(140);
   const int padX = (DISPLAY_WIDTH - padSize) / 2;
   const int padY = HEADER_HEIGHT + SCALE_Y(8);
 
@@ -202,9 +218,9 @@ void handleGridsMode() {
     return;
   }
 
-  const int btnY = DISPLAY_HEIGHT - SCALE_Y(60);
-  const int btnH = SCALE_Y(50);
-  const int btnSpacing = SCALE_X(10);
+  const int btnY = DISPLAY_HEIGHT - SCALE_Y(50);
+  const int btnH = SCALE_Y(40);
+  const int btnSpacing = SCALE_X(8);
   const int btnW = (DISPLAY_WIDTH - (5 * btnSpacing)) / 4;
 
   bool playPressed = isButtonPressed(MARGIN_SMALL, btnY, btnW, btnH);
@@ -239,11 +255,11 @@ void handleGridsMode() {
     return;
   }
 
-  const int sliderY = padY + padSize + SCALE_Y(10);
-  const int sliderW = SCALE_X(120);
+  const int sliderY = padY + padSize + SCALE_Y(18);
+  const int sliderW = SCALE_X(80);
   const int sliderH = SCALE_Y(18);
-  const int sliderSpacing = SCALE_X(12);
-  const int sliderStartX = MARGIN_SMALL + SCALE_X(30);
+  const int sliderSpacing = SCALE_X(8);
+  const int sliderStartX = (DISPLAY_WIDTH - (3 * sliderW + 2 * sliderSpacing)) / 2;
   const int sliderPositions[3] = {
       sliderStartX,
       sliderStartX + sliderW + sliderSpacing,

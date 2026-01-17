@@ -51,32 +51,70 @@ void initializeEuclideanMode() {
 
 void drawEuclideanMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("EUCLID", "Euclidean Rhythm");
+  drawHeader("EUCLID", "Euclidean Rhythm", 3);
 
-  int y = HEADER_HEIGHT + SCALE_Y(10);
+  // Draw circular visualization with sweeping line (like screenshot 16)
+  int centerX = DISPLAY_CENTER_X;
+  int centerY = HEADER_HEIGHT + SCALE_Y(70);
+  int radius = SCALE_Y(50);
+  
+  // Draw circle background
+  tft.drawCircle(centerX, centerY, radius, THEME_TEXT_DIM);
+  tft.drawCircle(centerX, centerY, radius - 1, THEME_TEXT_DIM);
+  
+  // Draw voices as segments around the circle
   for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
     const EuclideanVoice &voice = euclideanState.voices[voiceIdx];
     int totalSteps = voice.steps ? voice.steps : 1;
-    int rowHeight = SCALE_Y(14);
-    int stepSpacing = SCALE_X(2);
-    int availableWidth = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
-    int stepW = std::max(SCALE_X(6), (availableWidth - (totalSteps - 1) * stepSpacing) / totalSteps);
-
-    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-    tft.drawString("Voice " + String(voiceIdx + 1), MARGIN_SMALL, y - SCALE_Y(14), 1);
-
-    int stepY = y;
-    for (int step = 0; step < totalSteps; ++step) {
-      int x = MARGIN_SMALL + step * (stepW + stepSpacing);
+    
+    // Draw each step as a point on the circle
+    for (int step = 0; step < totalSteps; step++) {
+      float angle = (2.0 * PI * step) / totalSteps - PI/2; // Start from top
+      int layerRadius = radius - (voiceIdx * SCALE_Y(12));
+      int x = centerX + cos(angle) * layerRadius;
+      int y = centerY + sin(angle) * layerRadius;
+      
       bool active = voice.pattern[step];
-      uint16_t fill = active ? voice.color : THEME_SURFACE;
-      tft.fillRect(x, stepY, stepW, rowHeight, fill);
-      tft.drawRect(x, stepY, stepW, rowHeight, THEME_BG);
+      bool isCurrent = (euclideanState.isPlaying && 
+                       step == (euclideanState.currentStep % totalSteps));
+      
+      uint16_t color;
+      if (isCurrent && active) {
+        color = THEME_TEXT; // White for current active
+      } else if (isCurrent) {
+        color = THEME_ACCENT; // Cyan for current position
+      } else if (active) {
+        color = voice.color; // Voice color for active
+      } else {
+        color = THEME_SURFACE; // Dark for inactive
+      }
+      
+      int dotSize = active ? SCALE_X(3) : SCALE_X(2);
+      tft.fillCircle(x, y, dotSize, color);
     }
-    y += rowHeight + SCALE_Y(10);
+  }
+  
+  // Draw sweeping line showing current step position
+  if (euclideanState.isPlaying && euclideanState.voices[0].steps > 0) {
+    int totalSteps = euclideanState.voices[0].steps;
+    float angle = (2.0 * PI * (euclideanState.currentStep % totalSteps)) / totalSteps - PI/2;
+    int lineEndX = centerX + cos(angle) * radius;
+    int lineEndY = centerY + sin(angle) * radius;
+    tft.drawLine(centerX, centerY, lineEndX, lineEndY, THEME_PRIMARY);
+  }
+  
+  // Draw voice labels
+  int labelY = centerY + radius + SCALE_Y(20);
+  for (int i = 0; i < EUCLIDEAN_VOICE_COUNT; i++) {
+    int x = MARGIN_SMALL + i * (DISPLAY_WIDTH / EUCLIDEAN_VOICE_COUNT);
+    tft.setTextColor(euclideanState.voices[i].color, THEME_BG);
+    tft.drawString("V" + String(i+1), x, labelY, 1);
+    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+    tft.drawString(String(euclideanState.voices[i].events) + "/" + 
+                  String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(10), 1);
   }
 
-  int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
+  int controlY = DISPLAY_HEIGHT - SCALE_Y(50);
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
                   euclideanState.isPlaying ? "STOP" : "PLAY",
                   euclideanState.isPlaying ? THEME_ERROR : THEME_SUCCESS, false, 2);
@@ -88,9 +126,6 @@ void drawEuclideanMode() {
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("BPM " + String(euclideanState.bpm), DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(20), 2);
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString(euclideanState.tripletMode ? "Triplet feel" : "16th feel",
-                 DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(32), 1);
 }
 
 void updateEuclideanSequencer() {
@@ -119,6 +154,7 @@ void updateEuclideanSequencer() {
     }
   }
   euclideanState.currentStep = (euclideanState.currentStep + 1) % EUCLIDEAN_MAX_STEPS;
+  requestRedraw();  // Request redraw to show step progress
 }
 
 void handleEuclideanMode() {

@@ -42,10 +42,11 @@ void initializeMorphMode() {
 
 void drawMorphMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("MORPH", "Gesture morphing");
+  drawHeader("MORPH", "Gesture morphing", 3);
 
+  // Move XY pad higher to avoid button overlay
   int sliderX = MARGIN_SMALL;
-  int sliderY = HEADER_HEIGHT + SCALE_Y(110);
+  int sliderY = HEADER_HEIGHT + SCALE_Y(10);
   int sliderW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
   int sliderH = SCALE_Y(80);
 
@@ -57,8 +58,7 @@ void drawMorphMode() {
   int cursorY = sliderY + static_cast<int>(morphState.morphY * sliderH);
   tft.fillCircle(cursorX, cursorY, SCALE_X(5), THEME_PRIMARY);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Morph X", sliderX, sliderY - SCALE_Y(16), 1);
-  tft.drawString("Morph Y", sliderX + sliderW / 2, sliderY - SCALE_Y(16), 1);
+  tft.drawString("Morph X/Y", sliderX, sliderY - SCALE_Y(12), 1);
 
   const int slotSize = SCALE_X(60);
   const int slotSpacing = SCALE_X(12);
@@ -72,19 +72,18 @@ void drawMorphMode() {
     drawSlot(slot, x, y, slotSize);
   }
 
-  int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
+  int controlY = DISPLAY_HEIGHT - SCALE_Y(50);
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
                   "PLAY", morphState.recording ? THEME_ERROR : THEME_SUCCESS, false, 2);
-  // RECORD/RECORDING button uses font 1 due to longer text ("RECORDING" = 9 chars)
-  drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(64), controlY, SCALE_X(64), SCALE_Y(32),
+  drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), controlY, SCALE_X(80), SCALE_Y(32),
                   morphState.recording ? "RECORDING" : "RECORD",
                   morphState.recording ? THEME_ACCENT : THEME_SECONDARY, false, 1);
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("X: " + String(static_cast<int>(morphState.morphX * 100)) + "%",
-                 MARGIN_SMALL, controlY - SCALE_Y(20), 1);
+                 MARGIN_SMALL, controlY - SCALE_Y(15), 1);
   tft.drawString("Y: " + String(static_cast<int>(morphState.morphY * 100)) + "%",
-                 DISPLAY_WIDTH - SCALE_X(70), controlY - SCALE_Y(20), 1);
+                 DISPLAY_WIDTH - SCALE_X(70), controlY - SCALE_Y(15), 1);
 }
 
 void handleMorphMode() {
@@ -95,12 +94,12 @@ void handleMorphMode() {
   }
 
   if (touch.justPressed) {
-    int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
+    int controlY = DISPLAY_HEIGHT - SCALE_Y(50);
     if (isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32))) {
       playMorphNote();
       return;
     }
-    if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(64), controlY, SCALE_X(64), SCALE_Y(32))) {
+    if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), controlY, SCALE_X(80), SCALE_Y(32))) {
       morphState.recording = !morphState.recording;
       requestRedraw();
       return;
@@ -109,7 +108,7 @@ void handleMorphMode() {
 
   if (touch.isPressed) {
     int sliderX = MARGIN_SMALL;
-    int sliderY = HEADER_HEIGHT + SCALE_Y(110);
+    int sliderY = HEADER_HEIGHT + SCALE_Y(10);
     int sliderW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
     int sliderH = SCALE_Y(80);
     if (touch.x >= sliderX && touch.x <= sliderX + sliderW &&
@@ -118,6 +117,7 @@ void handleMorphMode() {
       morphState.morphY = (float)(touch.y - sliderY) / (float)sliderH;
       morphState.morphX = std::min(std::max(morphState.morphX, 0.0f), 1.0f);
       morphState.morphY = std::min(std::max(morphState.morphY, 0.0f), 1.0f);
+      playMorphNote();  // Play note as you morph
       requestRedraw();
       return;
     }

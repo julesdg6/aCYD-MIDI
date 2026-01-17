@@ -61,6 +61,7 @@ void drawPhysicsDropMode() {
   tft.drawString("Oct:" + String(dropOctave), SCALE_X(150), SCALE_Y(180), 1);
   tft.drawString("Balls:" + String(numActiveDropBalls), SCALE_X(220), SCALE_Y(180), 1);
   
+  // Draw play area
   drawPlatforms();
   drawDropBalls();
 }
@@ -235,33 +236,11 @@ void updatePhysics() {
     return;
   }
   static unsigned long lastUpdate = 0;
-  static float lastX[MAX_DROP_BALLS], lastY[MAX_DROP_BALLS];
-  static bool initialized = false;
   
-  if (millis() - lastUpdate < 50) return; // 20 FPS to reduce flickering
-  
-  // Initialize last positions
-  if (!initialized) {
-    for (int i = 0; i < MAX_DROP_BALLS; i++) {
-      lastX[i] = dropBalls[i].x;
-      lastY[i] = dropBalls[i].y;
-    }
-    initialized = true;
-  }
-  
-  // Clear previous ball positions only
-  for (int i = 0; i < MAX_DROP_BALLS; i++) {
-    if (dropBalls[i].active) {
-      tft.fillCircle(lastX[i], lastY[i], dropBalls[i].size + 1, THEME_BG);
-    }
-  }
+  if (millis() - lastUpdate < 50) return; // 20 FPS to reduce flicker
   
   for (int i = 0; i < MAX_DROP_BALLS; i++) {
     if (!dropBalls[i].active) continue;
-    
-    // Store last position
-    lastX[i] = dropBalls[i].x;
-    lastY[i] = dropBalls[i].y;
     
     // Apply gravity
     dropBalls[i].vy += dropBalls[i].gravity;
@@ -295,12 +274,7 @@ void updatePhysics() {
   }
   
   checkPlatformCollisions();
-  
-  // Redraw platforms (they don't move so less flickering)
-  drawPlatforms();
-  // Draw balls at new positions
-  drawDropBalls();
-  
+  requestRedraw();  // Request redraw to trigger render event for animation
   lastUpdate = millis();
 }
 
