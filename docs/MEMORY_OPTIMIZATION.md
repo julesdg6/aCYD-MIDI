@@ -4,6 +4,24 @@
 
 The ESP32-2432S028R has limited DRAM (internal RAM) which can cause build failures when the firmware grows too large. This document explains the memory constraints and how they're managed in aCYD-MIDI.
 
+## ⚠️ CRITICAL: lv_conf.h Configuration Issue
+
+**If you see DRAM overflow errors, first check that `platformio.ini` does NOT contain `-D LV_CONF_H`.**
+
+This flag pre-defines the include guard and prevents `lv_conf.h` from being processed. Without this, all memory optimizations in `lv_conf.h` are ignored and LVGL uses its default (much larger) memory allocations.
+
+**Correct `platformio.ini` build_flags should include:**
+```ini
+-D LV_CONF_PATH=\"lv_conf.h\"
+-D LV_CONF_INCLUDE_SIMPLE=1
+-I ${project_dir}/include
+```
+
+**Should NOT include:**
+```ini
+-D LV_CONF_H  # ❌ This breaks lv_conf.h processing!
+```
+
 ## Build Error
 
 When DRAM is exceeded, you'll see a linker error like:
