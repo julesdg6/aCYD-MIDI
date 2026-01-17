@@ -39,6 +39,13 @@ void drawBouncingBallMode() {
   tft.drawString("Oct:" + String(ballOctave), SCALE_X(150), SCALE_Y(180), 1);
   tft.drawString("Balls:" + String(numActiveBalls), SCALE_X(270), SCALE_Y(180), 1);
   
+  // Draw play area background
+  int playAreaX = SCALE_X(53);
+  int playAreaY = HEADER_HEIGHT + SCALE_Y(18);
+  int playAreaW = SCALE_X(219);
+  int playAreaH = SCALE_Y(114);
+  tft.fillRect(playAreaX, playAreaY, playAreaW, playAreaH, THEME_BG);
+  
   drawWalls();
   drawBalls();
 }
@@ -201,22 +208,9 @@ void updateBouncingBall() {
   // Smooth 60 FPS animation
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate > 16) {
-    // Clear entire play area to prevent flickering
-    int playAreaX = SCALE_X(53);
-    int playAreaY = HEADER_HEIGHT + SCALE_Y(18);
-    int playAreaW = SCALE_X(219);
-    int playAreaH = SCALE_Y(114);
-    tft.fillRect(playAreaX, playAreaY, playAreaW, playAreaH, THEME_BG);
-    
     updateBalls();
     checkWallCollisions();
-    
-    // Draw walls
-    drawWalls();
-    
-    // Draw balls
-    drawBalls();
-    
+    requestRedraw();  // Request redraw to trigger render event for animation
     lastUpdate = millis();
   }
 }

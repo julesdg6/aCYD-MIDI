@@ -27,7 +27,7 @@ void initializeRagaMode() {
 
 void drawRagaMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("RAGA", "Indian Classical Scales");
+  drawHeader("RAGA", "Indian Classical Scales", 3);
 
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   tft.drawString("Root: " + getNoteNameFromMIDI(raga.rootNote), MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(10), 1);
@@ -35,7 +35,7 @@ void drawRagaMode() {
 
   const int rows = (RAGA_COUNT + RAGA_COLUMNS - 1) / RAGA_COLUMNS;
   const int buttonW = (DISPLAY_WIDTH - (2 * MARGIN_SMALL) - (RAGA_COLUMNS - 1) * SCALE_X(8)) / RAGA_COLUMNS;
-  const int buttonH = SCALE_Y(28);
+  const int buttonH = SCALE_Y(35);  // Increased from 28 to 35 for easier pressing
   const int startY = HEADER_HEIGHT + SCALE_Y(30);
 
   for (int index = 0; index < RAGA_COUNT; ++index) {
@@ -53,16 +53,16 @@ void drawRagaMode() {
     tft.drawCentreString(kRagaNames[index], x + buttonW / 2, y + buttonH / 2 - 6, 1);
   }
 
-  const int controlY = DISPLAY_HEIGHT - SCALE_Y(55);
-  drawRoundButton(MARGIN_SMALL, controlY, BTN_MEDIUM_W, BTN_MEDIUM_H,
+  const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
+  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35),
                   raga.playing ? "STOP" : "PLAY",
                   raga.playing ? THEME_ERROR : THEME_SUCCESS);
-  drawRoundButton(MARGIN_SMALL + BTN_MEDIUM_W + SCALE_X(12), controlY, BTN_MEDIUM_W, BTN_MEDIUM_H,
-                  raga.droneEnabled ? "DRONE ON" : "DRONE",
+  drawRoundButton(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35),
+                  raga.droneEnabled ? "DRONE ON" : "DRONE OFF",
                   raga.droneEnabled ? THEME_SUCCESS : THEME_SECONDARY);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   tft.drawString("Scale: " + String(kRagaNames[static_cast<int>(raga.currentRaga)]),
-                 MARGIN_SMALL, controlY - SCALE_Y(20), 1);
+                 MARGIN_SMALL, controlY - SCALE_Y(15), 1);
 }
 
 void toggleRagaPlayback() {
@@ -83,15 +83,15 @@ void handleRagaMode() {
     return;
   }
 
-  const int controlY = DISPLAY_HEIGHT - SCALE_Y(55);
+  const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
   if (touch.justPressed &&
-      isButtonPressed(MARGIN_SMALL, controlY, BTN_MEDIUM_W, BTN_MEDIUM_H)) {
+      isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35))) {
     toggleRagaPlayback();
     return;
   }
 
   if (touch.justPressed &&
-      isButtonPressed(MARGIN_SMALL + BTN_MEDIUM_W + SCALE_X(12), controlY, BTN_MEDIUM_W, BTN_MEDIUM_H)) {
+      isButtonPressed(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35))) {
     raga.droneEnabled = !raga.droneEnabled;
     requestRedraw();
     return;
@@ -102,7 +102,7 @@ void handleRagaMode() {
   }
 
   const int buttonW = (DISPLAY_WIDTH - (2 * MARGIN_SMALL) - (RAGA_COLUMNS - 1) * SCALE_X(8)) / RAGA_COLUMNS;
-  const int buttonH = SCALE_Y(28);
+  const int buttonH = SCALE_Y(35);
   const int startY = HEADER_HEIGHT + SCALE_Y(30);
 
   for (int index = 0; index < RAGA_COUNT; ++index) {

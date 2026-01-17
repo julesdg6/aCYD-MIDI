@@ -113,7 +113,7 @@ void handleSequencerMode() {
           sequencePattern[t][s] = false;
         }
       }
-      drawSequencerGrid();
+      requestRedraw();
       return;
     }
     
@@ -145,7 +145,7 @@ void handleSequencerMode() {
         
         if (isButtonPressed(x, y, cellW, cellH)) {
           toggleSequencerStep(track, step);
-          drawSequencerGrid();
+          requestRedraw();
           return;
         }
       }
@@ -178,7 +178,7 @@ void updateSequencer() {
     playSequencerStep();
     currentStep = (currentStep + 1) % SEQ_STEPS;
     lastStepTime = now;
-    drawSequencerGrid();
+    requestRedraw();  // Request redraw to trigger render event for animation
   }
 }
 

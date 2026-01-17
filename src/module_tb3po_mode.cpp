@@ -147,26 +147,69 @@ void updateTB3POPlayback() {
   if (tb3po.step >= tb3po.numSteps) {
     tb3po.step = 0;
   }
+  requestRedraw();  // Request redraw to show step progress and pattern
 }
 
 void drawTB3POMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("TB-3PO", "", 4);
+  drawHeader("TB-3PO", "", 3);
   int y = HEADER_HEIGHT + SCALE_Y(8);
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString(tb3po.playing ? "PLAYING" : "STOPPED", SCALE_X(10), y, 2);
   tft.drawString(tb3po.lockSeed ? "SEED LOCKED" : "SEED AUTO", SCALE_X(180), y, 2);
   y += SCALE_Y(18);
 
+  // Draw pattern visualization
+  int patternY = y + SCALE_Y(5);
+  int stepW = SCALE_X(18);
+  int stepH = SCALE_Y(40);
+  int spacing = SCALE_X(1);
+  int startX = SCALE_X(10);
+  
+  for (int step = 0; step < TB3PO_MAX_STEPS; step++) {
+    int x = startX + step * (stepW + spacing);
+    bool isGated = stepIsGated(step);
+    bool isCurrent = (tb3po.playing && step == tb3po.step);
+    bool isAccent = stepIsAccent(step);
+    bool isSlide = stepIsSlid(step);
+    
+    uint16_t color;
+    if (isCurrent && isGated) {
+      color = THEME_TEXT; // White for current gated step
+    } else if (isCurrent) {
+      color = THEME_ACCENT; // Cyan for current ungated step
+    } else if (isGated && isAccent) {
+      color = THEME_WARNING; // Yellow for accented steps
+    } else if (isGated) {
+      color = THEME_PRIMARY; // Cyan for gated steps
+    } else {
+      color = THEME_SURFACE; // Dark for ungated steps
+    }
+    
+    tft.fillRect(x, patternY, stepW, stepH, color);
+    tft.drawRect(x, patternY, stepW, stepH, THEME_TEXT_DIM);
+    
+    // Draw slide indicator
+    if (isSlide && isGated) {
+      tft.fillRect(x + stepW - SCALE_X(3), patternY, SCALE_X(3), stepH, THEME_ACCENT);
+    }
+  }
+  
+  y += stepH + SCALE_Y(15);
+
   int btnW = SCALE_X(70);
   int btnH = SCALE_Y(28);
-  int spacing = SCALE_X(8);
-  int startX = MARGIN_SMALL;
+  int btnSpacing = SCALE_X(8);
+  int btnStartX = MARGIN_SMALL;
 
-  drawRoundButton(startX, y, btnW, btnH, tb3po.playing ? "STOP" : "PLAY", THEME_PRIMARY);
-  drawRoundButton(startX + (btnW + spacing), y, btnW, btnH, "REGEN", THEME_SECONDARY);
-  drawRoundButton(startX + 2 * (btnW + spacing), y, btnW, btnH, "DENS+", THEME_ACCENT);
-  drawRoundButton(startX + 3 * (btnW + spacing), y, btnW, btnH, "DENS-", THEME_WARNING);
+  drawRoundButton(btnStartX, y, btnW, btnH, tb3po.playing ? "STOP" : "PLAY", THEME_PRIMARY);
+  drawRoundButton(btnStartX + (btnW + btnSpacing), y, btnW, btnH, "REGEN", THEME_SECONDARY);
+  drawRoundButton(btnStartX + 2 * (btnW + btnSpacing), y, btnW, btnH, "DENS+", THEME_ACCENT);
+  drawRoundButton(btnStartX + 3 * (btnW + btnSpacing), y, btnW, btnH, "DENS-", THEME_WARNING);
+  
+  // Show density value
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Density: " + String(tb3po.density), MARGIN_SMALL, y + btnH + SCALE_Y(8), 1);
 }
 
 void initializeTB3POMode() {
@@ -195,23 +238,30 @@ void handleTB3POMode() {
   }
   updateTB3POPlayback();
   if (touch.justPressed) {
-    if (isButtonPressed(MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
+    // Calculate button positions (must match drawTB3POMode)
+    int y = HEADER_HEIGHT + SCALE_Y(8) + SCALE_Y(18) + SCALE_Y(5) + SCALE_Y(40) + SCALE_Y(15);
+    int btnW = SCALE_X(70);
+    int btnH = SCALE_Y(28);
+    int btnSpacing = SCALE_X(8);
+    int btnStartX = MARGIN_SMALL;
+    
+    if (isButtonPressed(btnStartX, y, btnW, btnH)) {
       tb3po.playing = !tb3po.playing;
       requestRedraw();
       return;
     }
-    if (isButtonPressed(MARGIN_SMALL + (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
+    if (isButtonPressed(btnStartX + (btnW + btnSpacing), y, btnW, btnH)) {
       regenerateAll();
       requestRedraw();
       return;
     }
-    if (isButtonPressed(MARGIN_SMALL + 2 * (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
+    if (isButtonPressed(btnStartX + 2 * (btnW + btnSpacing), y, btnW, btnH)) {
       tb3po.density = min(14, tb3po.density + 1);
       regenerateAll();
       requestRedraw();
       return;
     }
-    if (isButtonPressed(MARGIN_SMALL + 3 * (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
+    if (isButtonPressed(btnStartX + 3 * (btnW + btnSpacing), y, btnW, btnH)) {
       tb3po.density = max(0, tb3po.density - 1);
       regenerateAll();
       requestRedraw();
