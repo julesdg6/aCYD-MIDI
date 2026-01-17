@@ -186,7 +186,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 #endif
 
 void initRemoteDisplay() {
-#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
+#if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
     Serial.println("Remote Display disabled (REMOTE_DISPLAY_ENABLED=0 or WIFI_ENABLED=0)");
     return;
 #else
@@ -303,7 +303,7 @@ void sendFrameUpdate() {
 }
 
 void handleRemoteDisplay() {
-#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
+#if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
     return;
 #else
     if (!wifiConnected) {
@@ -330,7 +330,7 @@ bool isRemoteDisplayConnected() {
 }
 
 String getRemoteDisplayIP() {
-#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
+#if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
     return "Remote Display disabled";
 #else
     if (wifiConnected) {
