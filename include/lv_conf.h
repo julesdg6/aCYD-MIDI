@@ -1,6 +1,20 @@
 /**
  * @file lv_conf.h
  * Configuration file for v9.4.0
+ * 
+ * IMPORTANT: ESP32 DRAM Memory Constraints
+ * ========================================
+ * The ESP32 has limited DRAM (internal RAM). This configuration has been
+ * carefully tuned to fit within DRAM limits while supporting all aCYD-MIDI
+ * features. Key memory-constrained settings:
+ * 
+ * - LV_MEM_SIZE: 44KB (LVGL heap for UI objects)
+ * - LV_DRAW_LAYER_SIMPLE_BUF_SIZE: 20KB (layer buffering)
+ * - LV_DRAW_THREAD_STACK_SIZE: 6KB (drawing thread stack)
+ * 
+ * DO NOT increase these values without careful testing, as it may cause
+ * DRAM overflow and build failures. If adding new features that require
+ * more memory, consider using heap allocation or PSRAM for large buffers.
  */
 
 /*
@@ -70,7 +84,7 @@
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
     /** Size of memory available for `lv_malloc()` in bytes (>= 2kB) */
     #ifndef LV_MEM_SIZE
-        #define LV_MEM_SIZE (48 * 1024U)          /**< [bytes] - Reduced for ESP32 DRAM constraints */
+        #define LV_MEM_SIZE (44 * 1024U)          /**< [bytes] - Reduced for ESP32 DRAM constraints */
     #endif
 
     /** Size of the memory expand for `lv_malloc()` in bytes */
