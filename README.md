@@ -1,4 +1,4 @@
-# CYD MIDI Controller
+# aCYD MIDI Controller
 
 Touchscreen Bluetooth MIDI controller for the ESP32-2432S028R "Cheap Yellow Display" (CYD).
 
