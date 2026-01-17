@@ -198,7 +198,7 @@ void handleGridsMode() {
     grids.patternX = ((touch.x - padX) * 255) / padSize;
     grids.patternY = ((touch.y - padY) * 255) / padSize;
     regenerateGridsPattern();
-    drawGridsMode();
+    requestRedraw();
     return;
   }
 
@@ -218,24 +218,24 @@ void handleGridsMode() {
       grids.step = 0;
       grids.lastStepTime = millis();
     }
-    drawGridsMode();
+    requestRedraw();
     return;
   }
   if (bpmDownPressed) {
     grids.bpm = constrain(grids.bpm - 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
-    drawGridsMode();
+    requestRedraw();
     return;
   }
   if (bpmUpPressed) {
     grids.bpm = constrain(grids.bpm + 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
-    drawGridsMode();
+    requestRedraw();
     return;
   }
   if (randomPressed) {
     grids.patternX = random(256);
     grids.patternY = random(256);
     regenerateGridsPattern();
-    drawGridsMode();
+    requestRedraw();
     return;
   }
 
@@ -258,7 +258,7 @@ void handleGridsMode() {
         if (i == 0) grids.kickDensity = value;
         if (i == 1) grids.snareDensity = value;
         if (i == 2) grids.hatDensity = value;
-        drawGridsMode();
+        requestRedraw();
         return;
       }
     }

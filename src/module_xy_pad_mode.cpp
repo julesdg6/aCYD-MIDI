@@ -139,8 +139,13 @@ void handleXYPadMode() {
         touch.y >= PAD_Y && touch.y <= PAD_Y + PAD_HEIGHT) {
       padPressed = true;
       updateXYValues(touch.x, touch.y);
+      // CRITICAL PATH: Send MIDI immediately for minimum latency
       sendXYValues();
-      drawXYPad();  // Update position indicator
+      // Immediate partial draw for visual feedback (optimized, only redraws changed parts)
+      // Note: Unlike button handlers which use requestRedraw(), this interactive element
+      // needs immediate visual tracking for playability. The partial draw is fast and
+      // occurs after MIDI is sent.
+      drawXYPad();
       return;
     }
   } else {
@@ -156,24 +161,24 @@ void handleXYPadMode() {
     // X CC controls
     if (isButtonPressed(controlsX, PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H)) {
       xCC = max(0, xCC - 1);
-      drawCCControls();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(25), SCALE_X(30), BTN_SMALL_H)) {
       xCC = min(127, xCC + 1);
-      drawCCControls();
+      requestRedraw();
       return;
     }
     
     // Y CC controls
     if (isButtonPressed(controlsX, PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H)) {
       yCC = max(0, yCC - 1);
-      drawCCControls();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(controlsX + SCALE_X(35), PAD_Y + SCALE_Y(105), SCALE_X(30), BTN_SMALL_H)) {
       yCC = min(127, yCC + 1);
-      drawCCControls();
+      requestRedraw();
       return;
     }
     

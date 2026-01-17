@@ -50,6 +50,7 @@ volatile bool ble_disconnect_action = false;
 uint8_t midiPacket[] = {0x80, 0x80, 0, 0, 0};
 TouchState touch;
 AppMode currentMode = MENU;
+volatile bool needsRedraw = false;
 
 #define RGB565(r, g, b) (uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
 
@@ -558,8 +559,13 @@ void captureAllScreenshots() {
 }
 
 void requestRedraw() {
-  if (render_obj) {
+  needsRedraw = true;
+}
+
+void processRedraw() {
+  if (needsRedraw && render_obj) {
     lv_obj_invalidate(render_obj);
+    needsRedraw = false;
   }
 }
 
@@ -916,7 +922,10 @@ void loop() {
     default:
       break;
   }
-  requestRedraw();
+  
+  // Process any pending redraws after handling logic
+  processRedraw();
+  
 #if REMOTE_DISPLAY_ENABLED
   handleRemoteDisplay();  // Handle remote display updates
 #endif

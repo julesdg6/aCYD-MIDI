@@ -106,13 +106,13 @@ void handleGridPianoMode() {
     if (isButtonPressed(SCALE_X(10), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       gridOctave = max(1, gridOctave - 1);
       calculateGridLayout();
-      drawGridPianoMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(60), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       gridOctave = min(6, gridOctave + 1);
       calculateGridLayout();
-      drawGridPianoMode();
+      requestRedraw();
       return;
     }
   }
@@ -144,9 +144,18 @@ void handleGridPianoMode() {
   
   // Handle note changes
   if (pressedNote != gridPressedNote) {
-    // Turn off old note
+    // Turn off old note - MIDI first
     if (gridPressedNote != -1) {
       sendMIDI(0x80, gridPressedNote, 0);
+    }
+    
+    // Turn on new note - MIDI first
+    if (pressedNote != -1 && deviceConnected) {
+      sendMIDI(0x90, pressedNote, 100);
+    }
+    
+    // Then update visuals
+    if (gridPressedNote != -1) {
       // Redraw old cell
       for (int row = 0; row < GRID_ROWS; row++) {
         for (int col = 0; col < GRID_COLS; col++) {
@@ -156,11 +165,6 @@ void handleGridPianoMode() {
           }
         }
       }
-    }
-    
-    // Turn on new note
-    if (pressedNote != -1 && deviceConnected) {
-      sendMIDI(0x90, pressedNote, 100);
     }
     
     gridPressedNote = pressedNote;

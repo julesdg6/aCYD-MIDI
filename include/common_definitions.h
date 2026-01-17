@@ -138,4 +138,7 @@ extern uint8_t midiPacket[];
 extern TouchState touch;
 extern AppMode currentMode;
 
+// Redraw control - to minimize unnecessary redraws
+extern volatile bool needsRedraw;
+
 #endif

@@ -4,6 +4,7 @@
 #include "common_definitions.h"
 
 void exitToMenu();
+void requestRedraw();
 
 // UI implementations
 inline void updateTouch() {

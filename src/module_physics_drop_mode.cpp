@@ -125,7 +125,7 @@ void handlePhysicsDropMode() {
     // Mode toggle
     if (isButtonPressed(SCALE_X(10), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       platformMode = !platformMode;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
@@ -136,34 +136,34 @@ void handlePhysicsDropMode() {
       }
       numActiveDropBalls = 0;
       numPlatforms = 0;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
     // Scale button
     if (isButtonPressed(SCALE_X(110), SCALE_Y(200), BTN_MEDIUM_W, BTN_SMALL_H)) {
       dropScale = (dropScale + 1) % NUM_SCALES;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
     // Key controls
     if (isButtonPressed(SCALE_X(170), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropKey = (dropKey - 1 + 12) % 12;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
     if (isButtonPressed(SCALE_X(220), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropKey = (dropKey + 1) % 12;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
     // Octave button
     if (isButtonPressed(SCALE_X(270), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       dropOctave = (dropOctave == 7) ? 2 : dropOctave + 1;
-      drawPhysicsDropMode();
+      requestRedraw();
       return;
     }
     
@@ -227,7 +227,7 @@ void addPlatform(int x, int y) {
   platforms[numPlatforms].activeTime = 0;
   numPlatforms++;
   
-  drawPhysicsDropMode();
+  requestRedraw();
 }
 
 void updatePhysics() {

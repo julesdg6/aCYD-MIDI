@@ -71,27 +71,27 @@ void handleKeyboardMode() {
   if (touch.justPressed) {
     if (isButtonPressed(SCALE_X(10), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       keyboardOctave = max(1, keyboardOctave - 1);
-      drawKeyboardMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(60), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       keyboardOctave = min(8, keyboardOctave + 1);
-      drawKeyboardMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(110), ctrlY, BTN_MEDIUM_W, BTN_SMALL_H)) {
       keyboardScale = (keyboardScale + 1) % NUM_SCALES;
-      drawKeyboardMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(170), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       keyboardKey = (keyboardKey - 1 + 12) % 12;
-      drawKeyboardMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(SCALE_X(220), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
       keyboardKey = (keyboardKey + 1) % 12;
-      drawKeyboardMode();
+      requestRedraw();
       return;
     }
   }
@@ -118,17 +118,27 @@ void handleKeyboardMode() {
   
   if (touch.isPressed && key != -1 && row != -1) {
     if (key != lastKey || row != lastRow) {
+      // ===== CRITICAL PATH: MIDI PROCESSING =====
+      // Send all MIDI messages first for minimum latency
       if (lastKey != -1 && lastRow != -1) {
-        playKeyboardNote(lastRow, lastKey, false);
+        playKeyboardNote(lastRow, lastKey, false);  // Release old key
+      }
+      playKeyboardNote(row, key, true);  // Press new key
+      
+      // ===== VISUAL FEEDBACK =====
+      // Immediate partial draws for tactile feedback (fast, no full redraw)
+      if (lastKey != -1 && lastRow != -1) {
         drawKeyboardKey(lastRow, lastKey, false);
       }
-      playKeyboardNote(row, key, true);
       drawKeyboardKey(row, key, true);
+      
       lastKey = key;
       lastRow = row;
     }
   } else if (touch.justReleased && lastKey != -1 && lastRow != -1) {
+    // CRITICAL PATH: Send MIDI immediately
     playKeyboardNote(lastRow, lastKey, false);
+    // Immediate partial draw for feedback
     drawKeyboardKey(lastRow, lastKey, false);
     lastKey = -1;
     lastRow = -1;

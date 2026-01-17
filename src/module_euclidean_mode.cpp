@@ -138,25 +138,25 @@ void handleEuclideanMode() {
     if (euclideanState.isPlaying) {
       euclideanState.lastStepTime = millis();
     }
-    drawEuclideanMode();
+    requestRedraw();
     return;
   }
 
   if (isButtonPressed(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32))) {
     euclideanState.bpm = std::max(60U, (unsigned int)euclideanState.bpm - 5);
-    drawEuclideanMode();
+    requestRedraw();
     return;
   }
 
   if (isButtonPressed(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32))) {
     euclideanState.bpm = std::min(240U, (unsigned int)euclideanState.bpm + 5);
-    drawEuclideanMode();
+    requestRedraw();
     return;
   }
 
   if (isButtonPressed(DISPLAY_WIDTH - SCALE_X(80), controlY, SCALE_X(70), SCALE_Y(32))) {
     euclideanState.tripletMode = !euclideanState.tripletMode;
-    drawEuclideanMode();
+    requestRedraw();
     return;
   }
 }

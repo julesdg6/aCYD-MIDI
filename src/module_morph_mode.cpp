@@ -101,7 +101,7 @@ void handleMorphMode() {
     }
     if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(64), controlY, SCALE_X(64), SCALE_Y(32))) {
       morphState.recording = !morphState.recording;
-      drawMorphMode();
+      requestRedraw();
       return;
     }
   }
@@ -117,7 +117,7 @@ void handleMorphMode() {
       morphState.morphY = (float)(touch.y - sliderY) / (float)sliderH;
       morphState.morphX = std::min(std::max(morphState.morphX, 0.0f), 1.0f);
       morphState.morphY = std::min(std::max(morphState.morphY, 0.0f), 1.0f);
-      drawMorphMode();
+      requestRedraw();
       return;
     }
 
@@ -132,7 +132,7 @@ void handleMorphMode() {
 
       if (isButtonPressed(x, y, slotSize, slotSize)) {
         morphState.activeSlot = slot;
-        drawMorphMode();
+        requestRedraw();
         return;
       }
     }

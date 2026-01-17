@@ -145,7 +145,7 @@ void handleBouncingBallMode() {
       if (numActiveBalls < MAX_BALLS) {
         numActiveBalls++;
         initializeBalls();
-        drawBouncingBallMode();
+        requestRedraw();
       }
       return;
     }
@@ -154,7 +154,7 @@ void handleBouncingBallMode() {
     if (isButtonPressed(SCALE_X(60), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       numActiveBalls = 1;
       initializeBalls();
-      drawBouncingBallMode();
+      requestRedraw();
       return;
     }
     
@@ -162,7 +162,7 @@ void handleBouncingBallMode() {
     if (isButtonPressed(SCALE_X(110), SCALE_Y(200), BTN_MEDIUM_W, BTN_SMALL_H)) {
       ballScale = (ballScale + 1) % NUM_SCALES;
       initializeWalls();
-      drawBouncingBallMode();
+      requestRedraw();
       return;
     }
     
@@ -170,14 +170,14 @@ void handleBouncingBallMode() {
     if (isButtonPressed(SCALE_X(170), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       ballKey = (ballKey - 1 + 12) % 12;
       initializeWalls();
-      drawBouncingBallMode();
+      requestRedraw();
       return;
     }
     
     if (isButtonPressed(SCALE_X(220), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       ballKey = (ballKey + 1) % 12;
       initializeWalls();
-      drawBouncingBallMode();
+      requestRedraw();
       return;
     }
     
@@ -185,7 +185,7 @@ void handleBouncingBallMode() {
     if (isButtonPressed(SCALE_X(270), SCALE_Y(200), BTN_SMALL_W, BTN_SMALL_H)) {
       ballOctave = (ballOctave == 7) ? 2 : ballOctave + 1;
       initializeWalls();
-      drawBouncingBallMode();
+      requestRedraw();
       return;
     }
   }

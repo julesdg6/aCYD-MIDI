@@ -197,24 +197,24 @@ void handleTB3POMode() {
   if (touch.justPressed) {
     if (isButtonPressed(MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
       tb3po.playing = !tb3po.playing;
-      drawTB3POMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(MARGIN_SMALL + (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
       regenerateAll();
-      drawTB3POMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(MARGIN_SMALL + 2 * (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
       tb3po.density = min(14, tb3po.density + 1);
       regenerateAll();
-      drawTB3POMode();
+      requestRedraw();
       return;
     }
     if (isButtonPressed(MARGIN_SMALL + 3 * (SCALE_X(70) + SCALE_X(8)), HEADER_HEIGHT + SCALE_Y(40), SCALE_X(70), SCALE_Y(28))) {
       tb3po.density = max(0, tb3po.density - 1);
       regenerateAll();
-      drawTB3POMode();
+      requestRedraw();
       return;
     }
   }
