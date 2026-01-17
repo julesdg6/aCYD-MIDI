@@ -1,6 +1,7 @@
 #include "module_morph_mode.h"
 
 #include <algorithm>
+#include <pgmspace.h>
 
 // forward-declare blendColor (defined inline in src/main.cpp)
 uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio);
