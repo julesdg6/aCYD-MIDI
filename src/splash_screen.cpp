@@ -4,6 +4,7 @@
 #include "remote_display.h"
 
 #include <algorithm>
+#include <pgmspace.h>
 
 static void drawSplashBitmap() {
   const int startX = std::max(0, (DISPLAY_WIDTH - SPLASH_WIDTH) / 2);
@@ -11,7 +12,7 @@ static void drawSplashBitmap() {
   for (int y = 0; y < SPLASH_HEIGHT; ++y) {
     int rowIndex = y * SPLASH_WIDTH;
     for (int x = 0; x < SPLASH_WIDTH; ++x) {
-      uint16_t color = SPLASH_PIXELS[rowIndex + x];
+      uint16_t color = pgm_read_word(&SPLASH_PIXELS[rowIndex + x]);
       tft.drawPixel(startX + x, startY + y, color);
     }
   }
