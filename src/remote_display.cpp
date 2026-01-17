@@ -5,9 +5,11 @@
 #include <lvgl.h>
 #include <esp32_smartdisplay.h>
 
-// Web server and WebSocket
+// Web server and WebSocket - only available when remote display is enabled
+#if REMOTE_DISPLAY_ENABLED && WIFI_ENABLED
 static AsyncWebServer *server = nullptr;
 static AsyncWebSocket *ws = nullptr;
+#endif
 
 // State tracking
 static bool wifiConnected = false;
@@ -162,6 +164,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+#if REMOTE_DISPLAY_ENABLED && WIFI_ENABLED
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, 
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
     switch(type) {
@@ -180,8 +183,13 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
             break;
     }
 }
+#endif
 
 void initRemoteDisplay() {
+#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
+    Serial.println("Remote Display disabled (REMOTE_DISPLAY_ENABLED=0 or WIFI_ENABLED=0)");
+    return;
+#else
     Serial.println("Initializing Remote Display...");
 
     if (!ensureFrameBuffer(REMOTE_DISPLAY_WIDTH * REMOTE_DISPLAY_HEIGHT * REMOTE_DISPLAY_BYTES_PER_PIXEL)) {
@@ -199,7 +207,6 @@ void initRemoteDisplay() {
         return;
     }
     
-#if WIFI_ENABLED
     // Connect to WiFi (blocking approach during initialization)
     // Note: This uses a simple blocking approach during initialization.
     // yield() is called in the loop to prevent watchdog timer issues.
@@ -241,9 +248,6 @@ void initRemoteDisplay() {
         Serial.println("\nWiFi connection failed!");
         Serial.println("Remote Display disabled.");
     }
-#else
-    wifiConnected = false;
-    Serial.println("Remote Display disabled: WiFi disabled.");
 #endif
 }
 
@@ -299,7 +303,7 @@ void sendFrameUpdate() {
 }
 
 void handleRemoteDisplay() {
-#if !WIFI_ENABLED
+#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
     return;
 #else
     if (!wifiConnected) {
@@ -326,8 +330,8 @@ bool isRemoteDisplayConnected() {
 }
 
 String getRemoteDisplayIP() {
-#if !WIFI_ENABLED
-    return "WiFi disabled";
+#if !REMOTE_DISPLAY_ENABLED || !WIFI_ENABLED
+    return "Remote Display disabled";
 #else
     if (wifiConnected) {
         return WiFi.localIP().toString();
