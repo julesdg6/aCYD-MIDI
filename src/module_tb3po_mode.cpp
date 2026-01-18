@@ -143,29 +143,33 @@ void updateTB3POPlayback() {
   if (!tb3poSync.playing) {
     return;
   }
-  if (!tb3poSync.readyForStep()) {
+  uint32_t readySteps = tb3poSync.consumeReadySteps();
+  if (readySteps == 0) {
     return;
   }
-  uint32_t currentTick = clockManagerGetTickCount();
-  bool gated = stepIsGated(tb3po.step);
-  Serial.printf("[TB3PO] tick=%u step=%u gate=%d playing=%d\n", currentTick, tb3po.step, gated,
-                tb3poSync.playing);
-  if (tb3po.currentNote >= 0) {
-    sendMIDI(0x80, tb3po.currentNote, 0);
-    tb3po.currentNote = -1;
+
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    uint32_t currentTick = clockManagerGetTickCount();
+    bool gated = stepIsGated(tb3po.step);
+    Serial.printf("[TB3PO] tick=%u step=%u gate=%d playing=%d\n", currentTick, tb3po.step, gated,
+                  tb3poSync.playing);
+    if (tb3po.currentNote >= 0) {
+      sendMIDI(0x80, tb3po.currentNote, 0);
+      tb3po.currentNote = -1;
+    }
+    if (gated) {
+      int note = getMIDINoteForStep(tb3po.step);
+      int velocity = stepIsAccent(tb3po.step) ? 127 : 100;
+      sendMIDI(0x90, note, velocity);
+      tb3po.currentNote = note;
+    }
+    tb3po.step++;
+    if (tb3po.step >= tb3po.numSteps) {
+      tb3po.step = 0;
+    }
+    Serial.printf("[TB3PO] nextStep=%u numSteps=%u stepAfterWrap=%u\n", currentTick, tb3po.numSteps,
+                  tb3po.step);
   }
-  if (stepIsGated(tb3po.step)) {
-    int note = getMIDINoteForStep(tb3po.step);
-    int velocity = stepIsAccent(tb3po.step) ? 127 : 100;
-    sendMIDI(0x90, note, velocity);
-    tb3po.currentNote = note;
-  }
-  tb3po.step++;
-  if (tb3po.step >= tb3po.numSteps) {
-    tb3po.step = 0;
-  }
-  Serial.printf("[TB3PO] nextStep=%u numSteps=%u stepAfterWrap=%u\n", currentTick, tb3po.numSteps,
-                tb3po.step);
   requestRedraw();  // Request redraw to show step progress and pattern
 }
 

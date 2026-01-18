@@ -344,16 +344,22 @@ static void updateRagaPlayback() {
   ragaSync.tryStartIfReady(!instantStartMode);
   raga.playing = ragaSync.playing;
 
-  unsigned long now = millis();
-  if (g_noteActive && now >= g_noteOffTime) {
-    stopCurrentNote();
-  }
-
-  if (!raga.playing || !ragaSync.readyForStep(CLOCK_TICKS_PER_SIXTEENTH)) {
+  if (!raga.playing) {
     return;
   }
 
-  scheduleNextNote(now);
+  uint32_t readySteps = ragaSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
+  if (readySteps == 0) {
+    return;
+  }
+
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    unsigned long loopNow = millis();
+    if (g_noteActive && loopNow >= g_noteOffTime) {
+      stopCurrentNote();
+    }
+    scheduleNextNote(loopNow);
+  }
 }
 
 static void cycleRaga(int delta) {

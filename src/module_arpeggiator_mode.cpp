@@ -281,10 +281,11 @@ void updateArpeggiator() {
   if (!arpSync.playing) {
     return;
   }
-  if (!arpSync.readyForStep()) {
+  uint32_t readySteps = arpSync.consumeReadySteps();
+  if (readySteps == 0) {
     return;
   }
-  arp.tickAccumulator += 1.0f;
+  arp.tickAccumulator += static_cast<float>(readySteps);
   while (arp.tickAccumulator >= arp.stepTicks) {
     playArpNote();
     arp.tickAccumulator -= arp.stepTicks;

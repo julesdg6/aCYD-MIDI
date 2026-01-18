@@ -209,12 +209,15 @@ void updateSequencer() {
     return;
   }
 
-  if (!sequencerSync.readyForStep()) {
+  uint32_t readySteps = sequencerSync.consumeReadySteps();
+  if (readySteps == 0) {
     return;
   }
 
-  playSequencerStep();
-  currentStep = (currentStep + 1) % SEQ_STEPS;
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    playSequencerStep();
+    currentStep = (currentStep + 1) % SEQ_STEPS;
+  }
   requestRedraw();  // Request redraw to trigger render event for animation
 }
 

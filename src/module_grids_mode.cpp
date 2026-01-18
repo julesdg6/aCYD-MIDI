@@ -123,23 +123,26 @@ void updateGridsPlayback() {
     return;
   }
 
-  if (!gridsSync.readyForStep(CLOCK_TICKS_PER_SIXTEENTH)) {
+  uint32_t readySteps = gridsSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
+  if (readySteps == 0) {
     return;
   }
 
-  bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
-  bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
-  bool hatTrigger = grids.hatPattern[grids.step] >= (255 - grids.hatDensity);
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
+    bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
+    bool hatTrigger = grids.hatPattern[grids.step] >= (255 - grids.hatDensity);
 
-  uint8_t kickVel = grids.kickPattern[grids.step] >= grids.accentThreshold ? 127 : 100;
-  uint8_t snareVel = grids.snarePattern[grids.step] >= grids.accentThreshold ? 127 : 100;
-  uint8_t hatVel = grids.hatPattern[grids.step] >= grids.accentThreshold ? 127 : 90;
+    uint8_t kickVel = grids.kickPattern[grids.step] >= grids.accentThreshold ? 127 : 100;
+    uint8_t snareVel = grids.snarePattern[grids.step] >= grids.accentThreshold ? 127 : 100;
+    uint8_t hatVel = grids.hatPattern[grids.step] >= grids.accentThreshold ? 127 : 90;
 
-  triggerDrum(grids.kickNote, kickTrigger, kickVel);
-  triggerDrum(grids.snareNote, snareTrigger, snareVel);
-  triggerDrum(grids.hatNote, hatTrigger, hatVel);
+    triggerDrum(grids.kickNote, kickTrigger, kickVel);
+    triggerDrum(grids.snareNote, snareTrigger, snareVel);
+    triggerDrum(grids.hatNote, hatTrigger, hatVel);
 
-  grids.step = (grids.step + 1) % GRIDS_STEPS;
+    grids.step = (grids.step + 1) % GRIDS_STEPS;
+  }
   requestRedraw();  // Request redraw to show step progress
 }
 

@@ -254,10 +254,13 @@ void updateRandomGenerator() {
   if (!randomSync.playing || !deviceConnected) {
     return;
   }
-  if (!randomSync.readyForStep(getRandomStepIntervalTicks())) {
+  uint32_t readySteps = randomSync.consumeReadySteps(getRandomStepIntervalTicks());
+  if (readySteps == 0) {
     return;
   }
-  playRandomNote();
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    playRandomNote();
+  }
 }
 
 void playRandomNote() {

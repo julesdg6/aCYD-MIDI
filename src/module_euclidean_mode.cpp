@@ -169,25 +169,27 @@ void updateEuclideanSequencer() {
   if (!euclidSync.playing) {
     return;
   }
-
-  if (!euclidSync.readyForStep(getEuclideanStepIntervalTicks())) {
+  uint32_t readySteps = euclidSync.consumeReadySteps(getEuclideanStepIntervalTicks());
+  if (readySteps == 0) {
     return;
   }
 
-  releaseEuclideanNotes();
-  for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
-    EuclideanVoice &voice = euclideanState.voices[voiceIdx];
-    if (voice.steps == 0) {
-      continue;
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    releaseEuclideanNotes();
+    for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
+      EuclideanVoice &voice = euclideanState.voices[voiceIdx];
+      if (voice.steps == 0) {
+        continue;
+      }
+      int stepIndex = euclideanState.currentStep % voice.steps;
+      if (!voice.pattern[stepIndex]) {
+        continue;
+      }
+      sendMIDI(0x90, voice.midiNote, 110);
+      euclideanState.pendingNoteRelease[voiceIdx] = true;
     }
-    int stepIndex = euclideanState.currentStep % voice.steps;
-    if (!voice.pattern[stepIndex]) {
-      continue;
-    }
-    sendMIDI(0x90, voice.midiNote, 110);
-    euclideanState.pendingNoteRelease[voiceIdx] = true;
+    euclideanState.currentStep = (euclideanState.currentStep + 1) % EUCLIDEAN_MAX_STEPS;
   }
-  euclideanState.currentStep = (euclideanState.currentStep + 1) % EUCLIDEAN_MAX_STEPS;
   requestRedraw();  // Request redraw to show step progress
 }
 

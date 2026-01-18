@@ -91,20 +91,34 @@ struct SequencerSyncState {
     return true;
   }
 
-  bool readyForStep(uint32_t stepIntervalTicks = CLOCK_TICKS_PER_SIXTEENTH) {
+  uint32_t consumeReadySteps(uint32_t stepIntervalTicks = CLOCK_TICKS_PER_SIXTEENTH) {
     if (!playing) {
-      return false;
-    }
-    if (!clockManagerHasTickAdvanced(lastTick)) {
-      return false;
+      return 0;
     }
     if (stepIntervalTicks == 0) {
-      return false;
+      return 0;
     }
-    if ((lastTick % stepIntervalTicks) != 0) {
-      return false;
+    uint32_t tickNow = clockManagerGetTickCount();
+    if (tickNow == lastTick) {
+      return 0;
     }
-    return true;
+    uint32_t tickDiff = tickNow - lastTick;
+    uint32_t steps = tickDiff / stepIntervalTicks;
+    if (steps == 0) {
+      return 0;
+    }
+    lastTick += steps * stepIntervalTicks;
+#if defined(DEBUG_ENABLED) && DEBUG_ENABLED
+    if (steps > 1) {
+      Serial.printf("[ClockManager] consumed %u ticks (%u steps at %u-tick interval)\n", tickDiff,
+                    steps, stepIntervalTicks);
+    }
+#endif
+    return steps;
+  }
+
+  bool readyForStep(uint32_t stepIntervalTicks = CLOCK_TICKS_PER_SIXTEENTH) {
+    return consumeReadySteps(stepIntervalTicks) > 0;
   }
 };
 
