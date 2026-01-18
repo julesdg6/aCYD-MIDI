@@ -1,7 +1,47 @@
 #include "module_grids_mode.h"
+
+#include <algorithm>
 #include <pgmspace.h>
 
 GridsState grids;
+
+struct GridsLayout {
+  int padX;
+  int padY;
+  int padSize;
+  int controlX;
+  int controlWidth;
+  int buttonHeight;
+  int buttonSpacing;
+  int sliderY;
+  int sliderW;
+  int sliderH;
+  int sliderSpacing;
+  int sliderPositions[3];
+};
+
+static GridsLayout calculateGridsLayout() {
+  GridsLayout layout;
+  const int desiredControlWidth = SCALE_X(90);
+  const int padMaxWidth = DISPLAY_WIDTH - desiredControlWidth - MARGIN_SMALL * 3;
+  layout.padSize = std::min(SCALE_X(140), std::max(padMaxWidth, SCALE_X(110)));
+  layout.padX = MARGIN_SMALL;
+  layout.padY = HEADER_HEIGHT + SCALE_Y(8);
+  layout.controlX = layout.padX + layout.padSize + MARGIN_SMALL;
+  layout.controlWidth = DISPLAY_WIDTH - layout.controlX - MARGIN_SMALL;
+  layout.buttonHeight = SCALE_Y(38);
+  layout.buttonSpacing = SCALE_Y(10);
+  layout.sliderW = SCALE_X(70);
+  layout.sliderSpacing = SCALE_X(8);
+  layout.sliderH = SCALE_Y(18);
+  layout.sliderY = DISPLAY_HEIGHT - SCALE_Y(70);
+  int sliderTotalWidth = 3 * layout.sliderW + 2 * layout.sliderSpacing;
+  int sliderStartX = (DISPLAY_WIDTH - sliderTotalWidth) / 2;
+  for (int i = 0; i < 3; ++i) {
+    layout.sliderPositions[i] = sliderStartX + i * (layout.sliderW + layout.sliderSpacing);
+  }
+  return layout;
+}
 
 static const uint8_t PROGMEM PATTERN_MAP[4][3][GRIDS_STEPS] = {
   {
@@ -101,9 +141,17 @@ void drawGridsMode() {
   tft.fillScreen(THEME_BG);
   drawHeader("GRIDS", "", 3);
 
-  const int padSize = SCALE_X(140);
-  const int padX = (DISPLAY_WIDTH - padSize) / 2;
-  const int padY = HEADER_HEIGHT + SCALE_Y(8);
+  const GridsLayout layout = calculateGridsLayout();
+  const int padX = layout.padX;
+  const int padY = layout.padY;
+  const int padSize = layout.padSize;
+  const int controlX = layout.controlX;
+  const int controlW = layout.controlWidth;
+  const int buttonH = layout.buttonHeight;
+  const int buttonSpacing = layout.buttonSpacing;
+  const int sliderY = layout.sliderY;
+  const int sliderH = layout.sliderH;
+  const int sliderW = layout.sliderW;
 
   tft.fillRect(padX, padY, padSize, padSize, THEME_SURFACE);
   tft.drawRect(padX, padY, padSize, padSize, THEME_TEXT);
@@ -117,7 +165,7 @@ void drawGridsMode() {
   
   // Show current step position if playing
   if (grids.playing) {
-    int stepIndicatorY = padY + padSize + SCALE_Y(5);
+    int stepIndicatorY = sliderY - SCALE_Y(20);
     int stepW = SCALE_X(18);
     int stepSpacing = SCALE_X(1);
     int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
@@ -130,23 +178,12 @@ void drawGridsMode() {
     }
   }
 
-  const int sliderY = padY + padSize + SCALE_Y(18);
-  const int sliderW = SCALE_X(80);
-  const int sliderH = SCALE_Y(18);
-  const int sliderSpacing = SCALE_X(8);
-  const int sliderStartX = (DISPLAY_WIDTH - (3 * sliderW + 2 * sliderSpacing)) / 2;
-  const int sliderPositions[3] = {
-      sliderStartX,
-      sliderStartX + sliderW + sliderSpacing,
-      sliderStartX + 2 * (sliderW + sliderSpacing),
-  };
-
   const uint8_t densities[3] = {grids.kickDensity, grids.snareDensity, grids.hatDensity};
   const uint16_t sliderColor[3] = {THEME_ERROR, THEME_WARNING, THEME_ACCENT};
   const char *sliderLabels[3] = {"K", "S", "H"};
 
   for (int i = 0; i < 3; ++i) {
-    int x = sliderPositions[i];
+    int x = layout.sliderPositions[i];
     tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
     tft.drawString(sliderLabels[i], x - SCALE_X(15), sliderY, 2);
     tft.drawRect(x, sliderY, sliderW, sliderH, THEME_TEXT);
@@ -156,18 +193,18 @@ void drawGridsMode() {
     }
   }
 
-  const int btnY = DISPLAY_HEIGHT - SCALE_Y(50);
-  const int btnH = SCALE_Y(40);
-  const int btnSpacing = SCALE_X(8);
-  const int btnW = (DISPLAY_WIDTH - (5 * btnSpacing)) / 4;
-
-  drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, grids.playing ? "STOP" : "PLAY", THEME_PRIMARY);
-  drawRoundButton(MARGIN_SMALL + (btnW + btnSpacing), btnY, btnW, btnH, "BPM-", THEME_SECONDARY);
-  drawRoundButton(MARGIN_SMALL + 2 * (btnW + btnSpacing), btnY, btnW, btnH, "BPM+", THEME_SECONDARY);
-  drawRoundButton(MARGIN_SMALL + 3 * (btnW + btnSpacing), btnY, btnW, btnH, "RNDM", THEME_ACCENT);
+  int buttonY = padY;
+  drawRoundButton(controlX, buttonY, controlW, buttonH, grids.playing ? "STOP" : "PLAY", THEME_PRIMARY);
+  buttonY += buttonH + buttonSpacing;
+  drawRoundButton(controlX, buttonY, controlW, buttonH, "BPM-", THEME_SECONDARY);
+  buttonY += buttonH + buttonSpacing;
+  drawRoundButton(controlX, buttonY, controlW, buttonH, "BPM+", THEME_SECONDARY);
+  buttonY += buttonH + buttonSpacing;
+  drawRoundButton(controlX, buttonY, controlW, buttonH, "RNDM", THEME_ACCENT);
+  buttonY += buttonH + buttonSpacing;
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM: " + String((int)grids.bpm), MARGIN_SMALL, btnY - SCALE_Y(15), 2);
+  tft.drawString("BPM: " + String((int)grids.bpm), controlX, buttonY, 2);
 }
 
 void initializeGridsMode() {
@@ -205,9 +242,10 @@ void handleGridsMode() {
     return;
   }
 
-  const int padSize = SCALE_X(140);
-  const int padX = (DISPLAY_WIDTH - padSize) / 2;
-  const int padY = HEADER_HEIGHT + SCALE_Y(8);
+  const GridsLayout layout = calculateGridsLayout();
+  const int padX = layout.padX;
+  const int padY = layout.padY;
+  const int padSize = layout.padSize;
 
   if (touch.x >= padX && touch.x < padX + padSize &&
       touch.y >= padY && touch.y < padY + padSize) {
@@ -218,15 +256,20 @@ void handleGridsMode() {
     return;
   }
 
-  const int btnY = DISPLAY_HEIGHT - SCALE_Y(50);
-  const int btnH = SCALE_Y(40);
-  const int btnSpacing = SCALE_X(8);
-  const int btnW = (DISPLAY_WIDTH - (5 * btnSpacing)) / 4;
+  const int controlX = layout.controlX;
+  const int controlW = layout.controlWidth;
+  const int buttonH = layout.buttonHeight;
+  const int buttonSpacing = layout.buttonSpacing;
+  int buttonY = layout.padY;
 
-  bool playPressed = isButtonPressed(MARGIN_SMALL, btnY, btnW, btnH);
-  bool bpmDownPressed = isButtonPressed(MARGIN_SMALL + (btnW + btnSpacing), btnY, btnW, btnH);
-  bool bpmUpPressed = isButtonPressed(MARGIN_SMALL + 2 * (btnW + btnSpacing), btnY, btnW, btnH);
-  bool randomPressed = isButtonPressed(MARGIN_SMALL + 3 * (btnW + btnSpacing), btnY, btnW, btnH);
+  bool playPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
+  buttonY += buttonH + buttonSpacing;
+  bool bpmDownPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
+  buttonY += buttonH + buttonSpacing;
+  bool bpmUpPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
+  buttonY += buttonH + buttonSpacing;
+  bool randomPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
+  buttonY += buttonH + buttonSpacing;
 
   if (playPressed) {
     grids.playing = !grids.playing;
@@ -255,22 +298,11 @@ void handleGridsMode() {
     return;
   }
 
-  const int sliderY = padY + padSize + SCALE_Y(18);
-  const int sliderW = SCALE_X(80);
-  const int sliderH = SCALE_Y(18);
-  const int sliderSpacing = SCALE_X(8);
-  const int sliderStartX = (DISPLAY_WIDTH - (3 * sliderW + 2 * sliderSpacing)) / 2;
-  const int sliderPositions[3] = {
-      sliderStartX,
-      sliderStartX + sliderW + sliderSpacing,
-      sliderStartX + 2 * (sliderW + sliderSpacing),
-  };
-
-  if (touch.y >= sliderY && touch.y < sliderY + sliderH) {
+  if (touch.y >= layout.sliderY && touch.y < layout.sliderY + layout.sliderH) {
     for (int i = 0; i < 3; ++i) {
-      int x = sliderPositions[i];
-      if (touch.x >= x && touch.x < x + sliderW) {
-        uint8_t value = ((touch.x - x) * 255) / sliderW;
+      int x = layout.sliderPositions[i];
+      if (touch.x >= x && touch.x < x + layout.sliderW) {
+        uint8_t value = ((touch.x - x) * 255) / layout.sliderW;
         if (i == 0) grids.kickDensity = value;
         if (i == 1) grids.snareDensity = value;
         if (i == 2) grids.hatDensity = value;

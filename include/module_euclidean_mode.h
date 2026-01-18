@@ -24,6 +24,7 @@ struct EuclideanState {
   bool isPlaying;
   bool tripletMode;
   unsigned long lastStepTime;
+  bool pendingNoteRelease[EUCLIDEAN_VOICE_COUNT];
 };
 
 extern EuclideanState euclideanState;

@@ -19,14 +19,23 @@ enum RagaType {
   RAGA_MALKAUNS,
 };
 
+enum TalaType {
+  TALA_TEENTAL = 0,
+  TALA_RUPAK,
+  TALA_JHAPTAL,
+  TALA_COUNT,
+};
+
 struct RagaState {
   RagaType currentRaga;
+  TalaType currentTala;
   uint8_t rootNote;
   bool playing;
   bool droneEnabled;
 };
 
 extern const char *const kRagaNames[RAGA_COUNT];
+extern const char *const kTalaNames[TALA_COUNT];
 extern RagaState raga;
 
 void initializeRagaMode();

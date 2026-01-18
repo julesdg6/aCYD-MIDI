@@ -101,6 +101,7 @@ struct TouchState {
 // App modes
 enum AppMode {
   MENU,
+  SETTINGS,
   KEYBOARD,
   SEQUENCER,
   BOUNCING_BALL,
@@ -117,6 +118,13 @@ enum AppMode {
   RAGA,
   EUCLID,
   MORPH
+};
+
+enum MidiClockMaster {
+  CLOCK_INTERNAL = 0,
+  CLOCK_WIFI,
+  CLOCK_BLE,
+  CLOCK_HARDWARE
 };
 
 // Music theory
@@ -140,5 +148,7 @@ extern AppMode currentMode;
 
 // Redraw control - to minimize unnecessary redraws
 extern volatile bool needsRedraw;
+extern uint16_t sharedBPM;
+extern MidiClockMaster midiClockMaster;
 
 #endif

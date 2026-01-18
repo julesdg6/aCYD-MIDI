@@ -12,7 +12,6 @@ static AsyncWebSocket *ws = nullptr;
 #endif
 
 // State tracking
-static bool wifiConnected = false;
 static bool clientConnected = false;
 static uint32_t lastFrameUpdate = 0;
 
@@ -207,47 +206,30 @@ void initRemoteDisplay() {
         return;
     }
     
-    // Connect to WiFi (blocking approach during initialization)
-    // Note: This uses a simple blocking approach during initialization.
-    // yield() is called in the loop to prevent watchdog timer issues.
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    
-    Serial.print("Connecting to WiFi");
-    int attempts = 0;
-    const int maxAttempts = WIFI_CONNECT_TIMEOUT_MS / 500;  // Calculate attempts from timeout
-    while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
-        delay(500);
-        yield();  // Prevent watchdog timer reset
-        Serial.print(".");
-        attempts++;
+    initWiFi();
+    if (!isWiFiConnected()) {
+        Serial.println("Remote Display disabled (WiFi not connected).");
+        return;
     }
+
+    Serial.println("WiFi connected for Remote Display:");
+    Serial.print("- IP address: ");
+    Serial.println(getWiFiIPAddress());
+    Serial.print("- Remote Display URL: http://");
+    Serial.println(getWiFiIPAddress());
+
+    // Setup WebSocket
+    ws->onEvent(onWsEvent);
+    server->addHandler(ws);
     
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiConnected = true;
-        Serial.println("\nWiFi connected!");
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
-        Serial.print("Remote Display URL: http://");
-        Serial.println(WiFi.localIP());
-        
-        // Setup WebSocket
-        ws->onEvent(onWsEvent);
-        server->addHandler(ws);
-        
-        // Setup HTTP server
-        server->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(200, "text/html", index_html);
-        });
-        
-        // Start server
-        server->begin();
-        Serial.println("Remote Display server started!");
-    } else {
-        wifiConnected = false;
-        Serial.println("\nWiFi connection failed!");
-        Serial.println("Remote Display disabled.");
-    }
+    // Setup HTTP server
+    server->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(200, "text/html", index_html);
+    });
+    
+    // Start server
+    server->begin();
+    Serial.println("Remote Display server started!");
 #endif
 }
 
@@ -255,7 +237,7 @@ void sendFrameUpdate() {
 #if !REMOTE_DISPLAY_ENABLED
     return;  // Do nothing if remote display is disabled
 #else
-    if (!wifiConnected || !clientConnected || !ws || ws->count() == 0) {
+    if (!isWiFiConnected() || !clientConnected || !ws || ws->count() == 0) {
         return;
     }
     
@@ -306,7 +288,8 @@ void handleRemoteDisplay() {
 #if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
     return;
 #else
-    if (!wifiConnected) {
+    handleWiFi();
+    if (!isWiFiConnected()) {
         return;
     }
     
@@ -326,16 +309,13 @@ void handleRemoteDisplay() {
 }
 
 bool isRemoteDisplayConnected() {
-    return wifiConnected && clientConnected;
+    return isWiFiConnected() && clientConnected;
 }
 
 String getRemoteDisplayIP() {
 #if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
     return "Remote Display disabled";
 #else
-    if (wifiConnected) {
-        return WiFi.localIP().toString();
-    }
-    return "Not connected";
+    return getWiFiIPAddress();
 #endif
 }

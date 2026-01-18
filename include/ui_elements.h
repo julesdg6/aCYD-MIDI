@@ -2,6 +2,7 @@
 #define UI_ELEMENTS_H
 
 #include "common_definitions.h"
+#include "wifi_manager.h"
 
 void exitToMenu();
 void requestRedraw();
@@ -54,7 +55,46 @@ inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t co
   tft.drawCentreString(text, x + w/2, textY, textFont);
 }
 
-inline void drawHeader(String title, String subtitle, uint8_t titleFont = 4) {
+static inline void drawWifiIndicator(int x, int y, uint16_t color) {
+  const int radii[] = {SCALE_X(3), SCALE_X(5), SCALE_X(7)};
+  for (int radius : radii) {
+    tft.drawCircle(x, y, radius, color);
+  }
+  tft.fillCircle(x, y, SCALE_X(2), color);
+  tft.fillRect(x - radii[2], y, radii[2] * 2 + 1, radii[2], THEME_SURFACE);
+}
+
+static inline void drawBluetoothIndicator(int x, int y, uint16_t color) {
+  int halfHeight = SCALE_Y(7);
+  int diagOffset = SCALE_X(6);
+  int stemX = x - SCALE_X(1);
+  tft.drawLine(stemX, y - halfHeight, stemX, y + halfHeight, color);
+  tft.drawLine(stemX, y - halfHeight, x + diagOffset, y - SCALE_Y(2), color);
+  tft.drawLine(stemX, y + halfHeight, x + diagOffset, y + SCALE_Y(2), color);
+  tft.drawLine(x + diagOffset, y - SCALE_Y(2), x + diagOffset, y + SCALE_Y(2), color);
+  tft.drawLine(x + diagOffset, y - SCALE_Y(2), stemX, y, color);
+  tft.drawLine(x + diagOffset, y + SCALE_Y(2), stemX, y, color);
+}
+
+static inline void drawStatusIndicators() {
+  String bpmLabel = String(sharedBPM) + " BPM";
+  int textX = DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(70);
+  int textY = HEADER_TITLE_Y + SCALE_Y(2);
+  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+  tft.drawString(bpmLabel, textX, textY, 2);
+
+  const int iconSpacing = SCALE_X(6);
+  const int iconWidth = SCALE_X(16);
+  int bluetoothX = textX - iconSpacing - iconWidth;
+  int wifiX = bluetoothX - iconSpacing - iconWidth;
+  int iconY = textY + SCALE_Y(4);
+  uint16_t bluetoothColor = deviceConnected ? THEME_SUCCESS : THEME_TEXT_DIM;
+  uint16_t wifiColor = isWiFiConnected() ? THEME_SUCCESS : THEME_TEXT_DIM;
+  drawBluetoothIndicator(bluetoothX, iconY, bluetoothColor);
+  drawWifiIndicator(wifiX, iconY, wifiColor);
+}
+
+inline void drawHeader(String title, String subtitle, uint8_t titleFont = 4, bool showBackButton = true) {
   tft.fillRect(0, 0, DISPLAY_WIDTH, HEADER_HEIGHT, THEME_SURFACE);
   tft.drawFastHLine(0, HEADER_HEIGHT, DISPLAY_WIDTH, THEME_PRIMARY);
   
@@ -66,7 +106,10 @@ inline void drawHeader(String title, String subtitle, uint8_t titleFont = 4) {
     tft.drawCentreString(subtitle, DISPLAY_CENTER_X, HEADER_SUBTITLE_Y, 2);
   }
   
-  drawRoundButton(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H, "BACK", THEME_ERROR, false, 1);
+  if (showBackButton) {
+    drawRoundButton(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H, "BACK", THEME_ERROR, false, 1);
+  }
+  drawStatusIndicators();
 }
 
 inline void updateStatus() {

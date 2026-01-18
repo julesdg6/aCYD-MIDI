@@ -145,6 +145,7 @@ void updateSlinkEngine() {
     }
     uint32_t now = millis();
     slink_state.current_time_ms = now;
+    slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
     
     // Calculate delta time
     float delta_time_s = (now - slink_state.last_engine_tick) / 1000.0f;
@@ -169,6 +170,7 @@ void updateSlinkEngine() {
     
     // Process note offs
     processVoiceNoteOffs();
+    requestRedraw();
 }
 
 // ============================================================
@@ -784,19 +786,12 @@ void handleSlinkMode() {
     }
     
     if (!touch.justPressed) return;
-    
-    // Handle tab switching
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    for (int i = 0; i < 7; i++) {
-        if (isButtonPressed(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH)) {
-            slink_state.current_tab = (SlinkTab)i;
-            requestRedraw();
-            return;
-        }
+
+    int hit = hitSlinkTab(touch.x, touch.y);
+    if (hit >= 0) {
+        slink_state.current_tab = static_cast<SlinkTab>(hit);
+        requestRedraw();
+        return;
     }
     
     // Handle tab-specific interactions
@@ -829,308 +824,334 @@ void handleSlinkMode() {
 // UI Implementation
 // ============================================================
 
+static constexpr int kSlinkTabsPerRow = 4;
+static constexpr int kSlinkTabCount = SLINK_TAB_SETUP + 1;
+static const char *const kSlinkTabLabels[kSlinkTabCount] = {
+    "MAIN",
+    "TRIG",
+    "PITC",
+    "CLOK",
+    "SCAL",
+    "MOD",
+    "SETP",
+};
+
+static int getSlinkTabHeight() {
+    return SCALE_Y(38);
+}
+
+static int getSlinkTabSpacing() {
+    return SCALE_X(6);
+}
+
+static int getSlinkTabRows() {
+    return (kSlinkTabCount + kSlinkTabsPerRow - 1) / kSlinkTabsPerRow;
+}
+
+static int getSlinkTabBarHeight() {
+    int rows = getSlinkTabRows();
+    return rows * getSlinkTabHeight() + (rows + 1) * getSlinkTabSpacing();
+}
+
+static void getSlinkTabRect(int index, int &x, int &y, int &w, int &h) {
+    h = getSlinkTabHeight();
+    int spacing = getSlinkTabSpacing();
+    int cols = kSlinkTabsPerRow;
+    int row = index / cols;
+    int col = index % cols;
+    int textWidth = DISPLAY_WIDTH - 2 * MARGIN_SMALL - (cols - 1) * spacing;
+    w = textWidth / cols;
+    x = MARGIN_SMALL + col * (w + spacing);
+    y = HEADER_HEIGHT + spacing + row * (h + spacing);
+}
+
+static void drawSlinkTabBar() {
+    for (int i = 0; i < kSlinkTabCount; i++) {
+        int x, y, w, h;
+        getSlinkTabRect(i, x, y, w, h);
+        bool active = (i == static_cast<int>(slink_state.current_tab));
+        drawRoundButton(x, y, w, h, kSlinkTabLabels[i], active ? THEME_ACCENT : THEME_SURFACE,
+                        active, 2);
+    }
+}
+
+int hitSlinkTab(int px, int py) {
+    for (int i = 0; i < kSlinkTabCount; i++) {
+        int x, y, w, h;
+        getSlinkTabRect(i, x, y, w, h);
+        if (px >= x && px <= x + w && py >= y && py <= y + h) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static inline int getBandToggleRowCount() {
+    return 2;
+}
+
+static inline int getBandTogglePerRow() {
+    return SLINK_BANDS / getBandToggleRowCount();
+}
+
+static inline int getBandToggleSpacing() {
+    return SCALE_X(2);
+}
+
+static inline int getBandToggleHeight() {
+    return SCALE_Y(30);
+}
+
+static void getBandToggleRect(int index, int y_start, int &x, int &y, int &w, int &h) {
+    int perRow = getBandTogglePerRow();
+    int row = index / perRow;
+    int col = index % perRow;
+    int spacing = getBandToggleSpacing();
+    w = (DISPLAY_WIDTH - 2 * MARGIN_SMALL - (perRow - 1) * spacing) / perRow;
+    h = getBandToggleHeight();
+    x = MARGIN_SMALL + col * (w + spacing);
+    y = y_start + row * (h + spacing);
+}
+
+static const char *const kMainHelperLabels[] = {"+1", "-1", "MIX", "SFT", "ALL", "CLR"};
+static const uint16_t kMainHelperColors[] = {
+    THEME_SUCCESS,
+    THEME_ERROR,
+    THEME_WARNING,
+    THEME_ACCENT,
+    THEME_PRIMARY,
+    THEME_SECONDARY,
+};
+static_assert(sizeof(kMainHelperColors) / sizeof(kMainHelperColors[0]) ==
+                  sizeof(kMainHelperLabels) / sizeof(kMainHelperLabels[0]),
+              "Helper colors must align with labels");
+
+static void getHelperButtonRect(int index, int y_start, int &x, int &y, int &w, int &h) {
+    const int columns = 3;
+    const int rows = 2;
+    int spacingX = SCALE_X(6);
+    int spacingY = SCALE_Y(6);
+    h = SCALE_Y(36);
+    w = (DISPLAY_WIDTH - 2 * MARGIN_SMALL - (columns - 1) * spacingX) / columns;
+    int row = index / columns;
+    int col = index % columns;
+    x = MARGIN_SMALL + col * (w + spacingX);
+    y = y_start + row * (h + spacingY);
+}
+
 void drawMainTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Wave Engine");
-    
-    // Tab buttons at top
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 0) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    // Wave visualization area
-    int vizY = tabY + tabH + SCALE_Y(5);
-    int vizH = SCALE_Y(50);
-    
-    drawWaveVisualization(vizY, vizH, &slink_state.wave_trigger, THEME_WARNING, "TRIG");
-    drawWaveVisualization(vizY + vizH + SCALE_Y(5), vizH, &slink_state.wave_pitch, THEME_ACCENT, "PITC");
-    
-    // Band toggles
-    int bandY = vizY + 2 * vizH + SCALE_Y(15);
+    drawHeader("SLINK", "Wave Engine", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int waveHeight = SCALE_Y(70);
+    int waveSpacing = SCALE_Y(10);
+    drawWaveVisualization(contentY, waveHeight, &slink_state.wave_trigger, THEME_WARNING, "WAVE A");
+    drawWaveVisualization(contentY + waveHeight + waveSpacing, waveHeight, &slink_state.wave_pitch, THEME_ACCENT, "WAVE B");
+
+    int bandY = contentY + 2 * (waveHeight + waveSpacing) + SCALE_Y(8);
     drawBandToggles(bandY);
-    
-    // Status text
-    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-    char status[64];
-    snprintf(status, sizeof(status), "BPM:%.0f | Voices:%d/%d", 
-             slink_state.clock_engine.bpm, 
-             countActiveVoices(), 
+
+    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(12);
+    for (int i = 0; i < 6; i++) {
+        int x, y, w, h;
+        getHelperButtonRect(i, helperY, x, y, w, h);
+        drawRoundButton(x, y, w, h, kMainHelperLabels[i], kMainHelperColors[i], false, 2);
+    }
+
+    int helperRows = 2;
+    int helperSpacingY = SCALE_Y(6);
+    int helperBlockHeight = helperRows * SCALE_Y(36) + (helperRows - 1) * helperSpacingY;
+    int statusY = helperY + helperBlockHeight + SCALE_Y(12);
+    char statusBuf[64];
+    snprintf(statusBuf, sizeof(statusBuf), "BPM:%d | Voices:%d/%d",
+             sharedBPM,
+             countActiveVoices(),
              slink_state.clock_engine.max_voices);
-    tft.drawString(status, MARGIN_SMALL, SCALE_Y(215), 1);
+    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+    tft.drawString(statusBuf, MARGIN_SMALL, statusY, 1);
 }
 
 void drawTriggerTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Trigger Engine");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 1) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(10);
-    
-    // Draw trigger wave with threshold line
-    drawWaveVisualization(contentY, SCALE_Y(60), &slink_state.wave_trigger, THEME_WARNING, "TRIGGER WAVE");
-    drawThresholdLine(contentY, slink_state.trigger_engine.threshold);
-    
-    // Controls
-    int ctrlY = contentY + SCALE_Y(70);
-    
-    // Threshold slider
-    tft.setTextColor(THEME_TEXT, THEME_BG);
-    tft.drawString("THRESHOLD", MARGIN_SMALL, ctrlY, 2);
+    drawHeader("SLINK", "Trigger Engine", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
     int sliderX = MARGIN_SMALL;
-    int sliderY = ctrlY + SCALE_Y(15);
-    int sliderW = SCALE_X(60);
-    int sliderH = SCALE_Y(80);
-    drawSliderControl(sliderX, sliderY, sliderW, sliderH, 
-                     slink_state.trigger_engine.threshold, "THRS", THEME_WARNING);
-    
-    // Velocity controls
-    int velX = sliderX + sliderW + SCALE_X(20);
-    tft.drawString("VELOCITY", velX, ctrlY, 2);
-    
-    char buf[16];
-    snprintf(buf, sizeof(buf), "MIN:%d", slink_state.trigger_engine.vel_min);
-    drawRoundButton(velX, ctrlY + SCALE_Y(15), SCALE_X(60), SCALE_Y(22), buf, THEME_SECONDARY);
-    
-    snprintf(buf, sizeof(buf), "MAX:%d", slink_state.trigger_engine.vel_max);
-    drawRoundButton(velX, ctrlY + SCALE_Y(40), SCALE_X(60), SCALE_Y(22), buf, THEME_SECONDARY);
-    
-    snprintf(buf, sizeof(buf), "FORTE:%.0f%%", slink_state.trigger_engine.forte * 100);
-    drawRoundButton(velX, ctrlY + SCALE_Y(65), SCALE_X(60), SCALE_Y(22), buf, THEME_ACCENT);
+    int sliderY = contentY;
+    int sliderW = SCALE_X(70);
+    int sliderH = DISPLAY_HEIGHT - sliderY - SCALE_Y(80);
+    drawSliderControl(sliderX, sliderY, sliderW, sliderH,
+                      slink_state.trigger_engine.threshold, "THRESHOLD", THEME_WARNING);
+
+    int ctrlX = sliderX + sliderW + SCALE_X(24);
+    int ctrlY = contentY;
+    int ctrlW = DISPLAY_WIDTH - ctrlX - MARGIN_SMALL;
+    int btnH = SCALE_Y(44);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "MIN VELO: %d", slink_state.trigger_engine.vel_min);
+    drawRoundButton(ctrlX, ctrlY, ctrlW, btnH, buf, THEME_SECONDARY, false, 2);
+    snprintf(buf, sizeof(buf), "MAX VELO: %d", slink_state.trigger_engine.vel_max);
+    drawRoundButton(ctrlX, ctrlY + btnH + SCALE_Y(10), ctrlW, btnH, buf, THEME_SECONDARY, false, 2);
+    snprintf(buf, sizeof(buf), "FORTE: %.0f%%", slink_state.trigger_engine.forte * 100);
+    drawRoundButton(ctrlX, ctrlY + 2 * (btnH + SCALE_Y(10)), ctrlW, btnH, buf, THEME_ACCENT, false, 2);
 }
 
 void drawPitchTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Pitch Engine");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 2) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(10);
-    
-    // Draw pitch wave with grid
-    drawPitchGrid(contentY, SCALE_Y(70));
-    drawWaveVisualization(contentY, SCALE_Y(70), &slink_state.wave_pitch, THEME_ACCENT, "PITCH WAVE");
-    
-    // Controls
-    int ctrlY = contentY + SCALE_Y(80);
-    
+    drawHeader("SLINK", "Pitch Engine", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int vizHeight = SCALE_Y(70);
+    drawPitchGrid(contentY, vizHeight);
+    drawWaveVisualization(contentY, vizHeight, &slink_state.wave_pitch, THEME_ACCENT, "PITCH WAVE");
+
+    int btnY = contentY + vizHeight + SCALE_Y(10);
+    int btnH = SCALE_Y(42);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
     char buf[32];
-    snprintf(buf, sizeof(buf), "SPREAD:%.0f%%", slink_state.pitch_engine.spread * 100);
-    drawRoundButton(MARGIN_SMALL, ctrlY, SCALE_X(80), SCALE_Y(22), buf, THEME_PRIMARY);
-    
-    snprintf(buf, sizeof(buf), "SQUISH:%.0f%%", slink_state.pitch_engine.squish * 100);
-    drawRoundButton(MARGIN_SMALL, ctrlY + SCALE_Y(25), SCALE_X(80), SCALE_Y(22), buf, THEME_ACCENT);
-    
-    snprintf(buf, sizeof(buf), "RANGE:%dst", slink_state.pitch_engine.range_semitones);
-    drawRoundButton(MARGIN_SMALL, ctrlY + SCALE_Y(50), SCALE_X(80), SCALE_Y(22), buf, THEME_WARNING);
+    snprintf(buf, sizeof(buf), "SPREAD: %.0f%%", slink_state.pitch_engine.spread * 100);
+    drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, buf, THEME_PRIMARY, false, 2);
+    btnY += btnH + SCALE_Y(8);
+    snprintf(buf, sizeof(buf), "SQUISH: %.0f%%", slink_state.pitch_engine.squish * 100);
+    drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, buf, THEME_ACCENT, false, 2);
+    btnY += btnH + SCALE_Y(8);
+    snprintf(buf, sizeof(buf), "RANGE: %dst", slink_state.pitch_engine.range_semitones);
+    drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, buf, THEME_WARNING, false, 2);
 }
 
 void drawClockTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Clock & Length");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 3) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(10);
-    
-    // BPM control
+    drawHeader("SLINK", "Clock & Length", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int mainH = SCALE_Y(52);
+    drawRoundButton(MARGIN_SMALL, contentY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, mainH,
+                    String(sharedBPM) + " BPM", THEME_PRIMARY, false, 4);
+
+    int adjustY = contentY + mainH + SCALE_Y(10);
+    int adjustH = SCALE_Y(42);
+    int adjustW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+    drawRoundButton(MARGIN_SMALL, adjustY, adjustW, adjustH, "-", THEME_ERROR, false, 5);
+    drawRoundButton(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH, "+", THEME_SUCCESS, false, 5);
+
+    int swingY = adjustY + adjustH + SCALE_Y(12);
+    drawRoundButton(MARGIN_SMALL, swingY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(40),
+                    String("Swing: ") + String((int)(slink_state.clock_engine.swing * 100)) + "%", THEME_ACCENT, false, 2);
+
+    int noteY = swingY + SCALE_Y(40) + SCALE_Y(10);
+    int halfW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
     char buf[32];
-    snprintf(buf, sizeof(buf), "BPM:%.0f", slink_state.clock_engine.bpm);
-    drawRoundButton(MARGIN_SMALL, contentY, SCALE_X(70), SCALE_Y(22), buf, THEME_PRIMARY);
-    drawRoundButton(SCALE_X(85), contentY, SCALE_X(30), SCALE_Y(22), "-", THEME_SECONDARY);
-    drawRoundButton(SCALE_X(120), contentY, SCALE_X(30), SCALE_Y(22), "+", THEME_SECONDARY);
-    
-    // Swing
-    snprintf(buf, sizeof(buf), "SWING:%.0f%%", slink_state.clock_engine.swing * 100);
-    drawRoundButton(MARGIN_SMALL, contentY + SCALE_Y(25), SCALE_X(90), SCALE_Y(22), buf, THEME_ACCENT);
-    
-    // Note length
-    int lenY = contentY + SCALE_Y(55);
-    tft.setTextColor(THEME_TEXT, THEME_BG);
-    tft.drawString("NOTE LENGTH", MARGIN_SMALL, lenY, 2);
-    
-    snprintf(buf, sizeof(buf), "MIN:%dms", slink_state.clock_engine.note_len_min);
-    drawRoundButton(MARGIN_SMALL, lenY + SCALE_Y(15), SCALE_X(70), SCALE_Y(22), buf, THEME_WARNING);
-    
-    snprintf(buf, sizeof(buf), "MAX:%dms", slink_state.clock_engine.note_len_max);
-    drawRoundButton(MARGIN_SMALL, lenY + SCALE_Y(40), SCALE_X(70), SCALE_Y(22), buf, THEME_WARNING);
-    
-    drawRoundButton(SCALE_X(85), lenY + SCALE_Y(15), SCALE_X(40), SCALE_Y(22), 
-                   slink_state.clock_engine.note_len_x10 ? "x10:ON" : "x10:OFF", THEME_SECONDARY);
-    
-    drawRoundButton(SCALE_X(85), lenY + SCALE_Y(40), SCALE_X(40), SCALE_Y(22),
-                   slink_state.clock_engine.sustain_mode ? "SUST:ON" : "SUST:OFF", THEME_SUCCESS);
-    
-    // Voices
-    snprintf(buf, sizeof(buf), "VOICES:%d", slink_state.clock_engine.max_voices);
-    drawRoundButton(MARGIN_SMALL, lenY + SCALE_Y(65), SCALE_X(70), SCALE_Y(22), buf, THEME_ACCENT);
+    snprintf(buf, sizeof(buf), "Min: %dms", slink_state.clock_engine.note_len_min);
+    drawRoundButton(MARGIN_SMALL, noteY, halfW, SCALE_Y(38), buf, THEME_WARNING, false, 2);
+    snprintf(buf, sizeof(buf), "Max: %dms", slink_state.clock_engine.note_len_max);
+    drawRoundButton(MARGIN_SMALL + halfW + MARGIN_SMALL, noteY, halfW, SCALE_Y(38), buf, THEME_WARNING, false, 2);
+
+    int toggleY = noteY + SCALE_Y(38) + SCALE_Y(8);
+    drawRoundButton(MARGIN_SMALL, toggleY, halfW, SCALE_Y(38),
+                    slink_state.clock_engine.note_len_x10 ? "x10: ON" : "x10: OFF", THEME_ACCENT, false, 2);
+    drawRoundButton(MARGIN_SMALL + halfW + MARGIN_SMALL, toggleY, halfW, SCALE_Y(38),
+                    slink_state.clock_engine.sustain_mode ? "SUST: ON" : "SUST: OFF", THEME_ACCENT, false, 2);
+
+    int voiceY = toggleY + SCALE_Y(38) + SCALE_Y(8);
+    drawRoundButton(MARGIN_SMALL, voiceY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(38),
+                    "Voices: " + String(slink_state.clock_engine.max_voices), THEME_PRIMARY, false, 2);
 }
 
 void drawScaleTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Scale & Arp");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 4) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(10);
-    
-    // Arp Mode toggle
-    drawRoundButton(MARGIN_SMALL, contentY, SCALE_X(80), SCALE_Y(22),
-                   slink_state.scale_engine.arp_mode ? "ARP:ON" : "ARP:OFF", 
-                   slink_state.scale_engine.arp_mode ? THEME_SUCCESS : THEME_SURFACE);
-    
+    drawHeader("SLINK", "Scale & Arp", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
+    int btnH = SCALE_Y(42);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+    char buf[64];
+    drawRoundButton(MARGIN_SMALL, contentY, btnW, btnH,
+                    slink_state.scale_engine.arp_mode ? "ARP MODE: ON" : "ARP MODE: OFF",
+                    slink_state.scale_engine.arp_mode ? THEME_SUCCESS : THEME_SECONDARY, false, 2);
+
+    int rowY = contentY + btnH + SCALE_Y(12);
+    const char* noteNames[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+
     if (!slink_state.scale_engine.arp_mode) {
-        // Scale controls
-        int ctrlY = contentY + SCALE_Y(30);
-        
-        // Root note
-        char buf[32];
-        const char* noteNames[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-        snprintf(buf, sizeof(buf), "ROOT:%s", noteNames[slink_state.scale_engine.root_note]);
-        drawRoundButton(MARGIN_SMALL, ctrlY, SCALE_X(60), SCALE_Y(22), buf, THEME_PRIMARY);
-        drawRoundButton(SCALE_X(70), ctrlY, SCALE_X(25), SCALE_Y(22), "<", THEME_SECONDARY);
-        drawRoundButton(SCALE_X(100), ctrlY, SCALE_X(25), SCALE_Y(22), ">", THEME_SECONDARY);
-        
-        // Scale type
-        snprintf(buf, sizeof(buf), "SCALE:%s", scales[slink_state.scale_engine.scale_index].name.c_str());
-        drawRoundButton(MARGIN_SMALL, ctrlY + SCALE_Y(25), SCALE_X(90), SCALE_Y(22), buf, THEME_ACCENT);
-        
-        // Color
-        snprintf(buf, sizeof(buf), "COLOR:%.0f%%", slink_state.scale_engine.color * 100);
-        drawRoundButton(MARGIN_SMALL, ctrlY + SCALE_Y(50), SCALE_X(90), SCALE_Y(22), buf, THEME_WARNING);
-        
-        // Mini keyboard
-        drawMiniKeyboard(ctrlY + SCALE_Y(80), &slink_state.scale_engine);
+        snprintf(buf, sizeof(buf), "Root: %s", noteNames[slink_state.scale_engine.root_note]);
+        drawRoundButton(MARGIN_SMALL, rowY, btnW, btnH, buf, THEME_PRIMARY, false, 2);
+        rowY += btnH + SCALE_Y(8);
+        snprintf(buf, sizeof(buf), "Scale: %s", scales[slink_state.scale_engine.scale_index].name.c_str());
+        drawRoundButton(MARGIN_SMALL, rowY, btnW, btnH, buf, THEME_ACCENT, false, 2);
+        rowY += btnH + SCALE_Y(8);
+        snprintf(buf, sizeof(buf), "Color: %d%%", static_cast<int>(slink_state.scale_engine.color * 100));
+        drawRoundButton(MARGIN_SMALL, rowY, btnW, btnH, buf, THEME_WARNING, false, 2);
+        rowY += btnH + SCALE_Y(12);
+        drawMiniKeyboard(rowY, &slink_state.scale_engine);
     } else {
-        // Arp mode info
+        rowY += SCALE_Y(10);
         tft.setTextColor(THEME_TEXT, THEME_BG);
-        char buf[64];
         snprintf(buf, sizeof(buf), "Held notes: %d", slink_state.scale_engine.num_held_notes);
-        tft.drawString(buf, MARGIN_SMALL, contentY + SCALE_Y(30), 2);
-        tft.drawString("Use MIDI input to", MARGIN_SMALL, contentY + SCALE_Y(50), 1);
-        tft.drawString("define pitch pool", MARGIN_SMALL, contentY + SCALE_Y(65), 1);
+        tft.drawString(buf, MARGIN_SMALL, rowY, 2);
+        rowY += SCALE_Y(25);
+        tft.drawString("Use MIDI input to define", MARGIN_SMALL, rowY, 1);
+        rowY += SCALE_Y(20);
+        tft.drawString("your pitch pool", MARGIN_SMALL, rowY, 1);
     }
 }
 
 void drawModTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Modulators");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 5) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(10);
-    
-    // Show first 3 modulators
-    tft.setTextColor(THEME_TEXT, THEME_BG);
+    drawHeader("SLINK", "Modulators", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
+    int blockHeight = SCALE_Y(38);
+    int halfW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+    const char* shapes[] = {"SIN", "TRI", "SAW", "SQR", "RND"};
+    char buf[32];
+
     for (int i = 0; i < 3; i++) {
-        int modY = contentY + i * SCALE_Y(45);
-        char label = 'A' + i;
+        int y = contentY + i * (blockHeight * 2 + SCALE_Y(14));
         Modulator* mod = &slink_state.mod_engine.mods[i];
-        
-        char buf[32];
-        snprintf(buf, sizeof(buf), "[%c]", label);
-        drawRoundButton(MARGIN_SMALL, modY, SCALE_X(25), SCALE_Y(20), buf,
-                       mod->enabled ? THEME_SUCCESS : THEME_SURFACE);
-        
+        char label = 'A' + i;
+        drawRoundButton(MARGIN_SMALL, y, halfW, blockHeight, String("[") + String(label) + "]",
+                        mod->enabled ? THEME_SUCCESS : THEME_SURFACE, false, 2);
+
         if (mod->enabled) {
-            const char* shapes[] = {"SIN", "TRI", "SAW", "SQR", "RND"};
-            snprintf(buf, sizeof(buf), "%s", shapes[mod->shape]);
-            drawRoundButton(SCALE_X(40), modY, SCALE_X(40), SCALE_Y(20), buf, THEME_ACCENT);
-            
+            drawRoundButton(MARGIN_SMALL + halfW + MARGIN_SMALL, y, halfW, blockHeight,
+                            shapes[mod->shape], THEME_ACCENT, false, 2);
             snprintf(buf, sizeof(buf), "%.1fHz", mod->rate_hz);
-            drawRoundButton(SCALE_X(85), modY, SCALE_X(50), SCALE_Y(20), buf, THEME_PRIMARY);
-            
-            snprintf(buf, sizeof(buf), "RNG:%.0f%%", mod->range * 100);
-            drawRoundButton(SCALE_X(140), modY, SCALE_X(60), SCALE_Y(20), buf, THEME_WARNING);
+            drawRoundButton(MARGIN_SMALL, y + blockHeight + SCALE_Y(6), halfW, blockHeight, buf, THEME_PRIMARY, false, 2);
+            snprintf(buf, sizeof(buf), "RNG: %d%%", static_cast<int>(mod->range * 100));
+            drawRoundButton(MARGIN_SMALL + halfW + MARGIN_SMALL, y + blockHeight + SCALE_Y(6), halfW, blockHeight, buf, THEME_WARNING, false, 2);
+        } else {
+            tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+            tft.drawString("Disabled", MARGIN_SMALL + halfW + SCALE_X(4), y + blockHeight / 2 - SCALE_Y(4), 1);
         }
     }
-    
+
     tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-    tft.drawString("Mods D-F available", MARGIN_SMALL, SCALE_Y(210), 1);
+    tft.drawString("Tap each label to adjust shape/rate/range", MARGIN_SMALL, contentY + 3 * (blockHeight * 2 + SCALE_Y(14)), 1);
 }
 
 void drawSetupTab() {
     tft.fillScreen(THEME_BG);
-    drawHeader("SLINK", "Presets");
-    
-    // Tab buttons
-    int tabY = HEADER_HEIGHT + SCALE_Y(2);
-    int tabW = SCALE_X(45);
-    int tabH = SCALE_Y(20);
-    int tabX = SCALE_X(5);
-    
-    const char* tabs[] = {"MAIN", "TRIG", "PITC", "CLOK", "SCAL", "MOD", "SETP"};
-    for (int i = 0; i < 7; i++) {
-        uint16_t color = (i == 6) ? THEME_PRIMARY : THEME_SURFACE;
-        drawRoundButton(tabX + i * (tabW + SCALE_X(1)), tabY, tabW, tabH, tabs[i], color);
-    }
-    
-    int contentY = tabY + tabH + SCALE_Y(20);
-    
+    drawHeader("SLINK", "Presets", 4);
+    drawSlinkTabBar();
+
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
     tft.setTextColor(THEME_TEXT, THEME_BG);
-    tft.drawString("PRESET SYSTEM", MARGIN_SMALL, contentY, 2);
+    tft.drawString("Preset System", MARGIN_SMALL, contentY, 2);
     tft.drawString("Coming soon...", MARGIN_SMALL, contentY + SCALE_Y(25), 1);
-    
-    drawRoundButton(MARGIN_SMALL, contentY + SCALE_Y(50), SCALE_X(70), SCALE_Y(22), "SAVE", THEME_SUCCESS);
-    drawRoundButton(MARGIN_SMALL, contentY + SCALE_Y(75), SCALE_X(70), SCALE_Y(22), "LOAD", THEME_PRIMARY);
-    drawRoundButton(MARGIN_SMALL, contentY + SCALE_Y(100), SCALE_X(70), SCALE_Y(22), "INIT", THEME_WARNING);
+
+    int btnY = contentY + SCALE_Y(60);
+    int btnH = SCALE_Y(44);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+    drawRoundButton(MARGIN_SMALL, btnY, btnW, btnH, "SAVE", THEME_SUCCESS, false, 2);
+    drawRoundButton(MARGIN_SMALL, btnY + btnH + SCALE_Y(10), btnW, btnH, "LOAD", THEME_PRIMARY, false, 2);
+    drawRoundButton(MARGIN_SMALL, btnY + 2 * (btnH + SCALE_Y(10)), btnW, btnH, "INIT", THEME_WARNING, false, 2);
 }
 
 // ============================================================
@@ -1164,27 +1185,13 @@ void drawWaveVisualization(int y_start, int height, SlinkWave* wave,
 }
 
 void drawBandToggles(int y_pos) {
-    int btnW = DISPLAY_WIDTH / SLINK_BANDS;
-    int btnH = SCALE_Y(15);
-    
     for (int i = 0; i < SLINK_BANDS; i++) {
-        int x = i * btnW;
+        int x, y, w, h;
+        getBandToggleRect(i, y_pos, x, y, w, h);
         uint16_t color = slink_state.bands[i].enabled ? THEME_SUCCESS : THEME_SURFACE;
-        tft.fillRect(x + 1, y_pos, btnW - 2, btnH, color);
-        tft.drawRect(x, y_pos, btnW, btnH, THEME_TEXT_DIM);
+        tft.fillRect(x + 1, y, w - 2, h, color);
+        tft.drawRect(x, y, w, h, THEME_TEXT_DIM);
     }
-    
-    // Helper buttons below
-    int helpY = y_pos + btnH + SCALE_Y(5);
-    int helpW = SCALE_X(42);
-    int helpH = SCALE_Y(18);
-    
-    drawRoundButton(SCALE_X(5), helpY, helpW, helpH, "+1", THEME_SUCCESS);
-    drawRoundButton(SCALE_X(50), helpY, helpW, helpH, "-1", THEME_ERROR);
-    drawRoundButton(SCALE_X(95), helpY, helpW, helpH, "MIX", THEME_WARNING);
-    drawRoundButton(SCALE_X(140), helpY, helpW, helpH, "SFT", THEME_ACCENT);
-    drawRoundButton(SCALE_X(185), helpY, helpW, helpH, "ALL", THEME_PRIMARY);
-    drawRoundButton(SCALE_X(230), helpY, helpW, helpH, "CLR", THEME_SECONDARY);
 }
 
 void drawThresholdLine(int y_pos, float threshold) {
@@ -1205,7 +1212,7 @@ void drawPitchGrid(int y_start, int height) {
 void drawMiniKeyboard(int y_pos, ScaleEngine* engine) {
     // Draw a simple 12-key representation
     int keyW = DISPLAY_WIDTH / 12;
-    int keyH = SCALE_Y(20);
+    int keyH = SCALE_Y(26);
     
     for (int i = 0; i < 12; i++) {
         int x = i * keyW;
@@ -1273,239 +1280,285 @@ int countActiveVoices() {
 // ============================================================
 
 void handleMainTab() {
-    // Band toggles
-    int bandY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(5) + 2 * SCALE_Y(50) + SCALE_Y(20);
-    int btnW = DISPLAY_WIDTH / SLINK_BANDS;
-    int btnH = SCALE_Y(15);
-    
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int waveHeight = SCALE_Y(70);
+    int waveSpacing = SCALE_Y(10);
+    int bandY = contentY + 2 * (waveHeight + waveSpacing) + SCALE_Y(8);
+
     for (int i = 0; i < SLINK_BANDS; i++) {
-        int x = i * btnW;
-        if (isButtonPressed(x, bandY, btnW, btnH)) {
+        int x, y, w, h;
+        getBandToggleRect(i, bandY, x, y, w, h);
+        if (isButtonPressed(x, y, w, h)) {
             toggleBand(i);
-            drawMainTab();
+            requestRedraw();
             return;
         }
     }
-    
-    // Helper buttons
-    int helpY = bandY + btnH + SCALE_Y(5);
-    int helpW = SCALE_X(42);
-    int helpH = SCALE_Y(18);
-    
-    if (isButtonPressed(SCALE_X(5), helpY, helpW, helpH)) {
-        enableRandomBand();
-        drawMainTab();
-    } else if (isButtonPressed(SCALE_X(50), helpY, helpW, helpH)) {
-        disableRandomBand();
-        drawMainTab();
-    } else if (isButtonPressed(SCALE_X(95), helpY, helpW, helpH)) {
-        shuffleEnabledBands();
-        drawMainTab();
-    } else if (isButtonPressed(SCALE_X(140), helpY, helpW, helpH)) {
-        shiftBands();
-        drawMainTab();
-    } else if (isButtonPressed(SCALE_X(185), helpY, helpW, helpH)) {
-        enableAllBands();
-        drawMainTab();
-    } else if (isButtonPressed(SCALE_X(230), helpY, helpW, helpH)) {
-        clearAllBands();
-        drawMainTab();
+
+    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(12);
+    for (int i = 0; i < 6; i++) {
+        int x, y, w, h;
+        getHelperButtonRect(i, helperY, x, y, w, h);
+        if (isButtonPressed(x, y, w, h)) {
+            switch (i) {
+                case 0:
+                    enableRandomBand();
+                    break;
+                case 1:
+                    disableRandomBand();
+                    break;
+                case 2:
+                    shuffleEnabledBands();
+                    break;
+                case 3:
+                    shiftBands();
+                    break;
+                case 4:
+                    enableAllBands();
+                    break;
+                case 5:
+                    clearAllBands();
+                    break;
+            }
+            requestRedraw();
+            return;
+        }
     }
 }
 
 void handleTriggerTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(10);
-    int ctrlY = contentY + SCALE_Y(70);
-    
-    // Velocity controls
-    int velX = MARGIN_SMALL + SCALE_X(60) + SCALE_X(20);
-    
-    if (isButtonPressed(velX, ctrlY + SCALE_Y(15), SCALE_X(60), SCALE_Y(22))) {
-        // Adjust MIN velocity
-        slink_state.trigger_engine.vel_min = (slink_state.trigger_engine.vel_min + 10) % 128;
-        if (slink_state.trigger_engine.vel_min > slink_state.trigger_engine.vel_max) {
-            slink_state.trigger_engine.vel_min = 0;
-        }
-        drawTriggerTab();
-    } else if (isButtonPressed(velX, ctrlY + SCALE_Y(40), SCALE_X(60), SCALE_Y(22))) {
-        // Adjust MAX velocity
-        slink_state.trigger_engine.vel_max = ((slink_state.trigger_engine.vel_max + 10) % 128);
-        if (slink_state.trigger_engine.vel_max == 0) slink_state.trigger_engine.vel_max = 127;
-        if (slink_state.trigger_engine.vel_max < slink_state.trigger_engine.vel_min) {
-            slink_state.trigger_engine.vel_max = 127;
-        }
-        drawTriggerTab();
-    } else if (isButtonPressed(velX, ctrlY + SCALE_Y(65), SCALE_X(60), SCALE_Y(22))) {
-        // Adjust FORTE
-        slink_state.trigger_engine.forte += 0.1f;
-        if (slink_state.trigger_engine.forte > 1.0f) slink_state.trigger_engine.forte = 0.0f;
-        drawTriggerTab();
-    }
-    
-    // Threshold slider (touch drag)
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
     int sliderX = MARGIN_SMALL;
-    int sliderY = ctrlY + SCALE_Y(15);
-    int sliderW = SCALE_X(60);
-    int sliderH = SCALE_Y(80);
-    
+    int sliderY = contentY;
+    int sliderW = SCALE_X(70);
+    int sliderH = DISPLAY_HEIGHT - sliderY - SCALE_Y(80);
+
     if (touch.isPressed && touch.x >= sliderX && touch.x <= sliderX + sliderW &&
         touch.y >= sliderY && touch.y <= sliderY + sliderH) {
         float newThreshold = 1.0f - ((touch.y - sliderY) / (float)sliderH);
         slink_state.trigger_engine.threshold = constrain(newThreshold, 0.0f, 1.0f);
-        drawTriggerTab();
+        requestRedraw();
+        return;
+    }
+
+    int ctrlX = sliderX + sliderW + SCALE_X(24);
+    int ctrlY = contentY;
+    int ctrlW = DISPLAY_WIDTH - ctrlX - MARGIN_SMALL;
+    int btnH = SCALE_Y(44);
+
+    if (isButtonPressed(ctrlX, ctrlY, ctrlW, btnH)) {
+        slink_state.trigger_engine.vel_min = (slink_state.trigger_engine.vel_min + 10) % 128;
+        if (slink_state.trigger_engine.vel_min > slink_state.trigger_engine.vel_max) {
+            slink_state.trigger_engine.vel_min = 0;
+        }
+        requestRedraw();
+    } else if (isButtonPressed(ctrlX, ctrlY + btnH + SCALE_Y(10), ctrlW, btnH)) {
+        slink_state.trigger_engine.vel_max = (slink_state.trigger_engine.vel_max + 10) % 128;
+        if (slink_state.trigger_engine.vel_max == 0) slink_state.trigger_engine.vel_max = 127;
+        if (slink_state.trigger_engine.vel_max < slink_state.trigger_engine.vel_min) {
+            slink_state.trigger_engine.vel_max = 127;
+        }
+        requestRedraw();
+    } else if (isButtonPressed(ctrlX, ctrlY + 2 * (btnH + SCALE_Y(10)), ctrlW, btnH)) {
+        slink_state.trigger_engine.forte += 0.1f;
+        if (slink_state.trigger_engine.forte > 1.0f) slink_state.trigger_engine.forte = 0.0f;
+        requestRedraw();
     }
 }
 
 void handlePitchTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(10);
-    int ctrlY = contentY + SCALE_Y(80);
-    
-    if (isButtonPressed(MARGIN_SMALL, ctrlY, SCALE_X(80), SCALE_Y(22))) {
-        // Adjust SPREAD
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int vizHeight = SCALE_Y(70);
+    int btnY = contentY + vizHeight + SCALE_Y(10);
+    int btnH = SCALE_Y(42);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+
+    if (isButtonPressed(MARGIN_SMALL, btnY, btnW, btnH)) {
         slink_state.pitch_engine.spread += 0.1f;
         if (slink_state.pitch_engine.spread > 1.0f) slink_state.pitch_engine.spread = 0.0f;
-        drawPitchTab();
-    } else if (isButtonPressed(MARGIN_SMALL, ctrlY + SCALE_Y(25), SCALE_X(80), SCALE_Y(22))) {
-        // Adjust SQUISH
+        requestRedraw();
+    } else if (isButtonPressed(MARGIN_SMALL, btnY + btnH + SCALE_Y(8), btnW, btnH)) {
         slink_state.pitch_engine.squish += 0.1f;
         if (slink_state.pitch_engine.squish > 1.0f) slink_state.pitch_engine.squish = 0.0f;
-        drawPitchTab();
-    } else if (isButtonPressed(MARGIN_SMALL, ctrlY + SCALE_Y(50), SCALE_X(80), SCALE_Y(22))) {
-        // Adjust RANGE
+        requestRedraw();
+    } else if (isButtonPressed(MARGIN_SMALL, btnY + 2 * (btnH + SCALE_Y(8)), btnW, btnH)) {
         slink_state.pitch_engine.range_semitones += 12;
         if (slink_state.pitch_engine.range_semitones > 72) slink_state.pitch_engine.range_semitones = 12;
-        drawPitchTab();
+        requestRedraw();
     }
 }
 
 void handleClockTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(10);
-    
-    // BPM controls
-    if (isButtonPressed(SCALE_X(85), contentY, SCALE_X(30), SCALE_Y(22))) {
-        slink_state.clock_engine.bpm = max(40.0f, slink_state.clock_engine.bpm - 1.0f);
-        drawClockTab();
-    } else if (isButtonPressed(SCALE_X(120), contentY, SCALE_X(30), SCALE_Y(22))) {
-        slink_state.clock_engine.bpm = min(240.0f, slink_state.clock_engine.bpm + 1.0f);
-        drawClockTab();
-    } else if (isButtonPressed(MARGIN_SMALL, contentY + SCALE_Y(25), SCALE_X(90), SCALE_Y(22))) {
-        // Adjust SWING
-        slink_state.clock_engine.swing += 0.1f;
-        if (slink_state.clock_engine.swing > 1.0f) slink_state.clock_engine.swing = 0.0f;
-        drawClockTab();
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
+    int mainH = SCALE_Y(52);
+    int adjustY = contentY + mainH + SCALE_Y(10);
+    int adjustH = SCALE_Y(42);
+    int adjustW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+
+    if (isButtonPressed(MARGIN_SMALL, adjustY, adjustW, adjustH)) {
+        if (sharedBPM <= 45) {
+            sharedBPM = 40;
+        } else {
+            sharedBPM -= 5;
+        }
+        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
+        requestRedraw();
+        return;
+    } else if (isButtonPressed(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH)) {
+        if (sharedBPM >= 235) {
+            sharedBPM = 240;
+        } else {
+            sharedBPM += 5;
+        }
+        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
+        requestRedraw();
+        return;
     }
-    
-    // Note length controls
-    int lenY = contentY + SCALE_Y(55);
-    
-    if (isButtonPressed(MARGIN_SMALL, lenY + SCALE_Y(15), SCALE_X(70), SCALE_Y(22))) {
+
+    int swingY = adjustY + adjustH + SCALE_Y(12);
+    if (isButtonPressed(MARGIN_SMALL, swingY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(40))) {
+        slink_state.clock_engine.swing += 0.1f;
+        if (slink_state.clock_engine.swing > 1.0f) {
+            slink_state.clock_engine.swing = 0.0f;
+        }
+        requestRedraw();
+        return;
+    }
+
+    int noteY = swingY + SCALE_Y(40) + SCALE_Y(10);
+    int halfW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+    if (isButtonPressed(MARGIN_SMALL, noteY, halfW, SCALE_Y(38))) {
         slink_state.clock_engine.note_len_min += 10;
-        if (slink_state.clock_engine.note_len_min > 1000) slink_state.clock_engine.note_len_min = 10;
-        drawClockTab();
-    } else if (isButtonPressed(MARGIN_SMALL, lenY + SCALE_Y(40), SCALE_X(70), SCALE_Y(22))) {
+        if (slink_state.clock_engine.note_len_min > 1000) {
+            slink_state.clock_engine.note_len_min = 10;
+        }
+        requestRedraw();
+        return;
+    } else if (isButtonPressed(MARGIN_SMALL + halfW + MARGIN_SMALL, noteY, halfW, SCALE_Y(38))) {
         slink_state.clock_engine.note_len_max += 50;
-        if (slink_state.clock_engine.note_len_max > 2000) slink_state.clock_engine.note_len_max = 50;
-        drawClockTab();
-    } else if (isButtonPressed(SCALE_X(85), lenY + SCALE_Y(15), SCALE_X(40), SCALE_Y(22))) {
+        if (slink_state.clock_engine.note_len_max > 2000) {
+            slink_state.clock_engine.note_len_max = 50;
+        }
+        requestRedraw();
+        return;
+    }
+
+    int toggleY = noteY + SCALE_Y(38) + SCALE_Y(8);
+    if (isButtonPressed(MARGIN_SMALL, toggleY, halfW, SCALE_Y(38))) {
         slink_state.clock_engine.note_len_x10 = !slink_state.clock_engine.note_len_x10;
-        drawClockTab();
-    } else if (isButtonPressed(SCALE_X(85), lenY + SCALE_Y(40), SCALE_X(40), SCALE_Y(22))) {
+        requestRedraw();
+        return;
+    } else if (isButtonPressed(MARGIN_SMALL + halfW + MARGIN_SMALL, toggleY, halfW, SCALE_Y(38))) {
         slink_state.clock_engine.sustain_mode = !slink_state.clock_engine.sustain_mode;
-        drawClockTab();
-    } else if (isButtonPressed(MARGIN_SMALL, lenY + SCALE_Y(65), SCALE_X(70), SCALE_Y(22))) {
+        requestRedraw();
+        return;
+    }
+
+    int voiceY = toggleY + SCALE_Y(38) + SCALE_Y(8);
+    if (isButtonPressed(MARGIN_SMALL, voiceY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(38))) {
         slink_state.clock_engine.max_voices++;
-        if (slink_state.clock_engine.max_voices > 16) slink_state.clock_engine.max_voices = 1;
-        drawClockTab();
+        if (slink_state.clock_engine.max_voices > 16) {
+            slink_state.clock_engine.max_voices = 1;
+        }
+        requestRedraw();
+        return;
     }
 }
 
 void handleScaleTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(10);
-    
-    // Arp Mode toggle
-    if (isButtonPressed(MARGIN_SMALL, contentY, SCALE_X(80), SCALE_Y(22))) {
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
+    int btnH = SCALE_Y(42);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+
+    if (isButtonPressed(MARGIN_SMALL, contentY, btnW, btnH)) {
         slink_state.scale_engine.arp_mode = !slink_state.scale_engine.arp_mode;
-        drawScaleTab();
+        requestRedraw();
         return;
     }
-    
+
     if (!slink_state.scale_engine.arp_mode) {
-        int ctrlY = contentY + SCALE_Y(30);
-        
-        // Root note controls
-        if (isButtonPressed(SCALE_X(70), ctrlY, SCALE_X(25), SCALE_Y(22))) {
-            slink_state.scale_engine.root_note = (slink_state.scale_engine.root_note + 11) % 12;
-            drawScaleTab();
-        } else if (isButtonPressed(SCALE_X(100), ctrlY, SCALE_X(25), SCALE_Y(22))) {
+        int rowY = contentY + btnH + SCALE_Y(12);
+        if (isButtonPressed(MARGIN_SMALL, rowY, btnW, btnH)) {
             slink_state.scale_engine.root_note = (slink_state.scale_engine.root_note + 1) % 12;
-            drawScaleTab();
-        } else if (isButtonPressed(MARGIN_SMALL, ctrlY + SCALE_Y(25), SCALE_X(90), SCALE_Y(22))) {
-            // Cycle through scales
+            requestRedraw();
+            return;
+        }
+        rowY += btnH + SCALE_Y(8);
+        if (isButtonPressed(MARGIN_SMALL, rowY, btnW, btnH)) {
             slink_state.scale_engine.scale_index = (slink_state.scale_engine.scale_index + 1) % NUM_SCALES;
-            drawScaleTab();
-        } else if (isButtonPressed(MARGIN_SMALL, ctrlY + SCALE_Y(50), SCALE_X(90), SCALE_Y(22))) {
-            // Adjust color
+            requestRedraw();
+            return;
+        }
+        rowY += btnH + SCALE_Y(8);
+        if (isButtonPressed(MARGIN_SMALL, rowY, btnW, btnH)) {
             slink_state.scale_engine.color += 0.1f;
-            if (slink_state.scale_engine.color > 1.0f) slink_state.scale_engine.color = 0.0f;
-            drawScaleTab();
+            if (slink_state.scale_engine.color > 1.0f) {
+                slink_state.scale_engine.color = 0.0f;
+            }
+            requestRedraw();
+            return;
         }
     }
 }
 
 void handleModTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(10);
-    
-    // Toggle modulators A-C
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
+    int blockHeight = SCALE_Y(38);
+    int halfW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+
     for (int i = 0; i < 3; i++) {
-        int modY = contentY + i * SCALE_Y(45);
-        
-        if (isButtonPressed(MARGIN_SMALL, modY, SCALE_X(25), SCALE_Y(20))) {
-            slink_state.mod_engine.mods[i].enabled = !slink_state.mod_engine.mods[i].enabled;
-            drawModTab();
+        int baseY = contentY + i * (blockHeight * 2 + SCALE_Y(14));
+        int secondY = baseY + blockHeight + SCALE_Y(6);
+        Modulator* mod = &slink_state.mod_engine.mods[i];
+
+        if (isButtonPressed(MARGIN_SMALL, baseY, halfW, blockHeight)) {
+            mod->enabled = !mod->enabled;
+            requestRedraw();
             return;
         }
-        
-        if (slink_state.mod_engine.mods[i].enabled) {
-            // Shape
-            if (isButtonPressed(SCALE_X(40), modY, SCALE_X(40), SCALE_Y(20))) {
-                slink_state.mod_engine.mods[i].shape = (slink_state.mod_engine.mods[i].shape + 1) % 5;
-                drawModTab();
-                return;
+
+        if (!mod->enabled) {
+            continue;
+        }
+
+        if (isButtonPressed(MARGIN_SMALL + halfW + MARGIN_SMALL, baseY, halfW, blockHeight)) {
+            mod->shape = (mod->shape + 1) % 5;
+            requestRedraw();
+            return;
+        }
+
+        if (isButtonPressed(MARGIN_SMALL, secondY, halfW, blockHeight)) {
+            mod->rate_hz += 0.1f;
+            if (mod->rate_hz > 10.0f) {
+                mod->rate_hz = 0.1f;
             }
-            
-            // Rate
-            if (isButtonPressed(SCALE_X(85), modY, SCALE_X(50), SCALE_Y(20))) {
-                slink_state.mod_engine.mods[i].rate_hz += 0.1f;
-                if (slink_state.mod_engine.mods[i].rate_hz > 10.0f) {
-                    slink_state.mod_engine.mods[i].rate_hz = 0.1f;
-                }
-                drawModTab();
-                return;
+            requestRedraw();
+            return;
+        }
+
+        if (isButtonPressed(MARGIN_SMALL + halfW + MARGIN_SMALL, secondY, halfW, blockHeight)) {
+            mod->range += 0.1f;
+            if (mod->range > 1.0f) {
+                mod->range = 0.1f;
             }
-            
-            // Range
-            if (isButtonPressed(SCALE_X(140), modY, SCALE_X(60), SCALE_Y(20))) {
-                slink_state.mod_engine.mods[i].range += 0.1f;
-                if (slink_state.mod_engine.mods[i].range > 1.0f) {
-                    slink_state.mod_engine.mods[i].range = 0.1f;
-                }
-                drawModTab();
-                return;
-            }
+            requestRedraw();
+            return;
         }
     }
 }
 
 void handleSetupTab() {
-    int contentY = HEADER_HEIGHT + SCALE_Y(2) + SCALE_Y(20) + SCALE_Y(20);
-    
-    if (isButtonPressed(MARGIN_SMALL, contentY + SCALE_Y(50), SCALE_X(70), SCALE_Y(22))) {
-        // SAVE - not implemented yet
-    } else if (isButtonPressed(MARGIN_SMALL, contentY + SCALE_Y(75), SCALE_X(70), SCALE_Y(22))) {
-        // LOAD - not implemented yet
-    } else if (isButtonPressed(MARGIN_SMALL, contentY + SCALE_Y(100), SCALE_X(70), SCALE_Y(22))) {
-        // INIT - reinitialize
+    int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(10);
+    int btnY = contentY + SCALE_Y(60);
+    int btnH = SCALE_Y(44);
+    int btnW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+
+    if (isButtonPressed(MARGIN_SMALL, btnY, btnW, btnH)) {
+        // SAVE placeholder
+    } else if (isButtonPressed(MARGIN_SMALL, btnY + btnH + SCALE_Y(10), btnW, btnH)) {
+        // LOAD placeholder
+    } else if (isButtonPressed(MARGIN_SMALL, btnY + 2 * (btnH + SCALE_Y(10)), btnW, btnH)) {
         initializeSlinkMode();
-        drawSetupTab();
+        requestRedraw();
     }
 }

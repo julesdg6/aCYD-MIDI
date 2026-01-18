@@ -25,6 +25,16 @@ static void generateEuclideanPattern(EuclideanVoice &voice) {
   }
 }
 
+static void releaseEuclideanNotes() {
+  for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
+    if (!euclideanState.pendingNoteRelease[voiceIdx]) {
+      continue;
+    }
+    sendMIDI(0x80, euclideanState.voices[voiceIdx].midiNote, 0);
+    euclideanState.pendingNoteRelease[voiceIdx] = false;
+  }
+}
+
 void initializeEuclideanMode() {
   const uint8_t baseSteps[EUCLIDEAN_VOICE_COUNT] = {16, 16, 16, 16};
   const uint8_t baseEvents[EUCLIDEAN_VOICE_COUNT] = {4, 4, 8, 5};
@@ -46,6 +56,7 @@ void initializeEuclideanMode() {
   euclideanState.isPlaying = false;
   euclideanState.tripletMode = false;
   euclideanState.lastStepTime = millis();
+  std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
   drawEuclideanMode();
 }
 
@@ -142,16 +153,18 @@ void updateEuclideanSequencer() {
   }
 
   euclideanState.lastStepTime = now;
+  releaseEuclideanNotes();
   for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
     EuclideanVoice &voice = euclideanState.voices[voiceIdx];
     if (voice.steps == 0) {
       continue;
     }
     int stepIndex = euclideanState.currentStep % voice.steps;
-    if (voice.pattern[stepIndex]) {
-      sendMIDI(0x90, voice.midiNote, 110);
-      sendMIDI(0x80, voice.midiNote, 0);
+    if (!voice.pattern[stepIndex]) {
+      continue;
     }
+    sendMIDI(0x90, voice.midiNote, 110);
+    euclideanState.pendingNoteRelease[voiceIdx] = true;
   }
   euclideanState.currentStep = (euclideanState.currentStep + 1) % EUCLIDEAN_MAX_STEPS;
   requestRedraw();  // Request redraw to show step progress
@@ -164,6 +177,7 @@ void handleEuclideanMode() {
     return;
   }
   if (isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
+    releaseEuclideanNotes();
     exitToMenu();
     return;
   }
@@ -173,6 +187,8 @@ void handleEuclideanMode() {
     euclideanState.isPlaying = !euclideanState.isPlaying;
     if (euclideanState.isPlaying) {
       euclideanState.lastStepTime = millis();
+    } else {
+      releaseEuclideanNotes();
     }
     requestRedraw();
     return;

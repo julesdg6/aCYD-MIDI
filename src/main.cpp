@@ -28,6 +28,8 @@
 #include "module_physics_drop_mode.h"
 #include "module_random_generator_mode.h"
 #include "remote_display.h"
+#include "wifi_manager.h"
+#include "module_settings_mode.h"
 #include "module_raga_mode.h"
 #include "module_sequencer_mode.h"
 #include "screenshot.h"
@@ -51,6 +53,8 @@ uint8_t midiPacket[] = {0x80, 0x80, 0, 0, 0};
 TouchState touch;
 AppMode currentMode = MENU;
 volatile bool needsRedraw = false;
+uint16_t sharedBPM = 120;
+MidiClockMaster midiClockMaster = CLOCK_INTERNAL;
 
 #define RGB565(r, g, b) (uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
 
@@ -481,6 +485,21 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
   }
 }
 
+static void drawSettingsCog() {
+  int cx = BACK_BUTTON_X + BACK_BUTTON_W / 2;
+  int cy = BACK_BUTTON_Y + BACK_BUTTON_H / 2;
+  int radius = SCALE_X(9);
+  int toothHalf = SCALE_X(2);
+  int toothLen = SCALE_X(5);
+  tft.drawCircle(cx, cy, radius, THEME_TEXT);
+  tft.fillCircle(cx, cy, SCALE_X(3), THEME_SURFACE);
+
+  tft.fillRect(cx - toothHalf, cy - radius - SCALE_Y(2), SCALE_X(4), toothLen, THEME_TEXT);
+  tft.fillRect(cx - toothHalf, cy + radius - SCALE_Y(3), SCALE_X(4), toothLen, THEME_TEXT);
+  tft.fillRect(cx - radius - SCALE_X(2), cy - toothHalf, toothLen, SCALE_X(4), THEME_TEXT);
+  tft.fillRect(cx + radius - SCALE_X(2), cy - toothHalf, toothLen, SCALE_X(4), THEME_TEXT);
+}
+
 void drawMenuTile(int x, int y, int w, int h, const MenuTile &tile, uint16_t accent) {
   uint16_t bgColor = accent;
   uint16_t borderColor = blendColor(accent, THEME_BG, 150);
@@ -499,7 +518,8 @@ void drawMenuTile(int x, int y, int w, int h, const MenuTile &tile, uint16_t acc
 
 void drawMenu() {
   tft.fillScreen(THEME_BG);
-  drawHeader("aCYD MIDI", "", 5);
+  drawHeader("aCYD MIDI", "", 5, false);
+  drawSettingsCog();
   const int gapX = SCALE_X(6);
   const int gapY = SCALE_Y(4);
   const int tileW = (DISPLAY_WIDTH - (2 * MARGIN_SMALL) - ((int)kMenuCols - 1) * gapX) / kMenuCols;
@@ -583,6 +603,9 @@ static void render_event(lv_event_t *event) {
     case MENU:
       drawMenu();
       break;
+    case SETTINGS:
+      drawSettingsMode();
+      break;
     case KEYBOARD:
       drawKeyboardMode();
       break;
@@ -642,6 +665,10 @@ void switchMode(AppMode mode) {
     case MENU:
       stopAllModes();
       break;
+    case SETTINGS:
+      stopAllModes();
+      initializeSettingsMode();
+      break;
     case KEYBOARD:
       initializeKeyboardMode();
       break;
@@ -700,18 +727,30 @@ void handleMenu() {
   static const uint32_t kBackHoldDurationMs = 1500;
   static uint32_t backHoldStart = 0;
   static bool backHoldTriggered = false;
+  static bool backTouchActive = false;
 
   bool backPressed = touch.isPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H);
   if (touch.justPressed && backPressed) {
+    backTouchActive = true;
     backHoldStart = millis();
     backHoldTriggered = false;
   }
-  if (backHoldStart && backPressed && !backHoldTriggered &&
+  if (backTouchActive && backPressed && !backHoldTriggered &&
       (millis() - backHoldStart >= kBackHoldDurationMs)) {
     backHoldTriggered = true;
     captureAllScreenshots();
+    backTouchActive = false;
   }
   if (touch.justReleased) {
+    if (backTouchActive && !backHoldTriggered &&
+        isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
+      switchMode(SETTINGS);
+      backTouchActive = false;
+      backHoldStart = 0;
+      backHoldTriggered = false;
+      return;
+    }
+    backTouchActive = false;
     backHoldStart = 0;
     backHoldTriggered = false;
   }
@@ -815,6 +854,7 @@ void setup() {
 #endif
   
   tft.init();
+  showSplashScreen("Booting...", 400);
   render_obj = lv_obj_create(lv_screen_active());
   lv_obj_set_size(render_obj,
                   lv_display_get_horizontal_resolution(display),
@@ -824,11 +864,12 @@ void setup() {
   
   ble_init_start_ms = millis();
   initHardwareMIDI();  // Initialize hardware MIDI output
-  
-#if REMOTE_DISPLAY_ENABLED
+  initWiFi();  // Prepare WiFi (used by remote display and clock master suppliers)
+
+  #if REMOTE_DISPLAY_ENABLED
   initRemoteDisplay();  // Initialize remote display capability
-#endif
-  showSplashScreen();
+  #endif
+  showSplashScreen(String(), 500);
   switchMode(MENU);
   lv_last_tick = millis();
   
@@ -852,6 +893,10 @@ void loop() {
 
   updateTouch();
 
+#if WIFI_ENABLED
+  handleWiFi();
+#endif
+
   // Handle deferred BLE actions set by BLE callbacks (run in main loop)
   if (ble_disconnect_action) {
     ble_disconnect_action = false;
@@ -870,6 +915,9 @@ void loop() {
   switch (currentMode) {
     case MENU:
       handleMenu();
+      break;
+    case SETTINGS:
+      handleSettingsMode();
       break;
     case KEYBOARD:
       handleKeyboardMode();

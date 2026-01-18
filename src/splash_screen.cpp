@@ -43,7 +43,7 @@ static void drawSplashBitmap() {
   }
 }
 
-void showSplashScreen(const String &status) {
+void showSplashScreen(const String &status, unsigned long delayMs) {
   tft.fillScreen(THEME_BG);
   drawSplashBitmap();
   tft.setTextColor(THEME_TEXT, THEME_BG);
@@ -64,5 +64,5 @@ void showSplashScreen(const String &status) {
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawCentreString(message, DISPLAY_CENTER_X, DISPLAY_HEIGHT - SCALE_Y(32), 2);
-  delay(800);
+  delay(delayMs);
 }

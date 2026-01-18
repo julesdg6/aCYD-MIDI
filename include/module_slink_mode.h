@@ -265,4 +265,7 @@ float getSyncInterval(float sync_value, bool triplet, bool dotted, float bpm);
 uint32_t calculateNoteLength(float trigger_val, float pitch_val, ClockEngine* engine);
 int countActiveVoices();
 
+// UI tab hit test
+int hitSlinkTab(int px, int py);
+
 #endif // MODULE_SLINK_MODE_H
