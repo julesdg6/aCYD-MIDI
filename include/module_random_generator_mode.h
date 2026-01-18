@@ -12,13 +12,8 @@ struct RandomGen {
   int minOctave = 3;
   int maxOctave = 6;
   int probability = 50; // 0-100%
-  int bpm = 120; // BPM instead of interval
   int subdivision = 4; // 4=quarter, 8=eighth, 16=sixteenth
-  bool isPlaying = false;
-  unsigned long lastNoteTime = 0;
-  unsigned long nextNoteTime = 0;
   int currentNote = -1;
-  unsigned long noteInterval = 500; // Calculated from BPM
 };
 
 extern RandomGen randomGen;
@@ -30,6 +25,5 @@ void handleRandomGeneratorMode();
 void drawRandomGenControls();
 void updateRandomGenerator();
 void playRandomNote();
-void calculateNoteInterval();
 
 #endif // MODULE_RANDOM_GENERATOR_MODE_H

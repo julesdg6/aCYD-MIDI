@@ -21,9 +21,7 @@ struct EuclideanState {
   EuclideanVoice voices[EUCLIDEAN_VOICE_COUNT];
   uint8_t bpm;
   uint8_t currentStep;
-  bool isPlaying;
   bool tripletMode;
-  unsigned long lastStepTime;
   bool pendingNoteRelease[EUCLIDEAN_VOICE_COUNT];
 };
 

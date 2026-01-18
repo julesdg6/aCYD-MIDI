@@ -1,4 +1,5 @@
 #include "module_grids_mode.h"
+#include "clock_manager.h"
 
 #include <algorithm>
 #include <pgmspace.h>
@@ -19,6 +20,11 @@ struct GridsLayout {
   int sliderSpacing;
   int sliderPositions[3];
 };
+
+static SequencerSyncState gridsSync;
+static inline bool gridsIsRequested() {
+  return gridsSync.playing || gridsSync.startPending;
+}
 
 static GridsLayout calculateGridsLayout() {
   GridsLayout layout;
@@ -111,15 +117,15 @@ static inline void triggerDrum(uint8_t note, bool trigger, uint8_t velocity) {
 }
 
 void updateGridsPlayback() {
+  gridsSync.tryStartIfReady(!instantStartMode);
+  grids.playing = gridsSync.playing;
   if (!grids.playing) {
     return;
   }
-  unsigned long now = millis();
-  grids.stepInterval = (60000.0 / grids.bpm) / 4.0;
-  if (now - grids.lastStepTime < grids.stepInterval) {
+
+  if (!gridsSync.readyForStep(CLOCK_TICKS_PER_SIXTEENTH)) {
     return;
   }
-  grids.lastStepTime = now;
 
   bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
   bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
@@ -138,6 +144,7 @@ void updateGridsPlayback() {
 }
 
 void drawGridsMode() {
+  grids.playing = gridsSync.playing;
   tft.fillScreen(THEME_BG);
   drawHeader("GRIDS", "", 3);
 
@@ -204,15 +211,14 @@ void drawGridsMode() {
   buttonY += buttonH + buttonSpacing;
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM: " + String((int)grids.bpm), controlX, buttonY, 2);
+  tft.drawString("BPM: " + String(sharedBPM), controlX, buttonY, 2);
 }
 
 void initializeGridsMode() {
   grids.step = 0;
   grids.playing = false;
-  grids.lastStepTime = 0;
-  grids.stepInterval = (60000.0 / grids.bpm) / 4.0;
-  grids.bpm = 120.0f;
+  grids.bpm = static_cast<float>(sharedBPM);
+  gridsSync.reset();
   grids.patternX = 128;
   grids.patternY = 128;
   grids.kickDensity = 200;
@@ -231,8 +237,8 @@ void handleGridsMode() {
   updateGridsPlayback();
 
   if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
-    if (grids.playing) {
-      grids.playing = false;
+    if (gridsIsRequested()) {
+      gridsSync.stopPlayback();
     }
     exitToMenu();
     return;
@@ -272,21 +278,26 @@ void handleGridsMode() {
   buttonY += buttonH + buttonSpacing;
 
   if (playPressed) {
-    grids.playing = !grids.playing;
-    if (grids.playing) {
+    if (gridsIsRequested()) {
+      gridsSync.stopPlayback();
+    } else {
       grids.step = 0;
-      grids.lastStepTime = millis();
+      gridsSync.requestStart();
     }
     requestRedraw();
     return;
   }
   if (bpmDownPressed) {
-    grids.bpm = constrain(grids.bpm - 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
+    int target = std::max<int>(GRIDS_MIN_BPM, static_cast<int>(sharedBPM) - 5);
+    sharedBPM = static_cast<uint16_t>(target);
+    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }
   if (bpmUpPressed) {
-    grids.bpm = constrain(grids.bpm + 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
+    int target = std::min<int>(GRIDS_MAX_BPM, static_cast<int>(sharedBPM) + 5);
+    sharedBPM = static_cast<uint16_t>(target);
+    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }

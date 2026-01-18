@@ -1,9 +1,34 @@
 #include "module_euclidean_mode.h"
+#include "clock_manager.h"
 
 #include <algorithm>
 #include <cstring>
 
 EuclideanState euclideanState;
+static SequencerSyncState euclidSync;
+
+static uint32_t getEuclideanStepIntervalTicks() {
+  if (euclideanState.tripletMode) {
+    return CLOCK_TICKS_PER_QUARTER / 6;
+  }
+  return CLOCK_TICKS_PER_SIXTEENTH;
+}
+
+static void adjustEuclidTempo(int delta) {
+  int target = sharedBPM + delta;
+  if (target < 40) {
+    target = 40;
+  }
+  if (target > 240) {
+    target = 240;
+  }
+  if (target == sharedBPM) {
+    return;
+  }
+  sharedBPM = target;
+  euclideanState.bpm = target;
+  requestRedraw();
+}
 
 static void generateEuclideanPattern(EuclideanVoice &voice) {
   std::memset(voice.pattern, 0, sizeof(voice.pattern));
@@ -51,11 +76,10 @@ void initializeEuclideanMode() {
     generateEuclideanPattern(euclideanState.voices[i]);
   }
 
-  euclideanState.bpm = 120;
+  euclideanState.bpm = sharedBPM;
   euclideanState.currentStep = 0;
-  euclideanState.isPlaying = false;
+  euclidSync.reset();
   euclideanState.tripletMode = false;
-  euclideanState.lastStepTime = millis();
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
   drawEuclideanMode();
 }
@@ -86,7 +110,7 @@ void drawEuclideanMode() {
       int y = centerY + sin(angle) * layerRadius;
       
       bool active = voice.pattern[step];
-      bool isCurrent = (euclideanState.isPlaying && 
+      bool isCurrent = (euclidSync.playing &&
                        step == (euclideanState.currentStep % totalSteps));
       
       uint16_t color;
@@ -106,7 +130,7 @@ void drawEuclideanMode() {
   }
   
   // Draw sweeping line showing current step position
-  if (euclideanState.isPlaying && euclideanState.voices[0].steps > 0) {
+  if (euclidSync.playing && euclideanState.voices[0].steps > 0) {
     int totalSteps = euclideanState.voices[0].steps;
     float angle = (2.0 * PI * (euclideanState.currentStep % totalSteps)) / totalSteps - PI/2;
     int lineEndX = centerX + cos(angle) * radius;
@@ -126,9 +150,10 @@ void drawEuclideanMode() {
   }
 
   int controlY = DISPLAY_HEIGHT - SCALE_Y(50);
+  bool playing = euclidSync.playing;
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
-                  euclideanState.isPlaying ? "STOP" : "PLAY",
-                  euclideanState.isPlaying ? THEME_ERROR : THEME_SUCCESS, false, 2);
+                  playing ? "STOP" : "PLAY",
+                  playing ? THEME_ERROR : THEME_SUCCESS, false, 2);
   drawRoundButton(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32), "BPM-", THEME_SECONDARY, false, 1);
   drawRoundButton(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32), "BPM+", THEME_SECONDARY, false, 1);
   drawRoundButton(DISPLAY_WIDTH - SCALE_X(80), controlY, SCALE_X(70), SCALE_Y(32),
@@ -136,23 +161,19 @@ void drawEuclideanMode() {
                   euclideanState.tripletMode ? THEME_ACCENT : THEME_SURFACE, false, 2);
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM " + String(euclideanState.bpm), DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(20), 2);
+  tft.drawString("BPM " + String(sharedBPM), DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(20), 2);
 }
 
 void updateEuclideanSequencer() {
-  if (!euclideanState.isPlaying) {
+  euclidSync.tryStartIfReady(!instantStartMode);
+  if (!euclidSync.playing) {
     return;
   }
 
-  unsigned long now = millis();
-  unsigned long stepDuration = euclideanState.tripletMode
-                                  ? ((60000UL / euclideanState.bpm) / 6)
-                                  : ((60000UL / euclideanState.bpm) / 4);
-  if (now - euclideanState.lastStepTime < stepDuration) {
+  if (!euclidSync.readyForStep(getEuclideanStepIntervalTicks())) {
     return;
   }
 
-  euclideanState.lastStepTime = now;
   releaseEuclideanNotes();
   for (int voiceIdx = 0; voiceIdx < EUCLIDEAN_VOICE_COUNT; ++voiceIdx) {
     EuclideanVoice &voice = euclideanState.voices[voiceIdx];
@@ -184,25 +205,24 @@ void handleEuclideanMode() {
 
   int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
   if (isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32))) {
-    euclideanState.isPlaying = !euclideanState.isPlaying;
-    if (euclideanState.isPlaying) {
-      euclideanState.lastStepTime = millis();
-    } else {
+    if (euclidSync.playing || euclidSync.startPending) {
+      euclidSync.stopPlayback();
       releaseEuclideanNotes();
+    } else {
+      euclideanState.currentStep = 0;
+      euclidSync.requestStart();
     }
     requestRedraw();
     return;
   }
 
   if (isButtonPressed(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32))) {
-    euclideanState.bpm = std::max(60U, (unsigned int)euclideanState.bpm - 5);
-    requestRedraw();
+    adjustEuclidTempo(-5);
     return;
   }
 
   if (isButtonPressed(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32))) {
-    euclideanState.bpm = std::min(240U, (unsigned int)euclideanState.bpm + 5);
-    requestRedraw();
+    adjustEuclidTempo(+5);
     return;
   }
 

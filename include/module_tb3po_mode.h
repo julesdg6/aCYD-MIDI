@@ -20,9 +20,6 @@ struct TB3POState {
 
   uint8_t step = 0;
   uint8_t numSteps = TB3PO_MAX_STEPS;
-  bool playing = false;
-  unsigned long lastStepTime = 0;
-  unsigned long stepInterval = 125;
   int currentNote = -1;
 
   uint16_t seed = 12345;

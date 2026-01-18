@@ -1,6 +1,8 @@
 #include "module_tb3po_mode.h"
+#include "clock_manager.h"
 
 TB3POState tb3po;
+static SequencerSyncState tb3poSync;
 
 static bool randBit(int probability) {
   return (random(100) < probability);
@@ -124,15 +126,30 @@ static bool stepIsAccent(int stepNum) {
 }
 
 void updateTB3POPlayback() {
-  if (!tb3po.playing) {
+  static uint32_t lastStartTick = UINT32_MAX;
+  bool wasPlaying = tb3poSync.playing;
+  bool justStarted = tb3poSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
+  if (justStarted) {
+    uint32_t tick = clockManagerGetTickCount();
+    lastStartTick = tick;
+    uint32_t elapsedMs = (tb3poSync.startRequestMs == UINT32_MAX)
+                             ? 0
+                             : millis() - tb3poSync.startRequestMs;
+    Serial.printf("[TB3PO] justStarted tick=%u stepBeforeReset=%u startDelayMs=%u\n", tick,
+                  tb3po.step, elapsedMs);
+    tb3po.step = 0;
+    tb3po.currentNote = -1;
+  }
+  if (!tb3poSync.playing) {
     return;
   }
-  unsigned long now = millis();
-  tb3po.stepInterval = (60000.0 / tb3po.bpm) / 4.0;
-  if (now - tb3po.lastStepTime < tb3po.stepInterval) {
+  if (!tb3poSync.readyForStep()) {
     return;
   }
-  tb3po.lastStepTime = now;
+  uint32_t currentTick = clockManagerGetTickCount();
+  bool gated = stepIsGated(tb3po.step);
+  Serial.printf("[TB3PO] tick=%u step=%u gate=%d playing=%d\n", currentTick, tb3po.step, gated,
+                tb3poSync.playing);
   if (tb3po.currentNote >= 0) {
     sendMIDI(0x80, tb3po.currentNote, 0);
     tb3po.currentNote = -1;
@@ -147,6 +164,8 @@ void updateTB3POPlayback() {
   if (tb3po.step >= tb3po.numSteps) {
     tb3po.step = 0;
   }
+  Serial.printf("[TB3PO] nextStep=%u numSteps=%u stepAfterWrap=%u\n", currentTick, tb3po.numSteps,
+                tb3po.step);
   requestRedraw();  // Request redraw to show step progress and pattern
 }
 
@@ -155,7 +174,8 @@ void drawTB3POMode() {
   drawHeader("TB-3PO", "", 3);
   int y = HEADER_HEIGHT + SCALE_Y(8);
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString(tb3po.playing ? "PLAYING" : "STOPPED", SCALE_X(10), y, 2);
+  tft.drawString(tb3poSync.playing ? "PLAYING" : (tb3poSync.startPending ? "WAITING" : "STOPPED"),
+                 SCALE_X(10), y, 2);
   tft.drawString(tb3po.lockSeed ? "SEED LOCKED" : "SEED AUTO", SCALE_X(180), y, 2);
   y += SCALE_Y(18);
 
@@ -169,7 +189,7 @@ void drawTB3POMode() {
   for (int step = 0; step < TB3PO_MAX_STEPS; step++) {
     int x = startX + step * (stepW + spacing);
     bool isGated = stepIsGated(step);
-    bool isCurrent = (tb3po.playing && step == tb3po.step);
+    bool isCurrent = (tb3poSync.playing && step == tb3po.step);
     bool isAccent = stepIsAccent(step);
     bool isSlide = stepIsSlid(step);
     
@@ -202,7 +222,9 @@ void drawTB3POMode() {
   int btnSpacing = SCALE_X(8);
   int btnStartX = MARGIN_SMALL;
 
-  drawRoundButton(btnStartX, y, btnW, btnH, tb3po.playing ? "STOP" : "PLAY", THEME_PRIMARY);
+  drawRoundButton(btnStartX, y, btnW, btnH,
+                  tb3poSync.playing || tb3poSync.startPending ? "STOP" : "PLAY",
+                  THEME_PRIMARY);
   drawRoundButton(btnStartX + (btnW + btnSpacing), y, btnW, btnH, "REGEN", THEME_SECONDARY);
   drawRoundButton(btnStartX + 2 * (btnW + btnSpacing), y, btnW, btnH, "DENS+", THEME_ACCENT);
   drawRoundButton(btnStartX + 3 * (btnW + btnSpacing), y, btnW, btnH, "DENS-", THEME_WARNING);
@@ -214,9 +236,8 @@ void drawTB3POMode() {
 
 void initializeTB3POMode() {
   tb3po.step = 0;
-  tb3po.playing = false;
   tb3po.currentNote = -1;
-  tb3po.lastStepTime = 0;
+  tb3poSync.reset();
   tb3po.readyForInput = false;
   tb3po.density = 7;
   tb3po.scaleIndex = 0;
@@ -231,7 +252,6 @@ void initializeTB3POMode() {
 }
 
 void handleTB3POMode() {
-  updateTouch();
   if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
     exitToMenu();
     return;
@@ -246,7 +266,11 @@ void handleTB3POMode() {
     int btnStartX = MARGIN_SMALL;
     
     if (isButtonPressed(btnStartX, y, btnW, btnH)) {
-      tb3po.playing = !tb3po.playing;
+      if (tb3poSync.playing || tb3poSync.startPending) {
+        tb3poSync.stopPlayback();
+      } else {
+        tb3poSync.requestStart();
+      }
       requestRedraw();
       return;
     }

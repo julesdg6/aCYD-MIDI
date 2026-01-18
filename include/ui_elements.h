@@ -1,7 +1,11 @@
 #ifndef UI_ELEMENTS_H
 #define UI_ELEMENTS_H
 
+#include <algorithm>
+
 #include "common_definitions.h"
+#include "clock_manager.h"
+#include "midi_transport.h"
 #include "wifi_manager.h"
 
 void exitToMenu();
@@ -77,21 +81,42 @@ static inline void drawBluetoothIndicator(int x, int y, uint16_t color) {
 }
 
 static inline void drawStatusIndicators() {
-  String bpmLabel = String(sharedBPM) + " BPM";
-  int textX = DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(70);
-  int textY = HEADER_TITLE_Y + SCALE_Y(2);
-  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
-  tft.drawString(bpmLabel, textX, textY, 2);
+  const int iconSize = SCALE_X(12);
+  const int iconSpacing = SCALE_X(4);
+  const int gridCols = 2;
+  const int gridRows = 2;
+  const int totalWidth = gridCols * iconSize + (gridCols - 1) * iconSpacing;
+  const int totalHeight = gridRows * iconSize + (gridRows - 1) * iconSpacing;
+  int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
+  int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
-  const int iconSpacing = SCALE_X(6);
-  const int iconWidth = SCALE_X(16);
-  int bluetoothX = textX - iconSpacing - iconWidth;
-  int wifiX = bluetoothX - iconSpacing - iconWidth;
-  int iconY = textY + SCALE_Y(4);
-  uint16_t bluetoothColor = deviceConnected ? THEME_SUCCESS : THEME_TEXT_DIM;
-  uint16_t wifiColor = isWiFiConnected() ? THEME_SUCCESS : THEME_TEXT_DIM;
-  drawBluetoothIndicator(bluetoothX, iconY, bluetoothColor);
-  drawWifiIndicator(wifiX, iconY, wifiColor);
+  String bpmLabel = String(sharedBPM);
+  int bpmX = max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
+  int bpmY = iconsStartY + totalHeight / 2 - SCALE_Y(6);
+  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+  tft.drawString(bpmLabel, bpmX, bpmY, 2);
+
+  struct Indicator {
+    int dx;
+    int dy;
+    uint16_t color;
+  };
+  Indicator icons[4] = {
+      {0, 0,
+       static_cast<uint16_t>(isWiFiConnected() ? THEME_SECONDARY : THEME_TEXT_DIM)},
+      {iconSize + iconSpacing, 0,
+       static_cast<uint16_t>(deviceConnected ? THEME_PRIMARY : THEME_TEXT_DIM)},
+      {0, iconSize + iconSpacing,
+       static_cast<uint16_t>(clockManagerIsRunning() ? THEME_SUCCESS : THEME_ERROR)},
+      {iconSize + iconSpacing, iconSize + iconSpacing,
+       static_cast<uint16_t>(
+           midiTransportIsPulseActive() ? THEME_WARNING : THEME_TEXT_DIM)},
+  };
+
+  for (int i = 0; i < 4; ++i) {
+    tft.fillRect(iconsStartX + icons[i].dx, iconsStartY + icons[i].dy, iconSize,
+                 iconSize, icons[i].color);
+  }
 }
 
 inline void drawHeader(String title, String subtitle, uint8_t titleFont = 4, bool showBackButton = true) {

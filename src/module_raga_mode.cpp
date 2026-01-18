@@ -1,4 +1,5 @@
 #include "module_raga_mode.h"
+#include "clock_manager.h"
 
 #include <Arduino.h>
 #include <algorithm>
@@ -100,7 +101,6 @@ static int g_phraseLength = 0;
 static int g_phraseIndex = 0;
 static uint32_t g_noteIntervalMs = 0;
 static uint32_t g_noteDurationMs = 0;
-static uint32_t g_nextNoteTime = 0;
 static uint32_t g_noteOffTime = 0;
 static bool g_noteActive = false;
 static uint8_t g_currentNote = 0;
@@ -109,6 +109,7 @@ static uint8_t g_droneNote = 0;
 static uint16_t g_activeTempo = 0;
 static int g_talaBeatIndex = 0;
 static int g_lastTalaBeatIndex = -1;
+static SequencerSyncState ragaSync;
 
 static bool updateRagaTempo();
 static void generateRagaPhrase();
@@ -130,9 +131,9 @@ void initializeRagaMode() {
   g_phraseIndex = 0;
   g_noteActive = false;
   g_droneActive = false;
-  g_nextNoteTime = 0;
   g_noteOffTime = 0;
   g_activeTempo = 0;
+  ragaSync.reset();
   updateRagaTempo();
 }
 
@@ -181,15 +182,17 @@ void drawRagaMode() {
 }
 
 void toggleRagaPlayback() {
-  raga.playing = !raga.playing;
-  if (raga.playing) {
-    updateRagaTempo();
-    resetPhraseState();
-  } else {
+  if (ragaSync.playing || ragaSync.startPending) {
+    ragaSync.stopPlayback();
     stopCurrentNote();
     g_noteActive = false;
     g_noteOffTime = 0;
-    g_nextNoteTime = 0;
+    raga.playing = false;
+  } else {
+    updateRagaTempo();
+    resetPhraseState();
+    ragaSync.requestStart();
+    raga.playing = true;
   }
   requestRedraw();
 }
@@ -199,6 +202,9 @@ void handleRagaMode() {
 
   if (touch.justPressed &&
       isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
+    ragaSync.stopPlayback();
+    stopCurrentNote();
+    raga.playing = false;
     exitToMenu();
     return;
   }
@@ -256,8 +262,8 @@ static bool updateRagaTempo() {
   }
   g_activeTempo = tempo;
   uint32_t interval = 60000UL / g_activeTempo;
-  g_noteIntervalMs = std::max<uint32_t>(40, interval);
-  g_noteDurationMs = std::max<uint32_t>(30, (g_noteIntervalMs * 8) / 10);
+    g_noteIntervalMs = std::max<uint32_t>(40, interval / 4);
+    g_noteDurationMs = std::max<uint32_t>(30, (g_noteIntervalMs * 8) / 10);
   return true;
 }
 
@@ -294,7 +300,6 @@ static void scheduleNextNote(unsigned long now) {
   g_currentNote = note;
   g_noteActive = true;
   g_noteOffTime = now + g_noteDurationMs;
-  g_nextNoteTime = now + g_noteIntervalMs;
   g_lastTalaBeatIndex = beat;
   g_talaBeatIndex = (beat + 1) % pattern.beats;
 }
@@ -328,31 +333,27 @@ static void resetPhraseState() {
   g_phraseIndex = 0;
   g_noteActive = false;
   g_noteOffTime = 0;
-  g_nextNoteTime = millis();
   g_talaBeatIndex = 0;
   g_lastTalaBeatIndex = -1;
 }
 
 static void updateRagaPlayback() {
-  bool tempoChanged = updateRagaTempo();
+  updateRagaTempo();
   updateDroneNote();
 
-  if (!raga.playing) {
-    return;
-  }
+  ragaSync.tryStartIfReady(!instantStartMode);
+  raga.playing = ragaSync.playing;
 
   unsigned long now = millis();
   if (g_noteActive && now >= g_noteOffTime) {
     stopCurrentNote();
   }
 
-  if (tempoChanged) {
-    g_nextNoteTime = now + g_noteIntervalMs;
+  if (!raga.playing || !ragaSync.readyForStep(CLOCK_TICKS_PER_SIXTEENTH)) {
+    return;
   }
 
-  if (g_nextNoteTime == 0 || now >= g_nextNoteTime) {
-    scheduleNextNote(now);
-  }
+  scheduleNextNote(now);
 }
 
 static void cycleRaga(int delta) {

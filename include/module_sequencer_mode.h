@@ -10,11 +10,7 @@
 #define SEQ_TRACKS 4
 extern bool sequencePattern[SEQ_TRACKS][SEQ_STEPS];
 extern int currentStep;
-extern unsigned long lastStepTime;
 extern unsigned long noteOffTime[SEQ_TRACKS];
-extern int bpm;
-extern int stepInterval;
-extern bool sequencerPlaying;
 
 // Function declarations
 void initializeSequencerMode();

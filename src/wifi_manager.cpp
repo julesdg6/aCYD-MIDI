@@ -1,13 +1,14 @@
 #include "wifi_manager.h"
 
+static bool wifiInitialized = false;
+static bool wifiConnected = false;
+static uint32_t lastWiFiAttempt = 0;
+
 #if WIFI_ENABLED
 static void updateWifiStatus() {
   wifiConnected = (WiFi.status() == WL_CONNECTED);
 }
 #endif
-static bool wifiInitialized = false;
-static bool wifiConnected = false;
-static uint32_t lastWiFiAttempt = 0;
 
 void initWiFi() {
 #if WIFI_ENABLED
