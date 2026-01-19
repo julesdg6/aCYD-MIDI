@@ -12,8 +12,6 @@
 struct GridsState {
   uint8_t step;
   bool playing;
-  unsigned long lastStepTime;
-  unsigned long stepInterval;
   float bpm;
   uint8_t patternX;
   uint8_t patternY;

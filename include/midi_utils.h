@@ -3,6 +3,7 @@
 
 #include "common_definitions.h"
 #include "hardware_midi.h"
+#include "midi_transport.h"
 
 #if ESP_NOW_ENABLED
 #include "esp_now_midi_module.h"
@@ -28,6 +29,47 @@ inline void sendMIDI(byte cmd, byte note, byte vel) {
     sendEspNowMidi(cmd, note, vel);
   }
 #endif
+  uint8_t wifiBuffer[3] = {cmd, note, vel};
+  sendWiFiMidiMessage(wifiBuffer, sizeof(wifiBuffer));
+}
+
+inline void sendMIDIClock() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xF8;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
+  sendHardwareMIDISingle(0xF8);
+  uint8_t wifiClock = 0xF8;
+  sendWiFiMidiMessage(&wifiClock, 1);
+}
+
+inline void sendMIDIStart() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xFA;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
+  sendHardwareMIDISingle(0xFA);
+  uint8_t wifiStart = 0xFA;
+  sendWiFiMidiMessage(&wifiStart, 1);
+}
+
+inline void sendMIDIStop() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xFC;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
+  sendHardwareMIDISingle(0xFC);
+  uint8_t wifiStop = 0xFC;
+  sendWiFiMidiMessage(&wifiStop, 1);
 }
 
 inline int getNoteInScale(int scaleIndex, int degree, int octave) {

@@ -96,4 +96,14 @@ inline void sendHardwareMIDI(uint8_t byte1, uint8_t byte2) {
 #endif
 }
 
+inline void sendHardwareMIDISingle(uint8_t byte1) {
+  if (!HARDWARE_MIDI_ENABLED) return;
+  
+#if HARDWARE_MIDI_UART == 0
+  Serial.write(byte1);
+#elif HARDWARE_MIDI_UART == 2
+  MIDISerial.write(byte1);
+#endif
+}
+
 #endif // HARDWARE_MIDI_H

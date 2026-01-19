@@ -1,19 +1,37 @@
 #include "module_sequencer_mode.h"
+#include "clock_manager.h"
+#include <cstring>
 
 bool sequencePattern[SEQ_TRACKS][SEQ_STEPS] = {};
 int currentStep = 0;
-unsigned long lastStepTime = 0;
 unsigned long noteOffTime[SEQ_TRACKS] = {0};
-int bpm = 120;
-int stepInterval = 0;
-bool sequencerPlaying = false;
+static SequencerSyncState sequencerSync;
+static const uint8_t kDrumNotes[SEQ_TRACKS] = {36, 38, 42, 46};
+
+static bool sequencerModuleRunning() {
+  return sequencerSync.playing || sequencerSync.startPending;
+}
+
+static void changeSequencerTempo(int delta) {
+  int target = sharedBPM + delta;
+  if (target < 40) {
+    target = 40;
+  }
+  if (target > 240) {
+    target = 240;
+  }
+  if (target == sharedBPM) {
+    return;
+  }
+  sharedBPM = target;
+  requestRedraw();
+}
 
 // Implementations
 void initializeSequencerMode() {
-  bpm = 120;
-  stepInterval = 60000 / bpm / 4; // 16th notes
-  sequencerPlaying = false;
   currentStep = 0;
+  sequencerSync.reset();
+  memset(noteOffTime, 0, sizeof(noteOffTime));
   
   // Clear all patterns
   for (int t = 0; t < SEQ_TRACKS; t++) {
@@ -25,21 +43,21 @@ void initializeSequencerMode() {
 
 void drawSequencerMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("BEATS", String(bpm) + " BPM");
+  drawHeader("BEATS", String(sharedBPM) + " BPM");
   
   drawSequencerGrid();
   
   // Transport controls - positioned to avoid overlap
   int ctrlY = SCALE_Y(200);
-  drawRoundButton(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, sequencerPlaying ? "STOP" : "PLAY", 
-                 sequencerPlaying ? THEME_ERROR : THEME_SUCCESS);
+  drawRoundButton(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, sequencerModuleRunning() ? "STOP" : "PLAY", 
+                 sequencerModuleRunning() ? THEME_ERROR : THEME_SUCCESS);
   drawRoundButton(SCALE_X(70), ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, "CLEAR", THEME_WARNING);
   drawRoundButton(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM-", THEME_SECONDARY);
   drawRoundButton(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM+", THEME_SECONDARY);
   
   // BPM display
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString(String(bpm), SCALE_X(240), ctrlY + SCALE_Y(7), 2);
+  tft.drawString(String(sharedBPM), SCALE_X(240), ctrlY + SCALE_Y(7), 2);
 }
 
 void drawSequencerGrid() {
@@ -65,7 +83,7 @@ void drawSequencerGrid() {
       int x = gridX + SCALE_X(35) + step * (cellW + spacing);
       
       bool active = sequencePattern[track][step];
-      bool current = (sequencerPlaying && step == currentStep);
+      bool current = (sequencerSync.playing && step == currentStep);
       
       uint16_t color;
       if (current && active) color = THEME_TEXT;
@@ -87,7 +105,15 @@ void drawSequencerGrid() {
 void handleSequencerMode() {
   // Back button
   if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
-    sequencerPlaying = false;
+    if (sequencerModuleRunning()) {
+      sequencerSync.stopPlayback();
+      for (int track = 0; track < SEQ_TRACKS; track++) {
+        if (noteOffTime[track] > 0) {
+          sendMIDI(0x80, kDrumNotes[track], 0);
+          noteOffTime[track] = 0;
+        }
+      }
+    }
     exitToMenu();
     return;
   }
@@ -97,10 +123,17 @@ void handleSequencerMode() {
   if (touch.justPressed) {
     // Transport controls
     if (isButtonPressed(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H)) {
-      sequencerPlaying = !sequencerPlaying;
-      if (sequencerPlaying) {
+      if (sequencerModuleRunning()) {
+        sequencerSync.stopPlayback();
+        for (int track = 0; track < SEQ_TRACKS; track++) {
+          if (noteOffTime[track] > 0) {
+            sendMIDI(0x80, kDrumNotes[track], 0);
+            noteOffTime[track] = 0;
+          }
+        }
+      } else {
         currentStep = 0;
-        lastStepTime = millis();
+        sequencerSync.requestStart();
       }
       requestRedraw();
       return;
@@ -118,16 +151,12 @@ void handleSequencerMode() {
     }
     
     if (isButtonPressed(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
-      bpm = max(60, bpm - 1);
-      stepInterval = 60000 / bpm / 4;
-      requestRedraw();
+      changeSequencerTempo(-1);
       return;
     }
     
     if (isButtonPressed(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
-      bpm = min(200, bpm + 1);
-      stepInterval = 60000 / bpm / 4;
-      requestRedraw();
+      changeSequencerTempo(+1);
       return;
     }
     
@@ -161,39 +190,48 @@ void toggleSequencerStep(int track, int step) {
 }
 
 void updateSequencer() {
-  if (!sequencerPlaying) return;
-  
   unsigned long now = millis();
-  
+
   // Check for notes to turn off
-  int drumNotes[] = {36, 38, 42, 46};
   for (int track = 0; track < SEQ_TRACKS; track++) {
     if (noteOffTime[track] > 0 && now >= noteOffTime[track]) {
-      sendMIDI(0x80, drumNotes[track], 0);
+      sendMIDI(0x80, kDrumNotes[track], 0);
       noteOffTime[track] = 0;
     }
   }
-  
-  if (now - lastStepTime >= stepInterval) {
+
+  if (!sequencerModuleRunning()) {
+    return;
+  }
+
+  sequencerSync.tryStartIfReady(!instantStartMode);
+  if (!sequencerSync.playing) {
+    return;
+  }
+
+  uint32_t readySteps = sequencerSync.consumeReadySteps();
+  if (readySteps == 0) {
+    return;
+  }
+
+  for (uint32_t i = 0; i < readySteps; ++i) {
     playSequencerStep();
     currentStep = (currentStep + 1) % SEQ_STEPS;
-    lastStepTime = now;
-    requestRedraw();  // Request redraw to trigger render event for animation
   }
+  requestRedraw();  // Request redraw to trigger render event for animation
 }
 
 void playSequencerStep() {
   if (!deviceConnected) return;
-  
-  int drumNotes[] = {36, 38, 42, 46}; // Kick, Snare, Hi-hat, Open Hi-hat
+
   int noteLengths[] = {200, 150, 50, 300}; // Note lengths in ms
-  
+
   unsigned long now = millis();
-  
+
   for (int track = 0; track < SEQ_TRACKS; track++) {
     if (sequencePattern[track][currentStep]) {
       // Turn on note
-      sendMIDI(0x90, drumNotes[track], 100);
+      sendMIDI(0x90, kDrumNotes[track], 100);
       // Schedule note off
       noteOffTime[track] = now + noteLengths[track];
     }

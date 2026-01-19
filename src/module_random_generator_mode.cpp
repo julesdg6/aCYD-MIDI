@@ -1,6 +1,40 @@
 #include "module_random_generator_mode.h"
+#include "clock_manager.h"
 
 RandomGen randomGen;
+static SequencerSyncState randomSync;
+
+static bool randomModuleRunning() {
+  return randomSync.playing || randomSync.startPending;
+}
+
+static uint32_t getRandomStepIntervalTicks() {
+  uint32_t denom = randomGen.subdivision;
+  if (denom < 4) denom = 4;
+  if (denom > 16) denom = 16;
+  if (denom == 4) {
+    return 4 * CLOCK_TICKS_PER_SIXTEENTH;
+  }
+  if (denom == 8) {
+    return 2 * CLOCK_TICKS_PER_SIXTEENTH;
+  }
+  return CLOCK_TICKS_PER_SIXTEENTH;
+}
+
+static void adjustSharedTempo(int delta) {
+  int target = sharedBPM + delta;
+  if (target < 40) {
+    target = 40;
+  }
+  if (target > 240) {
+    target = 240;
+  }
+  if (target == sharedBPM) {
+    return;
+  }
+  sharedBPM = target;
+  requestRedraw();
+}
 
 // Implementations
 void initializeRandomGeneratorMode() {
@@ -9,12 +43,9 @@ void initializeRandomGeneratorMode() {
   randomGen.minOctave = 3;
   randomGen.maxOctave = 6;
   randomGen.probability = 50;
-  randomGen.bpm = 120;
   randomGen.subdivision = 4;
-  randomGen.isPlaying = false;
   randomGen.currentNote = -1;
-  calculateNoteInterval();
-  randomGen.nextNoteTime = millis() + randomGen.noteInterval;
+  randomSync.reset();
 }
 
 void drawRandomGeneratorMode() {
@@ -29,8 +60,8 @@ void drawRandomGenControls() {
   int spacing = SCALE_Y(35);  // Increased spacing for larger buttons
   
   // Play/Stop and Root note on same line
-  drawRoundButton(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(35), randomGen.isPlaying ? "STOP" : "PLAY", 
-                 randomGen.isPlaying ? THEME_ERROR : THEME_SUCCESS);
+  drawRoundButton(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(35), randomModuleRunning() ? "STOP" : "PLAY", 
+                 randomModuleRunning() ? THEME_ERROR : THEME_SUCCESS);
   
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("Key:", SCALE_X(90), y + SCALE_Y(10), 2);
@@ -79,7 +110,7 @@ void drawRandomGenControls() {
   
   // BPM and subdivision controls
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM: " + String(randomGen.bpm), MARGIN_SMALL, y + SCALE_Y(5), 2);
+  tft.drawString("BPM: " + String(sharedBPM), MARGIN_SMALL, y + SCALE_Y(5), 2);
   drawRoundButton(SCALE_X(80), y, SCALE_X(50), SCALE_Y(35), "-", THEME_SECONDARY);
   drawRoundButton(SCALE_X(140), y, SCALE_X(50), SCALE_Y(35), "+", THEME_SECONDARY);
   
@@ -115,12 +146,14 @@ void handleRandomGeneratorMode() {
     
     // Play/Stop and Root note controls
     if (isButtonPressed(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(35))) {
-      randomGen.isPlaying = !randomGen.isPlaying;
-      if (randomGen.isPlaying) {
-        randomGen.nextNoteTime = millis() + randomGen.noteInterval;
-      } else if (randomGen.currentNote != -1) {
-        sendMIDI(0x80, randomGen.currentNote, 0);
-        randomGen.currentNote = -1;
+      if (randomModuleRunning()) {
+        randomSync.stopPlayback();
+        if (randomGen.currentNote != -1) {
+          sendMIDI(0x80, randomGen.currentNote, 0);
+          randomGen.currentNote = -1;
+        }
+      } else {
+        randomSync.requestStart();
       }
       requestRedraw();
       return;
@@ -194,15 +227,11 @@ void handleRandomGeneratorMode() {
     
     // BPM controls
     if (isButtonPressed(SCALE_X(80), y, SCALE_X(50), SCALE_Y(35))) {
-      randomGen.bpm = max(60, randomGen.bpm - 5);
-      calculateNoteInterval();
-      requestRedraw();
+      adjustSharedTempo(-5);
       return;
     }
     if (isButtonPressed(SCALE_X(140), y, SCALE_X(50), SCALE_Y(35))) {
-      randomGen.bpm = min(200, randomGen.bpm + 5);
-      calculateNoteInterval();
-      requestRedraw();
+      adjustSharedTempo(+5);
       return;
     }
     
@@ -211,7 +240,6 @@ void handleRandomGeneratorMode() {
       if (randomGen.subdivision == 4) randomGen.subdivision = 8;
       else if (randomGen.subdivision == 8) randomGen.subdivision = 16;
       else randomGen.subdivision = 4;
-      calculateNoteInterval();
       requestRedraw();
       return;
     }
@@ -222,13 +250,16 @@ void handleRandomGeneratorMode() {
 }
 
 void updateRandomGenerator() {
-  if (!randomGen.isPlaying || !deviceConnected) return;
-  
-  unsigned long now = millis();
-  
-  if (now >= randomGen.nextNoteTime) {
+  randomSync.tryStartIfReady(!instantStartMode);
+  if (!randomSync.playing) {
+    return;
+  }
+  uint32_t readySteps = randomSync.consumeReadySteps(getRandomStepIntervalTicks());
+  if (readySteps == 0) {
+    return;
+  }
+  for (uint32_t i = 0; i < readySteps; ++i) {
     playRandomNote();
-    randomGen.nextNoteTime = now + randomGen.noteInterval;
   }
 }
 
@@ -258,11 +289,4 @@ void playRandomNote() {
       requestRedraw();  // Request redraw to trigger render event for display update
     }
   }
-}
-
-void calculateNoteInterval() {
-  // Calculate note interval from BPM and subdivision
-  float beatsPerSecond = randomGen.bpm / 60.0;
-  float notesPerSecond = beatsPerSecond * (randomGen.subdivision / 4.0);
-  randomGen.noteInterval = 1000.0 / notesPerSecond;
 }

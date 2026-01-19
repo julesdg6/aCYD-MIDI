@@ -151,5 +151,12 @@ extern AppMode currentMode;
 extern volatile bool needsRedraw;
 extern uint16_t sharedBPM;
 extern MidiClockMaster midiClockMaster;
+extern bool displayColorsInverted;
+extern uint8_t displayRotationIndex;
+extern bool instantStartMode;
+
+void setDisplayInversion(bool invert);
+void rotateDisplay180();
+void requestRedraw();
 
 #endif

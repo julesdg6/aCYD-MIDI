@@ -1,6 +1,13 @@
 #include "module_arpeggiator_mode.h"
+#include "clock_manager.h"
+
+#include <algorithm>
 
 Arpeggiator arp;
+static SequencerSyncState arpSync;
+static inline bool arpActive() {
+  return arpSync.playing || arpSync.startPending;
+}
 String patternNames[] = {"UP", "DOWN", "UP/DN", "RAND", "CHANCE"};
 String chordTypeNames[] = {"MAJ", "MIN", "7TH"};
 int pianoOctave = 4;
@@ -13,13 +20,15 @@ void initializeArpeggiatorMode() {
   arp.octaves = 2;
   arp.speed = 8;
   arp.bpm = 120;
-  arp.isPlaying = false;
   arp.currentStep = 0;
   arp.currentNote = -1;
   arp.triggeredKey = -1;
   arp.triggeredOctave = 4;
   pianoOctave = 4;
   calculateStepInterval();
+  arp.tickAccumulator = 0.0f;
+  arp.stepTicks = max(0.125f, 16.0f / max(arp.speed, 1));
+  arpSync.reset();
 }
 
 void drawArpeggiatorMode() {
@@ -81,7 +90,7 @@ void drawArpControls() {
   drawRoundButton(130, y, 25, 25, "+", THEME_SECONDARY);
   
   // Current status
-  if (arp.isPlaying && arp.triggeredKey != -1) {
+  if (arpSync.playing && arp.triggeredKey != -1) {
     tft.setTextColor(THEME_PRIMARY, THEME_BG);
     String keyName = getNoteNameFromMIDI(arp.triggeredKey);
     tft.drawString("Arping: " + keyName + " " + chordTypeNames[arp.chordType], 170, y + 6, 1);
@@ -107,7 +116,7 @@ void drawPianoKeys() {
     int note = (pianoOctave * 12) + i;
     String noteName = getNoteNameFromMIDI(note);
     
-    bool isPressed = (arp.isPlaying && arp.triggeredKey == note);
+    bool isPressed = (arp.triggeredKey == note) && arpActive();
     uint16_t bgColor = isPressed ? THEME_PRIMARY : THEME_SURFACE;
     uint16_t textColor = isPressed ? THEME_BG : THEME_TEXT;
     
@@ -231,25 +240,25 @@ void handleArpeggiatorMode() {
       if (isButtonPressed(x, keyY, keyWidth, keyHeight)) {
         int note = (pianoOctave * 12) + i;
         
-        if (arp.isPlaying && arp.triggeredKey == note) {
+        if (arpActive() && arp.triggeredKey == note) {
           // Stop current arp
-          arp.isPlaying = false;
+          arpSync.stopPlayback();
           if (arp.currentNote != -1) {
             sendMIDI(0x80, arp.currentNote, 0);
             arp.currentNote = -1;
           }
+          arp.triggeredKey = -1;
         } else {
-          // Start new arp - keep timing if already playing
-          if (arp.isPlaying && arp.currentNote != -1) {
+          // Start new arp
+          if (arp.currentNote != -1) {
             sendMIDI(0x80, arp.currentNote, 0);
+            arp.currentNote = -1;
           }
           arp.triggeredKey = note;
           arp.triggeredOctave = pianoOctave;
-          if (!arp.isPlaying) {
-            arp.isPlaying = true;
-            arp.currentStep = 0;
-            arp.lastStepTime = millis();
-          }
+          arp.currentStep = 0;
+          arp.tickAccumulator = 0.0f;
+          arpSync.requestStart();
         }
         drawPianoKeys();
         drawArpControls();
@@ -263,18 +272,27 @@ void handleArpeggiatorMode() {
 }
 
 void updateArpeggiator() {
-  if (!arp.isPlaying) return;
-  
-  unsigned long now = millis();
-  if (now - arp.lastStepTime >= arp.stepInterval) {
+  bool justStarted = arpSync.tryStartIfReady(!instantStartMode);
+  if (justStarted) {
+    arp.currentStep = 0;
+    arp.tickAccumulator = 0.0f;
+    arp.currentNote = -1;
+  }
+  if (!arpSync.playing) {
+    return;
+  }
+  uint32_t readySteps = arpSync.consumeReadySteps();
+  if (readySteps == 0) {
+    return;
+  }
+  arp.tickAccumulator += static_cast<float>(readySteps);
+  while (arp.tickAccumulator >= arp.stepTicks) {
     playArpNote();
-    arp.lastStepTime = now;
+    arp.tickAccumulator -= arp.stepTicks;
   }
 }
 
 void playArpNote() {
-  if (!deviceConnected) return;
-  
   // Turn off previous note
   if (arp.currentNote != -1) {
     sendMIDI(0x80, arp.currentNote, 0);
@@ -358,9 +376,6 @@ int getArpNote() {
 }
 
 void calculateStepInterval() {
-  // Calculate step interval from BPM and speed
-  // BPM = beats per minute, speed = notes per beat (4, 8, 16, 32)
-  float beatsPerSecond = arp.bpm / 60.0;
-  float notesPerSecond = beatsPerSecond * (arp.speed / 4.0);
-  arp.stepInterval = 1000.0 / notesPerSecond;
+  float clampedSpeed = max(arp.speed, 1);
+  arp.stepTicks = max(0.125f, 16.0f / clampedSpeed);
 }

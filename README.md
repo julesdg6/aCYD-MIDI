@@ -1,12 +1,6 @@
 # aCYD MIDI Controller
 
-Touchscreen Bluetooth MIDI controller for the ESP32-2432S028R "Cheap Yellow Display" (CYD).
-
-[![Release](https://img.shields.io/github/v/release/julesdg6/aCYD-MIDI)](https://github.com/julesdg6/aCYD-MIDI/releases)
-[![Build](https://github.com/julesdg6/aCYD-MIDI/workflows/Build%20ESP32%20firmware%20(PlatformIO)/badge.svg)](https://github.com/julesdg6/aCYD-MIDI/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-Special thanks to Brian Lough for putting together the resources on this board. Check out his repo for more examples: https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display
+Touchscreen Bluetooth MIDI controller running on the ESP32-2432S028R (CYD) display. The firmware bundles 16 interactive modes, hardware/ BLE MIDI routing, and touchscreen-first controls tuned for live performance.
 
 ## Quick Start
 
@@ -176,17 +170,25 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 
 - All MIDI messages now stream simultaneously to BLE and a DIN-5 connector with selectable UART0 (production) or UART2 (development) pins, plus detailed wiring/circuit guidance and platformio build_flag examples to keep configuration centralized ([docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md), [docs/CIRCUIT_DIAGRAMS.md](docs/CIRCUIT_DIAGRAMS.md), [docs/HARDWARE_MIDI_CONFIG.md](docs/HARDWARE_MIDI_CONFIG.md)).
 - Conditional `MIDI_DEBUG` macros disable USB prints when UART0 owns Serial while keeping them for UART2 so debugging remains reliable without disturbing hardware MIDI timing ([docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)).
+1. Grab a pre-built firmware from the GitHub [releases page](https://github.com/julesdg6/aCYD-MIDI/releases).
+2. Flash with `pio run -e esp32-2432S028Rv2 -t upload` (or the matching board when using 3248S035C/R).
+3. Pair “CYD MIDI” via Bluetooth or plug in a DIN-5 breakout for hardware MIDI.
+4. Use the touchscreen menu to open any mode; the UI resizes automatically thanks to the scaling helpers.
 
--### Remote Display Module
+## Documentation
 
-- WebSocket-based viewer streams RGB565 frames at ~20 FPS with auto-reconnect and status indications so remote monitoring stays in sync even on flaky WiFi, plus documented setup/reset guidance via `config/wifi_config.local.h.template` (copy to `config/wifi_config.local.h`) or build flags ([docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)).
-- Notes about current framebuffer limitations and future compression/touch-forwarding work keep expectations clear while giving a path for extending the feature.
+- `docs/README.md` explains the overall feature set, capture flow, and Wi-Fi/remote display notes.
+- Implementation notes live in `docs/IMPLEMENTATION_SUMMARY.md`, `docs/SLINK_IMPLEMENTATION.md`, `docs/PERFORMANCE_OPTIMIZATIONS.md`, `docs/RTOS_IMPLEMENTATION_PLAN.md`, and the `docs/` concept files for hardware, MIDI clock, and memory guidance.
+- `docs/BUILD_VERIFICATION.md` lists the verification steps when building for release or testing hardware revisions.
+- `docs/DRAM_FIX_EXPLANATION.md` explains the longstanding SPIRAM workaround that keeps LVGL stable.
 
-### Screenshot Capture Improvements
+## Releases
 
-- LVGL snapshots are converted to BMP with explicit buffer-size validation, padded rows, and sequential `/screenNNN.bmp` filenames so captures never silently corrupt the SD card, and the module logs successes/failures over Serial for easier troubleshooting (`src/screenshot.cpp`).
-- The SCREENSHOT button now always writes BMP files that can be read by any computer, keeping the existing feature reliable while we explore remote display recording later.
+- `docs/CHANGELOG.md` captures the public changelog for each version.
+- `docs/RELEASE.md` documents the release process and checklist.
+- `docs/RELEASE_SUMMARY.md` maps the recent release work and high-level impact.
+- `docs/PR_SUMMARY.md` highlights the performance optimization branch that drives the current UI responsiveness.
 
 ## License
 
-Open source - see MIT license file for details.
+MIT – see `LICENSE` for full terms.

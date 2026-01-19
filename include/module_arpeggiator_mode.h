@@ -13,13 +13,12 @@ struct Arpeggiator {
   int octaves = 2;
   int speed = 8; // 16th notes
   int bpm = 120; // BPM control
-  bool isPlaying = false;
   int currentStep = 0;
   int currentNote = -1; // Current single note being played
-  unsigned long lastStepTime = 0;
-  unsigned long stepInterval = 125; // Calculated from BPM
   int triggeredKey = -1; // Which piano key triggered the arp
   int triggeredOctave = 4; // Octave of the triggered key
+  float stepTicks = 2.0f;
+  float tickAccumulator = 0.0f;
 };
 
 #define NUM_PIANO_KEYS 12
