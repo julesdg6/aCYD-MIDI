@@ -934,8 +934,12 @@ void setup() {
 #endif
 
   // Increase task watchdog timeout to 10s to allow diagnostic logging
+#ifndef DISABLE_TASK_WDT
   esp_task_wdt_init(10, true);
   Serial.println("Task WDT timeout set to 10s for diagnostics");
+#else
+  Serial.println("Task WDT disabled for this build (display initializes on CYD 35)");
+#endif
 
   // Increase ESP log verbosity to capture BT stack debug output for diagnosis
   esp_log_level_set("*", ESP_LOG_DEBUG);
