@@ -21,7 +21,6 @@ ESP-NOW MIDI enables low-latency wireless MIDI communication between multiple CY
 
 ## Operating Modes
 
-### Off Mode
 ### Off Mode (Default)
 ESP-NOW MIDI is completely disabled by default. No wireless communication occurs until you enable it in Settings.
 

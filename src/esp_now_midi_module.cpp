@@ -104,10 +104,9 @@ bool removeEspNowPeer(const uint8_t mac[6]) {
     return false;
   }
   
-  // Note: ESP-NOW MIDI library doesn't have a removePeer method
-  // We'd need to clear all and re-add the ones we want to keep
-  // For now, just log this limitation
-  Serial.println("[ESP-NOW] Remove peer not implemented - use clearPeers instead");
+  // Note: ESP-NOW MIDI library doesn't provide a removePeer method
+  // To remove a specific peer, use clearEspNowPeers() and re-add desired peers
+  Serial.println("[ESP-NOW] Remove single peer not supported - use clearEspNowPeers() instead");
   return false;
 }
 
