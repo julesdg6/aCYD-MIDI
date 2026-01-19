@@ -44,6 +44,7 @@
 #include "ui_elements.h"
 #include "module_xy_pad_mode.h"
 #include "module_grids_mode.h"
+#include "esp_now_midi_module.h"
 
 static uint32_t lv_last_tick = 0;
 static lv_obj_t *render_obj = nullptr;
@@ -1007,6 +1008,12 @@ void loop() {
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
     setupBLE();
     ble_initialized = true;
+    
+#if ESP_NOW_ENABLED
+    // Initialize ESP-NOW after BLE to avoid conflicts
+    // Note: ESP-NOW is disabled by default, enabled via Settings mode
+    Serial.println("ESP-NOW MIDI available (disabled by default)");
+#endif
   }
 #endif
 

@@ -5,6 +5,10 @@
 #include "hardware_midi.h"
 #include "midi_transport.h"
 
+#if ESP_NOW_ENABLED
+#include "esp_now_midi_module.h"
+#endif
+
 // MIDI utility functions
 inline void sendMIDI(byte cmd, byte note, byte vel) {
   // Send via BLE MIDI
@@ -18,6 +22,13 @@ inline void sendMIDI(byte cmd, byte note, byte vel) {
   
   // Send via Hardware MIDI (DIN-5 connector)
   sendHardwareMIDI(cmd, note, vel);
+  
+  // Send via ESP-NOW MIDI (only if enabled and mode is not OFF)
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(cmd, note, vel);
+  }
+#endif
   uint8_t wifiBuffer[3] = {cmd, note, vel};
   sendWiFiMidiMessage(wifiBuffer, sizeof(wifiBuffer));
 }
