@@ -29,6 +29,8 @@
 #include "module_random_generator_mode.h"
 #include "remote_display.h"
 #include "wifi_manager.h"
+#include "wifi_midi.h"
+#include "ableton_link.h"
 #include "module_settings_mode.h"
 #include "module_raga_mode.h"
 #include "module_sequencer_mode.h"
@@ -866,6 +868,11 @@ void setup() {
   initHardwareMIDI();  // Initialize hardware MIDI output
   initWiFi();  // Prepare WiFi (used by remote display and clock master suppliers)
 
+  #if WIFI_ENABLED
+  initWiFiMIDI();  // Initialize Wi-Fi MIDI capability
+  initAbletonLink();  // Initialize Ableton Link capability
+  #endif
+
   #if REMOTE_DISPLAY_ENABLED
   initRemoteDisplay();  // Initialize remote display capability
   #endif
@@ -895,6 +902,23 @@ void loop() {
 
 #if WIFI_ENABLED
   handleWiFi();
+  handleWiFiMIDI();  // Handle Wi-Fi MIDI processing
+  handleAbletonLink();  // Handle Ableton Link processing
+  
+  // Sync sharedBPM with Link tempo if Link is the clock master
+  if (midiClockMaster == CLOCK_LINK) {
+    LinkSessionInfo linkInfo = getLinkSessionInfo();
+    if (linkInfo.isValid) {
+      uint16_t linkBPM = static_cast<uint16_t>(linkInfo.tempo);
+      if (linkBPM != sharedBPM) {
+        sharedBPM = linkBPM;
+        // Only request redraw if we're in a mode that displays BPM
+        if (currentMode == SETTINGS) {
+          requestRedraw();
+        }
+      }
+    }
+  }
 #endif
 
   // Handle deferred BLE actions set by BLE callbacks (run in main loop)

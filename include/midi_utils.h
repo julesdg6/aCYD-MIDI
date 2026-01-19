@@ -3,6 +3,7 @@
 
 #include "common_definitions.h"
 #include "hardware_midi.h"
+#include "wifi_midi.h"
 
 // MIDI utility functions
 inline void sendMIDI(byte cmd, byte note, byte vel) {
@@ -17,6 +18,9 @@ inline void sendMIDI(byte cmd, byte note, byte vel) {
   
   // Send via Hardware MIDI (DIN-5 connector)
   sendHardwareMIDI(cmd, note, vel);
+  
+  // Send via Wi-Fi MIDI
+  sendWiFiMIDI(cmd, note, vel);
 }
 
 inline int getNoteInScale(int scaleIndex, int degree, int octave) {

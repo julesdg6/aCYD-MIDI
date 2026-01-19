@@ -1,5 +1,7 @@
 #include "module_settings_mode.h"
 #include "wifi_manager.h"
+#include "wifi_midi.h"
+#include "ableton_link.h"
 #include "ui_elements.h"
 
 namespace {
@@ -26,6 +28,8 @@ struct SettingsLayout {
   int bpmRowY;
   int clockRowY;
   int wifiRowY;
+  int wifiMidiRowY;
+  int linkRowY;
   int bluetoothRowY;
   int scrollbarX;
 };
@@ -45,6 +49,10 @@ static SettingsLayout computeSettingsLayout() {
   layout.clockRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.wifiRowY = y;
+  y += statusRowHeight() + settingsRowSpacing();
+  layout.wifiMidiRowY = y;
+  y += statusRowHeight() + settingsRowSpacing();
+  layout.linkRowY = y;
   y += statusRowHeight() + settingsRowSpacing();
   layout.bluetoothRowY = y;
   y += statusRowHeight() + settingsRowSpacing();
@@ -67,8 +75,9 @@ static const char *const kClockMasterLabels[] = {
   "WiFi MIDI",
   "BLE MIDI",
   "Hardware MIDI",
+  "Ableton Link",
 };
-static_assert(static_cast<int>(CLOCK_HARDWARE) + 1 == sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]),
+static_assert(static_cast<int>(CLOCK_LINK) + 1 == sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]),
               "Clock master labels must match enum size");
 
 void initializeSettingsMode() {
@@ -119,6 +128,46 @@ void drawSettingsMode() {
     String wifiStatus = "WiFi: " + String(isWiFiConnected() ? "Connected" : "Offline");
     tft.drawString(wifiStatus, contentLeft, wifiRowY, 2);
   }
+
+  #if WIFI_ENABLED
+  const int wifiMidiRowY = layout.wifiMidiRowY - settingsScrollOffset;
+  if (wifiMidiRowY + statusRowHeight() > layout.viewTop && wifiMidiRowY < viewBottom) {
+    tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+    String wifiMidiStatus = "Wi-Fi MIDI: ";
+    if (getWiFiMIDIEnabled()) {
+      wifiMidiStatus += isWiFiMIDIConnected() ? "Connected" : "Enabled";
+      tft.setTextColor(isWiFiMIDIConnected() ? THEME_SUCCESS : THEME_WARNING, THEME_SURFACE);
+    } else {
+      wifiMidiStatus += "Disabled";
+      tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    }
+    tft.drawString(wifiMidiStatus, contentLeft, wifiMidiRowY, 2);
+  }
+
+  const int linkRowY = layout.linkRowY - settingsScrollOffset;
+  if (linkRowY + statusRowHeight() > layout.viewTop && linkRowY < viewBottom) {
+    tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+    String linkStatus = "Ableton Link: ";
+    if (getLinkEnabled()) {
+      LinkState state = getLinkState();
+      LinkSessionInfo info = getLinkSessionInfo();
+      if (state == LINK_CONNECTED && info.isValid) {
+        linkStatus += String((int)info.tempo) + " BPM, " + String(info.peerCount) + " peers";
+        tft.setTextColor(THEME_SUCCESS, THEME_SURFACE);
+      } else if (state == LINK_DISCOVERING) {
+        linkStatus += "Searching...";
+        tft.setTextColor(THEME_WARNING, THEME_SURFACE);
+      } else {
+        linkStatus += "Enabled";
+        tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+      }
+    } else {
+      linkStatus += "Disabled";
+      tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    }
+    tft.drawString(linkStatus, contentLeft, linkRowY, 2);
+  }
+  #endif
 
   const int btRowY = layout.bluetoothRowY - settingsScrollOffset;
   if (btRowY + statusRowHeight() > layout.viewTop && btRowY < viewBottom) {
@@ -181,7 +230,7 @@ void handleSettingsMode() {
   const int clockButtonW = rowWidth + SCALE_X(8);
   if (!handled && touch.justPressed &&
       isButtonPressed(clockButtonX, clockButtonY, clockButtonW, compactRowHeight())) {
-    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_HARDWARE + 1));
+    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_LINK + 1));
     requestRedraw();
     handled = true;
   }

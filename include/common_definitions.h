@@ -124,7 +124,8 @@ enum MidiClockMaster {
   CLOCK_INTERNAL = 0,
   CLOCK_WIFI,
   CLOCK_BLE,
-  CLOCK_HARDWARE
+  CLOCK_HARDWARE,
+  CLOCK_LINK
 };
 
 // Music theory
