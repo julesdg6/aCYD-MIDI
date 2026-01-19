@@ -195,7 +195,7 @@ void onEspNowNoteOn(byte channel, byte note, byte velocity) {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI3(status, note, velocity);
+  sendHardwareMIDI(status, note, velocity);
   
   Serial.printf("[ESP-NOW RX] Note On: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
 }
@@ -215,7 +215,7 @@ void onEspNowNoteOff(byte channel, byte note, byte velocity) {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI3(status, note, velocity);
+  sendHardwareMIDI(status, note, velocity);
   
   Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
 }
@@ -235,7 +235,7 @@ void onEspNowControlChange(byte channel, byte control, byte value) {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI3(status, control, value);
+  sendHardwareMIDI(status, control, value);
   
   Serial.printf("[ESP-NOW RX] CC: Ch=%d, CC=%d, Val=%d\n", channel, control, value);
 }
@@ -255,7 +255,7 @@ void onEspNowClock() {
     }
     
     // Route to Hardware MIDI
-    sendHardwareMIDI2(0xF8, 0);
+    sendHardwareMIDISingle(0xF8);
   }
 }
 
@@ -272,7 +272,7 @@ void onEspNowStart() {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI2(0xFA, 0);
+  sendHardwareMIDISingle(0xFA);
   
   Serial.println("[ESP-NOW RX] Start");
 }
@@ -290,7 +290,7 @@ void onEspNowStop() {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI2(0xFC, 0);
+  sendHardwareMIDISingle(0xFC);
   
   Serial.println("[ESP-NOW RX] Stop");
 }
@@ -308,7 +308,7 @@ void onEspNowContinue() {
   }
   
   // Route to Hardware MIDI
-  sendHardwareMIDI2(0xFB, 0);
+  sendHardwareMIDISingle(0xFB);
   
   Serial.println("[ESP-NOW RX] Continue");
 }
