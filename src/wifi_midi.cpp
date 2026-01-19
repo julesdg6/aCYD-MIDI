@@ -2,12 +2,21 @@
 
 #if WIFI_ENABLED
 
+// Default target IP - should be made configurable via UI in future
+#define WIFI_MIDI_DEFAULT_TARGET_IP_1 192
+#define WIFI_MIDI_DEFAULT_TARGET_IP_2 168
+#define WIFI_MIDI_DEFAULT_TARGET_IP_3 1
+#define WIFI_MIDI_DEFAULT_TARGET_IP_4 100
+
 static WiFiUDP udp;
 static WiFiMIDIState wifiMidiState = WIFI_MIDI_DISCONNECTED;
 static bool wifiMidiEnabled = false;
 static bool wifiMidiInitialized = false;
 static uint32_t lastWiFiMIDICheck = 0;
-static IPAddress targetIP(192, 168, 1, 100); // Default target - should be configurable
+static IPAddress targetIP(WIFI_MIDI_DEFAULT_TARGET_IP_1, 
+                          WIFI_MIDI_DEFAULT_TARGET_IP_2,
+                          WIFI_MIDI_DEFAULT_TARGET_IP_3,
+                          WIFI_MIDI_DEFAULT_TARGET_IP_4);
 
 // Simple UDP-based MIDI packet structure
 // Format: [0x80][0x80][status][data1][data2]

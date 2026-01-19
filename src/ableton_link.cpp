@@ -134,11 +134,12 @@ void handleAbletonLink() {
     }
   }
   
-  // Update beat phase (simple calculation based on tempo)
-  if (sessionInfo.isValid) {
+  // Update beat phase continuously based on current time and tempo
+  if (sessionInfo.isValid && sessionInfo.tempo > 0) {
     float beatsPerSecond = sessionInfo.tempo / 60.0f;
-    float secondsSinceUpdate = (now - lastLinkUpdate) / 1000.0f;
-    sessionInfo.beatPhase = fmodf(sessionInfo.beatPhase + (beatsPerSecond * secondsSinceUpdate), 1.0);
+    uint32_t timeSinceStart = now; // Use absolute time for continuous phase
+    float totalBeats = (timeSinceStart / 1000.0f) * beatsPerSecond;
+    sessionInfo.beatPhase = fmodf(totalBeats, 1.0f);
     sessionInfo.beatTime = (uint64_t)(now * 1000); // Convert to microseconds
   }
 }

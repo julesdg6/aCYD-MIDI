@@ -77,7 +77,8 @@ static const char *const kClockMasterLabels[] = {
   "Hardware MIDI",
   "Ableton Link",
 };
-static_assert(static_cast<int>(CLOCK_LINK) + 1 == sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]),
+constexpr size_t kClockMasterLabelCount = sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]);
+static_assert(static_cast<int>(CLOCK_LINK) + 1 == kClockMasterLabelCount,
               "Clock master labels must match enum size");
 
 void initializeSettingsMode() {
