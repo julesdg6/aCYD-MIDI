@@ -19,6 +19,12 @@ jobs:
           - esp32-2432S028Rv2
           - esp32-2432S028Rv2-uart2
           - esp32-2432S028Rv2-uart0
+          - esp32-3248S035C
+          - esp32-3248S035C-uart2
+          - esp32-3248S035C-uart0
+          - esp32-3248S035R
+          - esp32-3248S035R-uart2
+          - esp32-3248S035R-uart0
           # uncomment if you also want the non-v2 board
           # - esp32-2432S028R
 

@@ -1,6 +1,6 @@
 # aCYD MIDI Controller
 
-Touchscreen Bluetooth MIDI controller for the ESP32-2432S028R "Cheap Yellow Display" (CYD).
+Touchscreen Bluetooth MIDI controller for ESP32-based displays including the ESP32-2432S028R "Cheap Yellow Display" (CYD) and ESP32-3248S035 series.
 
 [![Release](https://img.shields.io/github/v/release/julesdg6/aCYD-MIDI)](https://github.com/julesdg6/aCYD-MIDI/releases)
 [![Build](https://github.com/julesdg6/aCYD-MIDI/workflows/Build%20ESP32%20firmware%20(PlatformIO)/badge.svg)](https://github.com/julesdg6/aCYD-MIDI/actions)
@@ -49,7 +49,11 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 ## What You Need
 
-- **ESP32-2432S028R (CYD)** - ~$15 from AliExpress/Amazon
+### Supported Hardware
+
+- **ESP32-2432S028R (CYD)** - 2.8" 320x240 display - ~$15 from AliExpress/Amazon
+- **ESP32-3248S035C** - 3.5" 480x320 display with capacitive touch
+- **ESP32-3248S035R** - 3.5" 480x320 display with resistive touch
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
 - **MicroSD Card** (optional) - For screenshot capture feature
@@ -60,10 +64,22 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 ### Option A: Flash Pre-built Firmware (Recommended)
 
 1. **Download firmware** from the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page
-   - Choose the appropriate `.bin` file for your needs:
+   - Choose the appropriate `.bin` file for your board:
+     
+     **ESP32-2432S028R (CYD):**
      - `firmware-esp32-2432S028Rv2` - Default (UART2 for development with debug)
      - `firmware-esp32-2432S028Rv2-uart0` - Production (UART0 for hardware MIDI, no debug)
      - `firmware-esp32-2432S028Rv2-uart2` - Explicit UART2 configuration
+     
+     **ESP32-3248S035C (Capacitive Touch):**
+     - `firmware-esp32-3248S035C` - Default (UART2 for development with debug)
+     - `firmware-esp32-3248S035C-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-3248S035C-uart2` - Explicit UART2 configuration
+     
+     **ESP32-3248S035R (Resistive Touch):**
+     - `firmware-esp32-3248S035R` - Default (UART2 for development with debug)
+     - `firmware-esp32-3248S035R-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-3248S035R-uart2` - Explicit UART2 configuration
 
 2. **Flash using ESP32 Flash Tool** or **esptool.py**:
    ```bash
@@ -80,9 +96,16 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 1. Install PlatformIO
 2. Clone this repository
-3. Build and upload:
+3. Build and upload for your board:
    ```bash
+   # For ESP32-2432S028R (CYD)
    pio run -e esp32-2432S028Rv2 -t upload
+   
+   # For ESP32-3248S035C (Capacitive Touch)
+   pio run -e esp32-3248S035C -t upload
+   
+   # For ESP32-3248S035R (Resistive Touch)
+   pio run -e esp32-3248S035R -t upload
    ```
 
 #### Using Arduino IDE
