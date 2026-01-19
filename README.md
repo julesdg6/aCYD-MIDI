@@ -39,6 +39,8 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 - **Bluetooth MIDI** - Wireless connection to DAWs and music software
 - **Hardware MIDI** - Dual BLE + DIN-5 output with selectable UART0 (production) or UART2 (development), conditional debug, and wiring/build guidance ([docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md), [docs/HARDWARE_MIDI_CONFIG.md](docs/HARDWARE_MIDI_CONFIG.md))
+- **Wi-Fi MIDI** - Network MIDI over Wi-Fi for wireless DAW connectivity ([docs/WIFI_MIDI.md](docs/WIFI_MIDI.md))
+- **Ableton Link** - Tempo and phase synchronization with DAWs and Link-enabled devices ([docs/ABLETON_LINK.md](docs/ABLETON_LINK.md))
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
 - **Visual Feedback** - Responsive graphics
