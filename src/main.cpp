@@ -6,6 +6,7 @@
 #include <BLESecurity.h>
 #include <esp32_smartdisplay.h>
 #include <esp_bt.h>
+#include <esp_mac.h>
 #include <lvgl.h>
 #include <esp32-hal-psram.h>
 #include <algorithm>
@@ -48,6 +49,7 @@ static uint32_t lv_last_tick = 0;
 static lv_obj_t *render_obj = nullptr;
 static bool ble_initialized = false;
 static uint32_t ble_init_start_ms = 0;
+static String uniqueDeviceName;
 
 TFT_eSPI tft;
 bool TFT_eSPI::invertColors_ = false;
@@ -163,6 +165,34 @@ HardwareSerial MIDISerial(2);
 void switchMode(AppMode mode);
 void requestRedraw();
 
+// Generate unique device name based on MAC address
+String getUniqueDeviceName() {
+  if (!uniqueDeviceName.isEmpty()) {
+    return uniqueDeviceName;
+  }
+  
+  // Get WiFi MAC address
+  uint8_t mac[6];
+  esp_err_t err = esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  
+  if (err != ESP_OK) {
+    // If MAC read fails, use a generic name
+    Serial.printf("Failed to read MAC address (error %d), using default name\n", err);
+    uniqueDeviceName = "aCYD MIDI";
+    return uniqueDeviceName;
+  }
+  
+  // Format last 3 octets as hex string (e.g., "AABBCC")
+  // Buffer size: 6 hex characters + null terminator = 7 bytes
+  char macSuffix[7];
+  snprintf(macSuffix, sizeof(macSuffix), "%02X%02X%02X", mac[3], mac[4], mac[5]);
+  
+  // Create unique device name
+  uniqueDeviceName = "aCYD MIDI-" + String(macSuffix);
+  
+  return uniqueDeviceName;
+}
+
 class MIDICallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override {
     deviceConnected = true;
@@ -197,8 +227,12 @@ void setupBLE() {
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
     bt_mem_released = true;
   }
-  BLEDevice::init("aCYD MIDI");
-  Serial.println("Configuring BLE security...");
+  
+  // Get unique device name based on MAC address
+  String deviceName = getUniqueDeviceName();
+  
+  BLEDevice::init(deviceName.c_str());
+  Serial.printf("Configuring BLE with device name: %s\n", deviceName.c_str());
   // Configure BLE security for "Just Works" pairing (no PIN/passkey) and
   // also provide a static PIN for clients that require one.
   BLESecurity *pSecurity = new BLESecurity();
@@ -247,7 +281,7 @@ void setupBLE() {
   advertising->setMinPreferred(0x06);
   advertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
-  Serial.println("BLE advertising initialized for aCYD MIDI");
+  Serial.printf("BLE advertising initialized for %s\n", deviceName.c_str());
 }
 
 inline uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio) {
