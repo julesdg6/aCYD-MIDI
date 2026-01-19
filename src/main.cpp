@@ -158,7 +158,7 @@ void requestRedraw();
 
 // Generate unique device name based on MAC address
 String getUniqueDeviceName() {
-  if (uniqueDeviceName.length() > 0) {
+  if (!uniqueDeviceName.isEmpty()) {
     return uniqueDeviceName;
   }
   
@@ -167,6 +167,7 @@ String getUniqueDeviceName() {
   esp_read_mac(mac, ESP_MAC_WIFI_STA);
   
   // Format last 3 octets as hex string (e.g., "AABBCC")
+  // Buffer size: 6 hex characters + null terminator = 7 bytes
   char macSuffix[7];
   snprintf(macSuffix, sizeof(macSuffix), "%02X%02X%02X", mac[3], mac[4], mac[5]);
   
