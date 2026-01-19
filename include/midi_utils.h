@@ -4,6 +4,11 @@
 #include "common_definitions.h"
 #include "hardware_midi.h"
 
+// Forward declaration for ESP-NOW MIDI
+#if ESP_NOW_ENABLED
+void sendEspNowMidi(uint8_t status, uint8_t data1, uint8_t data2);
+#endif
+
 // MIDI utility functions
 inline void sendMIDI(byte cmd, byte note, byte vel) {
   // Send via BLE MIDI
@@ -17,6 +22,11 @@ inline void sendMIDI(byte cmd, byte note, byte vel) {
   
   // Send via Hardware MIDI (DIN-5 connector)
   sendHardwareMIDI(cmd, note, vel);
+  
+  // Send via ESP-NOW MIDI
+#if ESP_NOW_ENABLED
+  sendEspNowMidi(cmd, note, vel);
+#endif
 }
 
 inline int getNoteInScale(int scaleIndex, int degree, int octave) {

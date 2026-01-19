@@ -1,6 +1,7 @@
 #include "module_settings_mode.h"
 #include "wifi_manager.h"
 #include "ui_elements.h"
+#include "esp_now_midi_module.h"
 
 namespace {
 static inline int settingsRowSpacing() { return SCALE_Y(10); }
@@ -27,6 +28,9 @@ struct SettingsLayout {
   int clockRowY;
   int wifiRowY;
   int bluetoothRowY;
+  int espNowRowY;
+  int espNowModeRowY;
+  int espNowStatusRowY;
   int scrollbarX;
 };
 
@@ -48,6 +52,14 @@ static SettingsLayout computeSettingsLayout() {
   y += statusRowHeight() + settingsRowSpacing();
   layout.bluetoothRowY = y;
   y += statusRowHeight() + settingsRowSpacing();
+#if ESP_NOW_ENABLED
+  layout.espNowRowY = y;
+  y += compactRowHeight() + settingsRowSpacing();
+  layout.espNowModeRowY = y;
+  y += compactRowHeight() + settingsRowSpacing();
+  layout.espNowStatusRowY = y;
+  y += statusRowHeight() + settingsRowSpacing();
+#endif
   layout.contentHeight = y - layout.viewTop + contentPadding();
   return layout;
 }
@@ -67,8 +79,9 @@ static const char *const kClockMasterLabels[] = {
   "WiFi MIDI",
   "BLE MIDI",
   "Hardware MIDI",
+  "ESP-NOW MIDI",
 };
-static_assert(static_cast<int>(CLOCK_HARDWARE) + 1 == sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]),
+static_assert(static_cast<int>(CLOCK_ESP_NOW) + 1 == sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]),
               "Clock master labels must match enum size");
 
 void initializeSettingsMode() {
@@ -127,6 +140,43 @@ void drawSettingsMode() {
     tft.drawString(btStatus, contentLeft, btRowY, 2);
   }
 
+#if ESP_NOW_ENABLED
+  // ESP-NOW Enable/Disable button
+  const int espNowRowY = layout.espNowRowY - settingsScrollOffset;
+  if (espNowRowY + compactRowHeight() > layout.viewTop && espNowRowY < viewBottom) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    int labelY = espNowRowY - SCALE_Y(18);
+    tft.drawString("ESP-NOW MIDI", contentLeft, labelY, 2);
+    const char* espNowLabel = (espNowState.mode == ESP_NOW_OFF) ? "Disabled" : "Enabled";
+    uint16_t espNowColor = (espNowState.mode == ESP_NOW_OFF) ? THEME_ERROR : THEME_SUCCESS;
+    drawRoundButton(contentLeft - SCALE_X(4), espNowRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+                    espNowLabel, espNowColor, false, 2);
+  }
+
+  // ESP-NOW Mode selection
+  const int espNowModeRowY = layout.espNowModeRowY - settingsScrollOffset;
+  if (espNowModeRowY + compactRowHeight() > layout.viewTop && espNowModeRowY < viewBottom) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    int labelY = espNowModeRowY - SCALE_Y(18);
+    tft.drawString("ESP-NOW Mode", contentLeft, labelY, 2);
+    const char* modeLabel = (espNowState.mode == ESP_NOW_OFF) ? "Off" : 
+                           (espNowState.mode == ESP_NOW_BROADCAST) ? "Broadcast" : "Peer";
+    uint16_t modeColor = (espNowState.mode == ESP_NOW_OFF) ? THEME_TEXT_DIM : THEME_ACCENT;
+    drawRoundButton(contentLeft - SCALE_X(4), espNowModeRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+                    modeLabel, modeColor, false, 2);
+  }
+
+  // ESP-NOW Status
+  const int espNowStatusRowY = layout.espNowStatusRowY - settingsScrollOffset;
+  if (espNowStatusRowY + statusRowHeight() > layout.viewTop && espNowStatusRowY < viewBottom) {
+    tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+    String espNowStatus = String("ESP-NOW: Peers=") + getEspNowPeerCount() + 
+                         " TX=" + espNowState.messagesSent + 
+                         " RX=" + espNowState.messagesReceived;
+    tft.drawString(espNowStatus, contentLeft, espNowStatusRowY, 2);
+  }
+#endif
+
   int maxScroll = std::max(0, layout.contentHeight - layout.viewHeight);
   if (maxScroll > 0) {
   int barHeight = std::max(SCALE_Y(24), (layout.viewHeight * layout.viewHeight) / layout.contentHeight);
@@ -181,10 +231,46 @@ void handleSettingsMode() {
   const int clockButtonW = rowWidth + SCALE_X(8);
   if (!handled && touch.justPressed &&
       isButtonPressed(clockButtonX, clockButtonY, clockButtonW, compactRowHeight())) {
-    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_HARDWARE + 1));
+    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_ESP_NOW + 1));
     requestRedraw();
     handled = true;
   }
+
+#if ESP_NOW_ENABLED
+  // ESP-NOW Enable/Disable button handler
+  const int espNowButtonY = layout.espNowRowY - settingsScrollOffset;
+  const int espNowButtonX = contentLeft - SCALE_X(4);
+  const int espNowButtonW = rowWidth + SCALE_X(8);
+  if (!handled && touch.justPressed &&
+      isButtonPressed(espNowButtonX, espNowButtonY, espNowButtonW, compactRowHeight())) {
+    // Toggle ESP-NOW on/off
+    if (espNowState.mode == ESP_NOW_OFF) {
+      setEspNowMode(ESP_NOW_BROADCAST);
+    } else {
+      setEspNowMode(ESP_NOW_OFF);
+    }
+    requestRedraw();
+    handled = true;
+  }
+
+  // ESP-NOW Mode button handler
+  const int espNowModeButtonY = layout.espNowModeRowY - settingsScrollOffset;
+  const int espNowModeButtonX = contentLeft - SCALE_X(4);
+  const int espNowModeButtonW = rowWidth + SCALE_X(8);
+  if (!handled && touch.justPressed &&
+      isButtonPressed(espNowModeButtonX, espNowModeButtonY, espNowModeButtonW, compactRowHeight())) {
+    // Cycle through modes: OFF -> BROADCAST -> PEER -> OFF
+    if (espNowState.mode == ESP_NOW_OFF) {
+      setEspNowMode(ESP_NOW_BROADCAST);
+    } else if (espNowState.mode == ESP_NOW_BROADCAST) {
+      setEspNowMode(ESP_NOW_PEER);
+    } else {
+      setEspNowMode(ESP_NOW_OFF);
+    }
+    requestRedraw();
+    handled = true;
+  }
+#endif
 
   if (settingsScrollActive && touch.isPressed && maxScroll > 0) {
     int dy = touch.y - settingsScrollStartY;
