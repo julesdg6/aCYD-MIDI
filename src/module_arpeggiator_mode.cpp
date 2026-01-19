@@ -293,8 +293,6 @@ void updateArpeggiator() {
 }
 
 void playArpNote() {
-  if (!deviceConnected) return;
-  
   // Turn off previous note
   if (arp.currentNote != -1) {
     sendMIDI(0x80, arp.currentNote, 0);

@@ -50,6 +50,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 ## What You Need
 
 - **ESP32-2432S028R (CYD)** - ~$15 from AliExpress/Amazon
+- **Elecrow CrowPanel 7.0" (ESP32-3248S035C/R)** - high-resolution 800×480 RGB TFT display with GT911 or XPT2046 touch, supported via the new `esp32-3248S035C` and `esp32-3248S035R` PlatformIO environments.
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
 - **MicroSD Card** (optional) - For screenshot capture feature
@@ -81,9 +82,11 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 1. Install PlatformIO
 2. Clone this repository
 3. Build and upload:
-   ```bash
-   pio run -e esp32-2432S028Rv2 -t upload
-   ```
+  ```bash
+  pio run -e esp32-2432S028Rv2 -t upload
+  ```
+  To build for the CrowPanel 7.0" displays, run `pio run -e esp32-3248S035C` or `pio run -e esp32-3248S035R` after selecting the matching board in the new `boards/` definitions.
+  <!-- Add ESP32-3248S035 #57: I briefly worked on adding the custom CrowPanel board JSONs and environments but reverted that change once PlatformIO stopped seeing the `boards/` directory (the literal `boards_dir` entry needs to stay as-is). -->
 
 #### Using Arduino IDE
 

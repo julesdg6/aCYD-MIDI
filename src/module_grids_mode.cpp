@@ -33,14 +33,33 @@ static GridsLayout calculateGridsLayout() {
   layout.padSize = std::min(SCALE_X(140), std::max(padMaxWidth, SCALE_X(110)));
   layout.padX = MARGIN_SMALL;
   layout.padY = HEADER_HEIGHT + SCALE_Y(8);
-  layout.controlX = layout.padX + layout.padSize + MARGIN_SMALL;
-  layout.controlWidth = DISPLAY_WIDTH - layout.controlX - MARGIN_SMALL;
   layout.buttonHeight = SCALE_Y(38);
   layout.buttonSpacing = SCALE_Y(10);
   layout.sliderW = SCALE_X(70);
   layout.sliderSpacing = SCALE_X(8);
   layout.sliderH = SCALE_Y(18);
-  layout.sliderY = DISPLAY_HEIGHT - SCALE_Y(70);
+
+  const int sliderPadGap = SCALE_Y(12);
+  const int sliderBottomMargin = SCALE_Y(20);
+  int padVerticalLimit =
+      DISPLAY_HEIGHT - layout.padY - sliderPadGap - layout.sliderH - sliderBottomMargin;
+  padVerticalLimit = std::max(padVerticalLimit, 0);
+  int padSizeLimit = std::min(layout.padSize, padVerticalLimit);
+  if (padVerticalLimit >= SCALE_X(110)) {
+    layout.padSize = std::max(padSizeLimit, SCALE_X(110));
+  } else {
+    layout.padSize = padSizeLimit;
+  }
+
+  layout.controlX = layout.padX + layout.padSize + MARGIN_SMALL;
+  layout.controlWidth = DISPLAY_WIDTH - layout.controlX - MARGIN_SMALL;
+
+  layout.sliderY = layout.padY + layout.padSize + sliderPadGap;
+  int sliderDefaultY = DISPLAY_HEIGHT - SCALE_Y(70);
+  layout.sliderY = std::max(layout.sliderY, sliderDefaultY);
+  int sliderMaxY = DISPLAY_HEIGHT - layout.sliderH - sliderBottomMargin;
+  layout.sliderY = std::min(layout.sliderY, sliderMaxY);
+
   int sliderTotalWidth = 3 * layout.sliderW + 2 * layout.sliderSpacing;
   int sliderStartX = (DISPLAY_WIDTH - sliderTotalWidth) / 2;
   for (int i = 0; i < 3; ++i) {

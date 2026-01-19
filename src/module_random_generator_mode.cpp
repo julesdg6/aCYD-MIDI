@@ -251,7 +251,7 @@ void handleRandomGeneratorMode() {
 
 void updateRandomGenerator() {
   randomSync.tryStartIfReady(!instantStartMode);
-  if (!randomSync.playing || !deviceConnected) {
+  if (!randomSync.playing) {
     return;
   }
   uint32_t readySteps = randomSync.consumeReadySteps(getRandomStepIntervalTicks());

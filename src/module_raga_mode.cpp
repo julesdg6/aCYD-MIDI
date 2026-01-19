@@ -291,6 +291,7 @@ static void scheduleNextNote(unsigned long now) {
   if (g_phraseLength == 0 || g_phraseIndex >= g_phraseLength) {
     generateRagaPhrase();
   }
+  stopCurrentNote();
   uint8_t note = raga.rootNote + g_ragaPhrase[g_phraseIndex++];
   const TalaPattern &pattern = getCurrentTalaPattern();
   int beat = g_talaBeatIndex;

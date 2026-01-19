@@ -1,6 +1,7 @@
 # PlatformIO
 .pio/
 .platformio/
+.pio.bak/
 .ccls-cache/
 .clangd/
 .worktrees/
