@@ -38,6 +38,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 ### Core Features
 
 - **Bluetooth MIDI** - Wireless connection to DAWs and music software
+- **ESP-NOW MIDI** - Low-latency wireless MIDI networking between multiple CYD devices without pairing (<10ms latency, auto-discovery, MIDI clock sync) ([docs/ESP_NOW_MIDI.md](docs/ESP_NOW_MIDI.md))
 - **Hardware MIDI** - Dual BLE + DIN-5 output with selectable UART0 (production) or UART2 (development), conditional debug, and wiring/build guidance ([docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md), [docs/HARDWARE_MIDI_CONFIG.md](docs/HARDWARE_MIDI_CONFIG.md))
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
 - **Real-time Control** - Low-latency MIDI output
