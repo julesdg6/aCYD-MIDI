@@ -82,10 +82,17 @@ static void handleHardwareMidiInput() {
   if (midiClockMaster != CLOCK_HARDWARE) {
     return;
   }
+#if HARDWARE_MIDI_UART == 0
+  while (Serial.available() > 0) {
+    uint8_t byte = static_cast<uint8_t>(Serial.read());
+    processTransportByte(byte);
+  }
+#elif HARDWARE_MIDI_UART == 2
   while (MIDISerial.available() > 0) {
     uint8_t byte = static_cast<uint8_t>(MIDISerial.read());
     processTransportByte(byte);
   }
+#endif
 }
 #else
 static void handleHardwareMidiInput() {}
