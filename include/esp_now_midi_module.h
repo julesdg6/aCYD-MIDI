@@ -5,7 +5,7 @@
 
 #if ESP_NOW_ENABLED
 
-#include <esp_now_midi.h>
+class esp_now_midi;
 
 // ESP-NOW MIDI operating modes
 enum EspNowMode {
