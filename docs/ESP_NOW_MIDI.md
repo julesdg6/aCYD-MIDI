@@ -22,9 +22,10 @@ ESP-NOW MIDI enables low-latency wireless MIDI communication between multiple CY
 ## Operating Modes
 
 ### Off Mode
-ESP-NOW MIDI is completely disabled. No wireless communication occurs.
+### Off Mode (Default)
+ESP-NOW MIDI is completely disabled by default. No wireless communication occurs until you enable it in Settings.
 
-### Broadcast Mode (Default)
+### Broadcast Mode
 - Automatic peer discovery
 - Any CYD device that sends an ESP-NOW message will be automatically added as a peer
 - Ideal for quick setup without manual configuration
@@ -40,11 +41,13 @@ ESP-NOW MIDI is completely disabled. No wireless communication occurs.
 
 ### Enabling ESP-NOW MIDI
 
+**ESP-NOW is disabled by default.** To enable it:
+
 1. Open the **Settings** mode from the main menu
 2. Scroll down to the **ESP-NOW MIDI** section
-3. Tap the **ESP-NOW MIDI** button to toggle between Enabled/Disabled
-4. When enabled, the button turns green
-5. Select your preferred mode using the **ESP-NOW Mode** button
+3. Tap the **ESP-NOW MIDI** button to toggle from "Disabled" to "Enabled"
+4. When enabled, the button turns green and mode switches to Broadcast
+5. Use the **ESP-NOW Mode** button to switch between modes if needed
 
 ### ESP-NOW Mode Selection
 

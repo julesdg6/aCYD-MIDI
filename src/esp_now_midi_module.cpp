@@ -2,15 +2,16 @@
 
 #if ESP_NOW_ENABLED
 
-#include "midi_utils.h"
 #include "hardware_midi.h"
+
+// External declarations for BLE MIDI
+extern BLECharacteristic *pCharacteristic;
+extern bool deviceConnected;
+extern uint8_t midiPacket[];
 
 // Global ESP-NOW MIDI instance
 esp_now_midi espNowMIDI;
 EspNowMidiState espNowState;
-
-// Forward declarations for internal routing
-extern void sendMIDI(uint8_t status, uint8_t data1, uint8_t data2);
 
 void initEspNowMidi() {
   if (espNowState.initialized) {
@@ -33,7 +34,7 @@ void initEspNowMidi() {
   espNowMIDI.setHandleContinue(onEspNowContinue);
   
   espNowState.initialized = true;
-  espNowState.mode = ESP_NOW_BROADCAST;
+  // Note: mode is set by caller (setEspNowMode)
   espNowState.messagesSent = 0;
   espNowState.messagesReceived = 0;
   
@@ -183,9 +184,16 @@ void sendEspNowMidi(uint8_t status, uint8_t data1, uint8_t data2) {
 void onEspNowNoteOn(byte channel, byte note, byte velocity) {
   espNowState.messagesReceived++;
   
-  // Route to BLE MIDI
   uint8_t status = 0x90 | channel;
-  sendMIDI(status, note, velocity);
+  
+  // Route to BLE MIDI
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = status;
+    midiPacket[3] = note;
+    midiPacket[4] = velocity;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI3(status, note, velocity);
@@ -196,9 +204,16 @@ void onEspNowNoteOn(byte channel, byte note, byte velocity) {
 void onEspNowNoteOff(byte channel, byte note, byte velocity) {
   espNowState.messagesReceived++;
   
-  // Route to BLE MIDI
   uint8_t status = 0x80 | channel;
-  sendMIDI(status, note, velocity);
+  
+  // Route to BLE MIDI
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = status;
+    midiPacket[3] = note;
+    midiPacket[4] = velocity;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI3(status, note, velocity);
@@ -209,9 +224,16 @@ void onEspNowNoteOff(byte channel, byte note, byte velocity) {
 void onEspNowControlChange(byte channel, byte control, byte value) {
   espNowState.messagesReceived++;
   
-  // Route to BLE MIDI
   uint8_t status = 0xB0 | channel;
-  sendMIDI(status, control, value);
+  
+  // Route to BLE MIDI
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = status;
+    midiPacket[3] = control;
+    midiPacket[4] = value;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI3(status, control, value);
@@ -225,7 +247,13 @@ void onEspNowClock() {
   // Only process if ESP-NOW is the clock master
   if (midiClockMaster == CLOCK_ESP_NOW) {
     // Route to BLE MIDI
-    sendMIDI(0xF8, 0, 0);
+    if (deviceConnected && pCharacteristic) {
+      midiPacket[2] = 0xF8;
+      midiPacket[3] = 0;
+      midiPacket[4] = 0;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
     
     // Route to Hardware MIDI
     sendHardwareMIDI2(0xF8, 0);
@@ -236,7 +264,13 @@ void onEspNowStart() {
   espNowState.messagesReceived++;
   
   // Route to BLE MIDI
-  sendMIDI(0xFA, 0, 0);
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = 0xFA;
+    midiPacket[3] = 0;
+    midiPacket[4] = 0;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI2(0xFA, 0);
@@ -248,7 +282,13 @@ void onEspNowStop() {
   espNowState.messagesReceived++;
   
   // Route to BLE MIDI
-  sendMIDI(0xFC, 0, 0);
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = 0xFC;
+    midiPacket[3] = 0;
+    midiPacket[4] = 0;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI2(0xFC, 0);
@@ -260,7 +300,13 @@ void onEspNowContinue() {
   espNowState.messagesReceived++;
   
   // Route to BLE MIDI
-  sendMIDI(0xFB, 0, 0);
+  if (deviceConnected && pCharacteristic) {
+    midiPacket[2] = 0xFB;
+    midiPacket[3] = 0;
+    midiPacket[4] = 0;
+    pCharacteristic->setValue(midiPacket, 5);
+    pCharacteristic->notify();
+  }
   
   // Route to Hardware MIDI
   sendHardwareMIDI2(0xFB, 0);
