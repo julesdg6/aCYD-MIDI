@@ -164,7 +164,14 @@ String getUniqueDeviceName() {
   
   // Get WiFi MAC address
   uint8_t mac[6];
-  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  esp_err_t err = esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  
+  if (err != ESP_OK) {
+    // If MAC read fails, use a generic name
+    Serial.printf("Failed to read MAC address (error %d), using default name\n", err);
+    uniqueDeviceName = "aCYD MIDI";
+    return uniqueDeviceName;
+  }
   
   // Format last 3 octets as hex string (e.g., "AABBCC")
   // Buffer size: 6 hex characters + null terminator = 7 bytes
