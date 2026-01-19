@@ -1,4 +1,5 @@
 #include "module_grids_mode.h"
+#include "clock_manager.h"
 
 #include <algorithm>
 #include <pgmspace.h>
@@ -20,6 +21,11 @@ struct GridsLayout {
   int sliderPositions[3];
 };
 
+static SequencerSyncState gridsSync;
+static inline bool gridsIsRequested() {
+  return gridsSync.playing || gridsSync.startPending;
+}
+
 static GridsLayout calculateGridsLayout() {
   GridsLayout layout;
   const int desiredControlWidth = SCALE_X(90);
@@ -27,14 +33,33 @@ static GridsLayout calculateGridsLayout() {
   layout.padSize = std::min(SCALE_X(140), std::max(padMaxWidth, SCALE_X(110)));
   layout.padX = MARGIN_SMALL;
   layout.padY = HEADER_HEIGHT + SCALE_Y(8);
-  layout.controlX = layout.padX + layout.padSize + MARGIN_SMALL;
-  layout.controlWidth = DISPLAY_WIDTH - layout.controlX - MARGIN_SMALL;
   layout.buttonHeight = SCALE_Y(38);
   layout.buttonSpacing = SCALE_Y(10);
   layout.sliderW = SCALE_X(70);
   layout.sliderSpacing = SCALE_X(8);
   layout.sliderH = SCALE_Y(18);
-  layout.sliderY = DISPLAY_HEIGHT - SCALE_Y(70);
+
+  const int sliderPadGap = SCALE_Y(12);
+  const int sliderBottomMargin = SCALE_Y(20);
+  int padVerticalLimit =
+      DISPLAY_HEIGHT - layout.padY - sliderPadGap - layout.sliderH - sliderBottomMargin;
+  padVerticalLimit = std::max(padVerticalLimit, 0);
+  int padSizeLimit = std::min(layout.padSize, padVerticalLimit);
+  if (padVerticalLimit >= SCALE_X(110)) {
+    layout.padSize = std::max(padSizeLimit, SCALE_X(110));
+  } else {
+    layout.padSize = padSizeLimit;
+  }
+
+  layout.controlX = layout.padX + layout.padSize + MARGIN_SMALL;
+  layout.controlWidth = DISPLAY_WIDTH - layout.controlX - MARGIN_SMALL;
+
+  layout.sliderY = layout.padY + layout.padSize + sliderPadGap;
+  int sliderDefaultY = DISPLAY_HEIGHT - SCALE_Y(70);
+  layout.sliderY = std::max(layout.sliderY, sliderDefaultY);
+  int sliderMaxY = DISPLAY_HEIGHT - layout.sliderH - sliderBottomMargin;
+  layout.sliderY = std::min(layout.sliderY, sliderMaxY);
+
   int sliderTotalWidth = 3 * layout.sliderW + 2 * layout.sliderSpacing;
   int sliderStartX = (DISPLAY_WIDTH - sliderTotalWidth) / 2;
   for (int i = 0; i < 3; ++i) {
@@ -111,33 +136,37 @@ static inline void triggerDrum(uint8_t note, bool trigger, uint8_t velocity) {
 }
 
 void updateGridsPlayback() {
+  gridsSync.tryStartIfReady(!instantStartMode);
+  grids.playing = gridsSync.playing;
   if (!grids.playing) {
     return;
   }
-  unsigned long now = millis();
-  grids.stepInterval = (60000.0 / grids.bpm) / 4.0;
-  if (now - grids.lastStepTime < grids.stepInterval) {
+
+  uint32_t readySteps = gridsSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
+  if (readySteps == 0) {
     return;
   }
-  grids.lastStepTime = now;
 
-  bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
-  bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
-  bool hatTrigger = grids.hatPattern[grids.step] >= (255 - grids.hatDensity);
+  for (uint32_t i = 0; i < readySteps; ++i) {
+    bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
+    bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
+    bool hatTrigger = grids.hatPattern[grids.step] >= (255 - grids.hatDensity);
 
-  uint8_t kickVel = grids.kickPattern[grids.step] >= grids.accentThreshold ? 127 : 100;
-  uint8_t snareVel = grids.snarePattern[grids.step] >= grids.accentThreshold ? 127 : 100;
-  uint8_t hatVel = grids.hatPattern[grids.step] >= grids.accentThreshold ? 127 : 90;
+    uint8_t kickVel = grids.kickPattern[grids.step] >= grids.accentThreshold ? 127 : 100;
+    uint8_t snareVel = grids.snarePattern[grids.step] >= grids.accentThreshold ? 127 : 100;
+    uint8_t hatVel = grids.hatPattern[grids.step] >= grids.accentThreshold ? 127 : 90;
 
-  triggerDrum(grids.kickNote, kickTrigger, kickVel);
-  triggerDrum(grids.snareNote, snareTrigger, snareVel);
-  triggerDrum(grids.hatNote, hatTrigger, hatVel);
+    triggerDrum(grids.kickNote, kickTrigger, kickVel);
+    triggerDrum(grids.snareNote, snareTrigger, snareVel);
+    triggerDrum(grids.hatNote, hatTrigger, hatVel);
 
-  grids.step = (grids.step + 1) % GRIDS_STEPS;
+    grids.step = (grids.step + 1) % GRIDS_STEPS;
+  }
   requestRedraw();  // Request redraw to show step progress
 }
 
 void drawGridsMode() {
+  grids.playing = gridsSync.playing;
   tft.fillScreen(THEME_BG);
   drawHeader("GRIDS", "", 3);
 
@@ -204,15 +233,14 @@ void drawGridsMode() {
   buttonY += buttonH + buttonSpacing;
 
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM: " + String((int)grids.bpm), controlX, buttonY, 2);
+  tft.drawString("BPM: " + String(sharedBPM), controlX, buttonY, 2);
 }
 
 void initializeGridsMode() {
   grids.step = 0;
   grids.playing = false;
-  grids.lastStepTime = 0;
-  grids.stepInterval = (60000.0 / grids.bpm) / 4.0;
-  grids.bpm = 120.0f;
+  grids.bpm = static_cast<float>(sharedBPM);
+  gridsSync.reset();
   grids.patternX = 128;
   grids.patternY = 128;
   grids.kickDensity = 200;
@@ -231,8 +259,8 @@ void handleGridsMode() {
   updateGridsPlayback();
 
   if (touch.justPressed && isButtonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H)) {
-    if (grids.playing) {
-      grids.playing = false;
+    if (gridsIsRequested()) {
+      gridsSync.stopPlayback();
     }
     exitToMenu();
     return;
@@ -272,21 +300,26 @@ void handleGridsMode() {
   buttonY += buttonH + buttonSpacing;
 
   if (playPressed) {
-    grids.playing = !grids.playing;
-    if (grids.playing) {
+    if (gridsIsRequested()) {
+      gridsSync.stopPlayback();
+    } else {
       grids.step = 0;
-      grids.lastStepTime = millis();
+      gridsSync.requestStart();
     }
     requestRedraw();
     return;
   }
   if (bpmDownPressed) {
-    grids.bpm = constrain(grids.bpm - 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
+    int target = std::max<int>(GRIDS_MIN_BPM, static_cast<int>(sharedBPM) - 5);
+    sharedBPM = static_cast<uint16_t>(target);
+    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }
   if (bpmUpPressed) {
-    grids.bpm = constrain(grids.bpm + 5, GRIDS_MIN_BPM, GRIDS_MAX_BPM);
+    int target = std::min<int>(GRIDS_MAX_BPM, static_cast<int>(sharedBPM) + 5);
+    sharedBPM = static_cast<uint16_t>(target);
+    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }

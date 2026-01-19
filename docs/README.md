@@ -6,6 +6,7 @@ This folder groups the supporting docs that expand on the features summarized in
 
 - `CIRCUIT_DIAGRAMS.md` – Wiring diagrams for the board, hardware MIDI breakout, and sensor pinouts.
 - `CONFIG_RULES.md` – PlatformIO/configuration conventions and helper scripts that keep the ESP32 builds identical.
+- `ESP_NOW_MIDI.md` – ESP-NOW wireless MIDI networking setup, operating modes, clock sync, and troubleshooting.
 - `HARDWARE_MIDI.md` / `HARDWARE_MIDI_CONFIG.md` – Hardware MIDI bus usage, UART selection, and debug handling.
 - `IMPLEMENTATION_SUMMARY.md` – Engine-level notes for the current code layout and key trade-offs.
 - `REMOTE_DISPLAY.md` – Wi-Fi + remote WebSocket viewer instructions (references `config/wifi_config.local.h.template`).

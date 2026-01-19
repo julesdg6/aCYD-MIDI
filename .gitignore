@@ -1,6 +1,7 @@
 # PlatformIO
 .pio/
 .platformio/
+.pio.bak/
 .ccls-cache/
 .clangd/
 .worktrees/
@@ -34,6 +35,7 @@ env/
 
 # WiFi credentials (keep template, ignore actual config)
 config/wifi_config.h
+config/wifi_config.local.h
 
 # Local secrets (API keys, tokens)
 .secrets/

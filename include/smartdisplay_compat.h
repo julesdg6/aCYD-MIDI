@@ -206,7 +206,12 @@ public:
     drawText_(text.c_str(), x, y, font, true);
   }
 
-private:
+  void setDisplayInversion(bool invert) {
+    invertColors_ = invert;
+  }
+
+ private:
+  static bool invertColors_;
   void drawText_(const char *text, int16_t x, int16_t y, uint8_t font, bool centered) {
     if (!layer_ || !text) {
       return;
@@ -242,7 +247,15 @@ private:
     lv_draw_label(layer_, &dsc, &bg_coords);
   }
 
+  static inline uint16_t maybeInvert565_(uint16_t color) {
+    if (invertColors_) {
+      return static_cast<uint16_t>(color ^ 0xFFFF);
+    }
+    return color;
+  }
+
   static lv_color_t colorFrom565_(uint16_t color) {
+    color = maybeInvert565_(color);
     uint8_t r = ((color >> 11) & 0x1F) * 255 / 31;
     uint8_t g = ((color >> 5) & 0x3F) * 255 / 63;
     uint8_t b = (color & 0x1F) * 255 / 31;

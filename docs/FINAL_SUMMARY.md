@@ -206,10 +206,12 @@
 - **New Capability:** Hardware MIDI output to professional gear
 - **Zero Breaking Changes:** All existing functionality preserved
 - **Flexibility:** Choice of UART0 or UART2 based on needs
-- **Documentation:** Complete guides for all skill levels
+- **Documentation:** Complete guides for all skill levels plus a consolidated shared MIDI clock reference (`docs/MIDI_CLOCK_SYNC.md`)
+- **Consistent Timing:** Every sequencer now runs from the same 24 ppqn clock so 16th-note timing stays locked even under UI load (`docs/MIDI_CLOCK_SYNC.md`)
 
 ### Code Quality
 - **Well-Documented:** 1,360+ lines of documentation
+- **Shared Timing API:** `SequencerSyncState::consumeReadySteps()` exposes the tick stream that all modes rely on (`include/clock_manager.h:27-123`)
 - **Maintainable:** Clean separation of concerns
 - **Extensible:** Easy to add MIDI IN, THRU, etc.
 - **Professional:** Follows MIDI 1.0 specification
@@ -240,4 +242,3 @@ This implementation successfully adds Hardware MIDI DIN-5 output to the aCYD MID
 
 All software implementation and documentation complete.
 Next step: Physical circuit assembly and validation.
-

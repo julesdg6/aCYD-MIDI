@@ -6,11 +6,13 @@
 #include <BLESecurity.h>
 #include <esp32_smartdisplay.h>
 #include <esp_bt.h>
+#include <esp_mac.h>
 #include <lvgl.h>
 #include <esp32-hal-psram.h>
 #include <algorithm>
 #include <cmath>
 #include <esp_task_wdt.h>
+#include <string>
 #include "esp_log.h"
 
 #include "module_arpeggiator_mode.h"
@@ -24,27 +26,34 @@
 #include "module_keyboard_mode.h"
 #include "module_lfo_mode.h"
 #include "midi_utils.h"
+#include "midi_transport.h"
 #include "module_morph_mode.h"
 #include "module_physics_drop_mode.h"
 #include "module_random_generator_mode.h"
 #include "remote_display.h"
+#include "clock_manager.h"
+#include "midi_clock_task.h"
 #include "wifi_manager.h"
 #include "module_settings_mode.h"
 #include "module_raga_mode.h"
 #include "module_sequencer_mode.h"
 #include "screenshot.h"
+#include "header_capture.h"
 #include "module_slink_mode.h"
 #include "module_tb3po_mode.h"
 #include "ui_elements.h"
 #include "module_xy_pad_mode.h"
 #include "module_grids_mode.h"
+#include "esp_now_midi_module.h"
 
 static uint32_t lv_last_tick = 0;
 static lv_obj_t *render_obj = nullptr;
 static bool ble_initialized = false;
 static uint32_t ble_init_start_ms = 0;
+static String uniqueDeviceName;
 
 TFT_eSPI tft;
+bool TFT_eSPI::invertColors_ = false;
 BLECharacteristic *pCharacteristic = nullptr;
 bool deviceConnected = false;
 volatile bool ble_request_redraw = false;
@@ -55,6 +64,9 @@ AppMode currentMode = MENU;
 volatile bool needsRedraw = false;
 uint16_t sharedBPM = 120;
 MidiClockMaster midiClockMaster = CLOCK_INTERNAL;
+bool displayColorsInverted = false;
+uint8_t displayRotationIndex = 3;
+bool instantStartMode = false;
 
 #define RGB565(r, g, b) (uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
 
@@ -154,6 +166,34 @@ HardwareSerial MIDISerial(2);
 void switchMode(AppMode mode);
 void requestRedraw();
 
+// Generate unique device name based on MAC address
+String getUniqueDeviceName() {
+  if (!uniqueDeviceName.isEmpty()) {
+    return uniqueDeviceName;
+  }
+  
+  // Get WiFi MAC address
+  uint8_t mac[6];
+  esp_err_t err = esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  
+  if (err != ESP_OK) {
+    // If MAC read fails, use a generic name
+    Serial.printf("Failed to read MAC address (error %d), using default name\n", err);
+    uniqueDeviceName = "aCYD MIDI";
+    return uniqueDeviceName;
+  }
+  
+  // Format last 3 octets as hex string (e.g., "AABBCC")
+  // Buffer size: 6 hex characters + null terminator = 7 bytes
+  char macSuffix[7];
+  snprintf(macSuffix, sizeof(macSuffix), "%02X%02X%02X", mac[3], mac[4], mac[5]);
+  
+  // Create unique device name
+  uniqueDeviceName = "aCYD MIDI-" + String(macSuffix);
+  
+  return uniqueDeviceName;
+}
+
 class MIDICallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override {
     deviceConnected = true;
@@ -172,14 +212,28 @@ class MIDICallbacks : public BLEServerCallbacks {
   }
 };
 
+class MidiCharacteristicCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *characteristic) override {
+    std::string value = characteristic->getValue();
+    if (!value.empty()) {
+      midiTransportProcessIncomingBytes(reinterpret_cast<const uint8_t *>(value.data()),
+                                         value.size());
+    }
+  }
+};
+
 void setupBLE() {
   static bool bt_mem_released = false;
   if (!bt_mem_released) {
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
     bt_mem_released = true;
   }
-  BLEDevice::init("aCYD MIDI");
-  Serial.println("Configuring BLE security...");
+  
+  // Get unique device name based on MAC address
+  String deviceName = getUniqueDeviceName();
+  
+  BLEDevice::init(deviceName.c_str());
+  Serial.printf("Configuring BLE with device name: %s\n", deviceName.c_str());
   // Configure BLE security for "Just Works" pairing (no PIN/passkey) and
   // also provide a static PIN for clients that require one.
   BLESecurity *pSecurity = new BLESecurity();
@@ -220,6 +274,7 @@ void setupBLE() {
       BLECharacteristic::PROPERTY_WRITE_NR |
       BLECharacteristic::PROPERTY_NOTIFY);
   pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setCallbacks(new MidiCharacteristicCallbacks());
   service->start();
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
@@ -227,7 +282,7 @@ void setupBLE() {
   advertising->setMinPreferred(0x06);
   advertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
-  Serial.println("BLE advertising initialized for aCYD MIDI");
+  Serial.printf("BLE advertising initialized for %s\n", deviceName.c_str());
 }
 
 inline uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio) {
@@ -272,213 +327,258 @@ static void fillTriangleImpl(TFT_eSPI &tft, int x0, int y0, int x1, int y1, int 
   }
 }
 
+namespace {
+static void drawKeysIcon(int cx, int cy, int size, uint16_t accent) {
+  int keyHeight = std::max(24, size / 2);
+  int keyWidth = std::max(6, size / 6);
+  int startX = cx - (5 * keyWidth) / 2;
+  int topY = cy - keyHeight / 2;
+  for (int i = 0; i < 5; ++i) {
+    int x = startX + i * keyWidth;
+    int outerW = keyWidth;
+    tft.fillRect(x, topY, outerW, keyHeight, accent);
+    tft.drawRect(x, topY, outerW, keyHeight, THEME_BG);
+    int innerX = x + keyWidth / 5;
+    int innerW = keyWidth - keyWidth / 2;
+    int innerH = keyHeight - keyHeight / 5;
+    tft.fillRect(innerX, topY + SCALE_Y(2), innerW, innerH, THEME_SURFACE);
+  }
+}
+
+static void drawSequencerIcon(int cx, int cy, int size, uint16_t accent) {
+  int unit = std::max(5, size / 6);
+  int gsize = unit * 3 + unit;
+  int startX = cx - gsize / 2;
+  int startY = cy - gsize / 2;
+  for (int row = 0; row < 3; ++row) {
+    for (int col = 0; col < 3; ++col) {
+      int x = startX + col * (unit + SCALE_X(2));
+      int y = startY + row * (unit + SCALE_Y(2));
+      tft.fillRoundRect(x, y, unit, unit, 2, accent);
+    }
+  }
+  tft.drawRect(startX - SCALE_X(2), startY - SCALE_Y(2), gsize + SCALE_X(4), gsize + SCALE_Y(4), THEME_BG);
+}
+
+static void drawCircleIcon(int cx, int cy, int size, uint16_t color) {
+  int radius = std::max(8, size / 3);
+  tft.drawCircle(cx, cy, radius, color);
+  tft.drawCircle(cx, cy, radius / 2, color);
+  tft.fillCircle(cx, cy, 2, color);
+}
+
+static void drawDropIcon(int cx, int cy, int size, uint16_t accent) {
+  int radius = std::max(6, size / 4);
+  int circleY = cy - radius / 2;
+  tft.fillCircle(cx, circleY, radius, accent);
+  fillTriangleImpl(tft, cx - radius, circleY + radius, cx + radius, circleY + radius, cx,
+                   circleY + radius + SCALE_Y(4), accent);
+}
+
+static void drawRngIcon(int cx, int cy, int size, uint16_t accent) {
+  int step = std::max(6, size / 5);
+  int x = cx - step * 2;
+  int y = cy + step / 2;
+  for (int i = 0; i < 4; ++i) {
+    int nextX = x + step;
+    int nextY = (i % 2 == 0) ? cy - step : cy + step;
+    tft.drawLine(x, y, nextX, nextY, accent);
+    x = nextX;
+    y = nextY;
+  }
+  tft.drawLine(x, y, x + step, cy - step / 2, accent);
+}
+
+static void drawArpIcon(int cx, int cy, int size, uint16_t accent) {
+  int baseY = cy + size / 4;
+  int width = std::max(16, size - 10);
+  int steps = 4;
+  int prevX = cx - width / 2;
+  int prevY = baseY;
+  for (int i = 1; i <= steps; ++i) {
+    int nextX = prevX + width / steps;
+    int nextY = baseY - (size * i) / (steps * 3);
+    tft.drawLine(prevX, prevY, nextX, nextY, accent);
+    prevX = nextX;
+    prevY = nextY;
+  }
+  fillTriangleImpl(tft, prevX, prevY, prevX - SCALE_X(5), prevY + SCALE_Y(6), prevX + SCALE_X(5),
+                   prevY + SCALE_Y(6), accent);
+}
+
+static void drawGridIcon(int cx, int cy, int size, uint16_t accent) {
+  int side = std::max(12, size - 10);
+  int start = cx - side / 2;
+  tft.drawRect(start, cy - side / 2, side, side, accent);
+  tft.drawLine(start + side / 2, cy - side / 2, start + side / 2, cy + side / 2, accent);
+  tft.drawLine(start, cy, start + side, cy, accent);
+}
+
+static void drawChordIcon(int cx, int cy, int size, uint16_t accent) {
+  int height = std::max(14, size - 8);
+  int width = std::max(12, size);
+  int startX = cx - width / 3;
+  for (int i = 0; i < 3; ++i) {
+    int x = startX + i * (width / 3);
+    tft.drawLine(x, cy - height / 2, x, cy + height / 2, accent);
+    tft.fillCircle(x, cy - height / 2 + SCALE_Y(3), SCALE_X(3), accent);
+  }
+}
+
+static void drawLfoIcon(int cx, int cy, int size, uint16_t accent) {
+  int width = std::max(14, size - 10);
+  int startX = cx - width / 2;
+  int offsetY = size / 4;
+  for (int i = 0; i < 5; ++i) {
+    int x0 = startX + (width * i) / 4;
+    int y0 = cy + ((i % 2 == 0) ? -offsetY : offsetY);
+    int x1 = startX + (width * (i + 1)) / 4;
+    int y1 = cy + (((i + 1) % 2 == 0) ? -offsetY : offsetY);
+    tft.drawLine(x0, y0, x1, y1, accent);
+  }
+}
+
+static void drawSlinkIcon(int cx, int cy, int size, uint16_t accent) {
+  int amplitude = std::max(3, size / 6);
+  int width = std::max(20, size);
+  int startX = cx - width / 2;
+  int prevX = startX;
+  int prevY = cy;
+  for (int i = 1; i <= 4; ++i) {
+    int nextX = startX + (width * i) / 4;
+    int nextY = cy + ((i % 2 == 0) ? -amplitude : amplitude);
+    tft.drawLine(prevX, prevY, nextX, nextY, accent);
+    prevX = nextX;
+    prevY = nextY;
+  }
+}
+
+static void drawTb3poIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int cols = 4;
+  int rows = 2;
+  int cellW = std::max(5, size / (cols * 2));
+  int cellH = std::max(4, size / 12);
+  int gridW = cols * cellW + (cols - 1) * SCALE_X(2);
+  int gridH = rows * cellH + (rows - 1) * SCALE_Y(4);
+  int startX = cx - gridW / 2;
+  int startY = cy - gridH / 2;
+  for (int row = 0; row < rows; ++row) {
+    for (int col = 0; col < cols; ++col) {
+      int x = startX + col * (cellW + SCALE_X(2));
+      int y = startY + row * (cellH + SCALE_Y(4));
+      tft.fillRoundRect(x, y, cellW, cellH, 2, (row + col) % 2 ? accent : fg);
+      tft.drawRoundRect(x, y, cellW, cellH, 2, accent);
+    }
+  }
+}
+
+static void drawGridsIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int blocks = 3;
+  int blockSize = std::max(6, (size - (blocks - 1) * 2) / blocks);
+  int totalW = blocks * blockSize + (blocks - 1) * SCALE_X(2);
+  int startX = cx - totalW / 2;
+  int startY = cy - totalW / 2;
+  for (int row = 0; row < blocks; ++row) {
+    for (int col = 0; col < blocks; ++col) {
+      int x = startX + col * (blockSize + SCALE_X(2));
+      int y = startY + row * (blockSize + SCALE_Y(2));
+      tft.fillRect(x, y, blockSize, blockSize, ((row + col) % 2) ? accent : fg);
+      tft.drawRect(x, y, blockSize, blockSize, THEME_BG);
+    }
+  }
+}
+
+static void drawRagaIcon(int cx, int cy, int size, uint16_t accent) {
+  int heights[3] = {size / 6, size / 4, size / 3};
+  for (int i = 0; i < 3; ++i) {
+    int x = cx - size / 4 + i * (size / 4);
+    int height = heights[i];
+    tft.drawLine(x, cy + size / 4, x, cy + size / 4 - height, accent);
+    tft.fillCircle(x, cy + size / 4 - height, SCALE_X(2), accent);
+  }
+  tft.drawCircle(cx, cy - size / 6, size / 5, accent);
+}
+
+static void drawEuclidIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int radius = std::max(10, size / 3);
+  tft.drawCircle(cx, cy, radius, accent);
+  const float twoPi = 6.2831853f;
+  const float startAngle = -1.5707963f;
+  const int steps = 8;
+  for (int i = 0; i < steps; ++i) {
+    float angle = startAngle + (twoPi * i) / steps;
+    int markerX = cx + static_cast<int>(std::cos(angle) * radius);
+    int markerY = cy + static_cast<int>(std::sin(angle) * radius);
+    tft.fillCircle(markerX, markerY, 2, (i % 2 == 0) ? accent : fg);
+  }
+}
+
+static void drawMorphIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int width = std::max(16, size - 8);
+  int height = std::max(8, size / 4);
+  int left = cx - width / 2;
+  int top = cy - height / 2;
+  tft.fillRoundRect(left, top, width, height, 6, fg);
+  int inset = SCALE_X(5);
+  tft.fillRoundRect(left + inset, top + inset / 2, width - 2 * inset, height - inset / 2, 4, accent);
+  tft.fillCircle(cx - inset, cy, SCALE_X(3), accent);
+  tft.fillCircle(cx + inset, cy, SCALE_X(3), accent);
+}
+}  // namespace
+
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
   const uint16_t fg = THEME_SURFACE;
   switch (icon) {
-    case ICON_KEYS: {
-      int keyWidth = std::max(5, size / 5);
-      int keyHeight = std::max(10, size / 2);
-      int startX = cx - (5 * keyWidth) / 2;
-      int topY = cy - keyHeight / 2;
-      for (int i = 0; i < 5; ++i) {
-        int x = startX + i * keyWidth;
-        int width = std::max(2, keyWidth - 2);
-        tft.fillRoundRect(x, topY, width, keyHeight, 2, fg);
-        tft.drawRoundRect(x, topY, width, keyHeight, 2, accent);
-      }
+    case ICON_KEYS:
+      drawKeysIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_SEQUENCER: {
-      int block = std::max(4, size / 5);
-      int gridSize = block * 3;
-      int startX = cx - gridSize / 2;
-      int startY = cy - gridSize / 2;
-      for (int row = 0; row < 3; ++row) {
-        for (int col = 0; col < 3; ++col) {
-          int x = startX + col * block;
-          int y = startY + row * block;
-          tft.fillRect(x, y, std::max(2, block - 2), std::max(2, block - 2), accent);
-        }
-      }
+    case ICON_SEQUENCER:
+      drawSequencerIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_ZEN: {
-      int radius = std::max(6, size / 3);
-      tft.drawCircle(cx, cy, radius, accent);
-      tft.drawCircle(cx, cy, std::max(3, radius / 2), accent);
-      tft.fillCircle(cx, cy, 2, accent);
+    case ICON_ZEN:
+      drawCircleIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_DROP: {
-      int radius = std::max(5, size / 4);
-      int circleY = cy - radius / 2;
-      tft.fillCircle(cx, circleY, radius, accent);
-      int tipY = circleY + radius;
-      fillTriangleImpl(tft, cx - radius, tipY, cx + radius, tipY, cx, tipY + radius + 2, accent);
+    case ICON_DROP:
+      drawDropIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_RNG: {
-      int startX = cx - size / 2;
-      int startY = cy + size / 4;
-      int step = std::max(4, size / 4);
-      int x = startX;
-      int y = startY;
-      for (int i = 0; i < 3; ++i) {
-        int nextX = x + step;
-        int nextY = (i % 2 == 0) ? cy - size / 6 : cy + size / 6;
-        tft.drawLine(x, y, nextX, nextY, accent);
-        x = nextX;
-        y = nextY;
-      }
-      tft.drawLine(x, y, x + step, cy - size / 8, accent);
+    case ICON_RNG:
+      drawRngIcon(cx, cy, size, accent);
       break;
-    }
     case ICON_XY:
       tft.drawLine(cx - size / 2, cy, cx + size / 2, cy, accent);
       tft.drawLine(cx, cy - size / 2, cx, cy + size / 2, accent);
-      tft.fillCircle(cx, cy, 2, accent);
+      tft.fillCircle(cx, cy, SCALE_X(3), accent);
       break;
-    case ICON_ARP: {
-      int steps = 4;
-      int width = std::max(12, size - 6);
-      int baseX = cx - width / 2;
-      int baseY = cy + size / 4;
-      int prevX = baseX;
-      int prevY = baseY;
-      for (int i = 1; i <= steps; ++i) {
-        int nextX = baseX + (width * i) / steps;
-        int nextY = baseY - (size * i) / (steps * 3);
-        tft.drawLine(prevX, prevY, nextX, nextY, accent);
-        prevX = nextX;
-        prevY = nextY;
-      }
-      fillTriangleImpl(tft, prevX, prevY, prevX - 4, prevY + 6, prevX + 4, prevY + 6, accent);
+    case ICON_ARP:
+      drawArpIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_GRID: {
-      int side = std::max(10, size - 6);
-      int left = cx - side / 2;
-      int topY = cy - side / 2;
-      tft.drawRect(left, topY, side, side, accent);
-      tft.drawLine(left + side / 2, topY, left + side / 2, topY + side, accent);
-      tft.drawLine(left, topY + side / 2, left + side, topY + side / 2, accent);
+    case ICON_GRID:
+      drawGridIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_CHORD: {
-      int spacing = std::max(6, size / 3);
-      int startX = cx - spacing;
-      int height = std::max(14, size - 8);
-      for (int i = 0; i < 3; ++i) {
-        int x = startX + i * spacing;
-        tft.drawLine(x, cy - height / 2, x, cy + height / 2, accent);
-        tft.fillCircle(x, cy - height / 2 + 3, 3, accent);
-      }
+    case ICON_CHORD:
+      drawChordIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_LFO: {
-      int width = std::max(12, size - 6);
-      int startX = cx - width / 2;
-      int offsets[5] = {0, -size / 4, 0, size / 4, 0};
-      for (int i = 0; i < 4; ++i) {
-        int x0 = startX + (width * i) / 4;
-        int y0 = cy + offsets[i];
-        int x1 = startX + (width * (i + 1)) / 4;
-        int y1 = cy + offsets[i + 1];
-        tft.drawLine(x0, y0, x1, y1, accent);
-      }
+    case ICON_LFO:
+      drawLfoIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_SLINK: {
-      int width = std::max(12, size - 6);
-      int startX = cx - width / 2;
-      int amplitude = std::max(3, size / 5);
-      for (int layer = 0; layer < 2; ++layer) {
-        int yOffset = layer * 3;
-        int prevX = startX;
-        int prevY = cy + yOffset;
-        for (int i = 1; i <= 4; ++i) {
-          int nextX = startX + (width * i) / 4;
-          int nextY = cy + yOffset + ((i % 2 == 0) ? -amplitude : amplitude);
-          tft.drawLine(prevX, prevY, nextX, nextY, accent);
-          prevX = nextX;
-          prevY = nextY;
-        }
-      }
+    case ICON_SLINK:
+      drawSlinkIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_TB3PO: {
-      int rows = 2;
-      int cols = 4;
-      int cellW = std::max(6, size / (cols * 2));
-      int cellH = std::max(4, size / 10);
-      int gridW = cols * cellW + (cols - 1) * 2;
-      int gridH = rows * cellH + (rows - 1) * 4;
-      int startX = cx - gridW / 2;
-      int startY = cy - gridH / 2;
-      for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-          int x = startX + col * (cellW + 2);
-          int y = startY + row * (cellH + 4);
-          tft.fillRoundRect(x, y, cellW, cellH, 2, (col + row) % 2 ? accent : fg);
-          tft.drawRoundRect(x, y, cellW, cellH, 2, accent);
-        }
-      }
+    case ICON_TB3PO:
+      drawTb3poIcon(cx, cy, size, accent, fg);
       break;
-    }
-    case ICON_GRIDS: {
-      int blocks = 3;
-      int blockSize = std::max(6, (size - (blocks - 1) * 2) / blocks);
-      int gridW = blocks * blockSize + (blocks - 1) * 2;
-      int startX = cx - gridW / 2;
-      int startY = cy - gridW / 2;
-      for (int row = 0; row < blocks; ++row) {
-        for (int col = 0; col < blocks; ++col) {
-          int x = startX + col * (blockSize + 2);
-          int y = startY + row * (blockSize + 2);
-          tft.fillRect(x, y, blockSize, blockSize, ((row + col) % 2) ? accent : fg);
-          tft.drawRect(x, y, blockSize, blockSize, THEME_BG);
-        }
-      }
+    case ICON_GRIDS:
+      drawGridsIcon(cx, cy, size, accent, fg);
       break;
-    }
-    case ICON_RAGA: {
-      int baseY = cy + size / 4;
-      int heights[3] = {size / 5, size / 4, size / 3};
-      for (int i = 0; i < 3; ++i) {
-        int x = cx - size / 3 + i * (size / 3);
-        int height = heights[i];
-        tft.drawLine(x, baseY, x, baseY - height, accent);
-        tft.fillCircle(x, baseY - height, 3, accent);
-      }
-      tft.drawCircle(cx, cy - size / 6, size / 5, accent);
+    case ICON_RAGA:
+      drawRagaIcon(cx, cy, size, accent);
       break;
-    }
-    case ICON_EUCLID: {
-      int radius = std::max(10, size / 3);
-      tft.drawCircle(cx, cy, radius, accent);
-      const float twoPi = 6.2831853f;
-      const float startAngle = -1.5707963f;
-      const int steps = 8;
-      for (int i = 0; i < steps; ++i) {
-        float angle = startAngle + (twoPi * i) / steps;
-        int markerX = cx + static_cast<int>(std::cos(angle) * radius);
-        int markerY = cy + static_cast<int>(std::sin(angle) * radius);
-        tft.fillCircle(markerX, markerY, 2, (i % 2 == 0) ? accent : fg);
-      }
+    case ICON_EUCLID:
+      drawEuclidIcon(cx, cy, size, accent, fg);
       break;
-    }
-    case ICON_MORPH: {
-      int width = std::max(18, size - 6);
-      int height = std::max(6, size / 4);
-      int offset = std::max(4, size / 8);
-      int left = cx - width / 2;
-      int top = cy - height / 2;
-      tft.fillRoundRect(left, top, width, height, 5, fg);
-      tft.fillRoundRect(left + offset, top + offset / 2, width - offset * 2, height - offset / 2, 5, accent);
-      tft.fillCircle(cx - offset, cy, 3, accent);
-      tft.fillCircle(cx + offset, cy, 3, accent);
+    case ICON_MORPH:
+      drawMorphIcon(cx, cy, size, accent, fg);
       break;
-    }
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);
       break;
@@ -580,6 +680,22 @@ void captureAllScreenshots() {
 
 void requestRedraw() {
   needsRedraw = true;
+}
+
+void setDisplayInversion(bool invert) {
+  if (displayColorsInverted == invert) {
+    requestRedraw();
+    return;
+  }
+  displayColorsInverted = invert;
+  tft.setDisplayInversion(invert);
+  requestRedraw();
+}
+
+void rotateDisplay180() {
+  displayRotationIndex ^= 2;
+  tft.setRotation(displayRotationIndex);
+  requestRedraw();
 }
 
 void processRedraw() {
@@ -826,7 +942,6 @@ void setup() {
   esp_log_level_set("BT", ESP_LOG_DEBUG);
   Serial.println("ESP log level set to DEBUG for BT stack");
 
-  smartdisplay_init();
 #if DEBUG_ENABLED
   Serial.printf("Heap post-init: dma_free=%u dma_largest=%u int_free=%u int_largest=%u\n",
                 heap_caps_get_free_size(MALLOC_CAP_DMA),
@@ -834,9 +949,11 @@ void setup() {
                 heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                 heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 #endif
+  smartdisplay_init();
   lv_display_t *display = lv_display_get_default();
-  lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
-  
+  if (display) {
+    tft.setRotation(displayRotationIndex);
+  }
   // Initialize display configuration for autoscaling
   initDisplayConfig();
 
@@ -864,7 +981,10 @@ void setup() {
   
   ble_init_start_ms = millis();
   initHardwareMIDI();  // Initialize hardware MIDI output
+  initClockManager();
+  initMidiClockTask();
   initWiFi();  // Prepare WiFi (used by remote display and clock master suppliers)
+  initMidiTransports();
 
   #if REMOTE_DISPLAY_ENABLED
   initRemoteDisplay();  // Initialize remote display capability
@@ -888,14 +1008,23 @@ void loop() {
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
     setupBLE();
     ble_initialized = true;
+    
+#if ESP_NOW_ENABLED
+    // Initialize ESP-NOW after BLE to avoid conflicts
+    // Note: ESP-NOW is disabled by default, enabled via Settings mode
+    Serial.println("ESP-NOW MIDI available (disabled by default)");
+#endif
   }
 #endif
 
   updateTouch();
+  updateHeaderCapture();
 
 #if WIFI_ENABLED
   handleWiFi();
 #endif
+
+  handleMidiTransports();
 
   // Handle deferred BLE actions set by BLE callbacks (run in main loop)
   if (ble_disconnect_action) {

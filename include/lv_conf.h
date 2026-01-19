@@ -84,7 +84,7 @@
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
     /** Size of memory available for `lv_malloc()` in bytes (>= 2kB) */
     #ifndef LV_MEM_SIZE
-        #define LV_MEM_SIZE (24 * 1024U)          /**< [bytes] - Reduced for ESP32 DRAM constraints */
+        #define LV_MEM_SIZE (16 * 1024U)          /**< [bytes] - Reduced for ESP32 DRAM constraints */
     #endif
 
     /** Size of the memory expand for `lv_malloc()` in bytes */

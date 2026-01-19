@@ -22,12 +22,12 @@ The release process is automated via GitHub Actions. When you push a version tag
 Before creating a release, ensure the version is updated:
 
 - Update `ACYD_MIDI_VERSION` in `common_definitions.h`
-- Add a new entry to `CHANGELOG.md` documenting changes
+- Add a new entry to `docs/CHANGELOG.md` documenting changes
 
 ### 2. Commit and Push Changes
 
 ```bash
-git add common_definitions.h CHANGELOG.md
+git add common_definitions.h docs/CHANGELOG.md
 git commit -m "Prepare release v0.0.1"
 git push origin main
 ```
@@ -58,7 +58,7 @@ After the release is created automatically, you can edit it on GitHub to add:
 - Installation instructions
 - Known issues
 
-The CHANGELOG.md content can be copied into the release notes.
+The `docs/CHANGELOG.md` content can be copied into the release notes.
 
 ## Release Checklist
 
