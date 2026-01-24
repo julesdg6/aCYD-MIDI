@@ -11,7 +11,10 @@ static inline int bpmRowHeight() { return SCALE_Y(56); }
 static inline int compactRowHeight() { return SCALE_Y(44); }
 static inline int statusRowHeight() { return SCALE_Y(26); }
 static inline int contentPadding() { return SCALE_Y(8); }
-static inline int scrollBarWidth() { return SCALE_X(6); }
+static inline int viewTopPadding() { return SCALE_Y(12); }
+static inline int rowSideMargin() { return SCALE_X(5); }
+static inline int scrollBarThumbWidth() { return SCALE_X(18); }
+static inline int scrollBarTouchWidth() { return SCALE_X(32); }
 static inline int viewMargin() { return MARGIN_SMALL; }
 static inline int clampInt(int value, int minValue, int maxValue) {
   if (value < minValue) return minValue;
@@ -35,16 +38,19 @@ struct SettingsLayout {
   int espNowModeRowY;
   int espNowStatusRowY;
   int displayRowY;
-  int scrollbarX;
+  int scrollbarTouchX;
+  int scrollbarTrackX;
 };
 
 static SettingsLayout computeSettingsLayout() {
   SettingsLayout layout;
-  layout.viewTop = HEADER_HEIGHT + SCALE_Y(5);
+  layout.viewTop = HEADER_HEIGHT + viewTopPadding();
   layout.viewLeft = viewMargin();
   layout.viewWidth = DISPLAY_WIDTH - 2 * viewMargin();
-  layout.scrollbarX = DISPLAY_WIDTH - viewMargin() - scrollBarWidth();
-  layout.viewWidth = layout.scrollbarX - layout.viewLeft - SCALE_X(4);
+  layout.scrollbarTouchX = DISPLAY_WIDTH - viewMargin() - scrollBarTouchWidth();
+  layout.scrollbarTrackX =
+      layout.scrollbarTouchX + (scrollBarTouchWidth() - scrollBarThumbWidth()) / 2;
+  layout.viewWidth = layout.scrollbarTouchX - layout.viewLeft - SCALE_X(4);
   layout.viewRight = layout.viewLeft + layout.viewWidth;
   layout.viewHeight = DISPLAY_HEIGHT - layout.viewTop - SCALE_Y(6);
   int y = layout.viewTop + contentPadding();
@@ -105,25 +111,26 @@ void drawSettingsMode() {
   tft.drawRoundRect(layout.viewLeft, layout.viewTop, layout.viewWidth, layout.viewHeight, 12, THEME_TEXT_DIM);
 
   const int viewBottom = layout.viewTop + layout.viewHeight;
-  const int contentLeft = layout.viewLeft + SCALE_X(6);
-  const int contentRight = layout.viewRight - SCALE_X(2);
-  const int rowWidth = contentRight - contentLeft;
-  const int rowBgX = contentLeft - SCALE_X(4);
-  const int rowBgW = rowWidth + SCALE_X(8);
+  const int horizontalMargin = rowSideMargin();
+  const int rowBgX = layout.viewLeft + horizontalMargin;
+  const int rowBgW = layout.viewWidth - 2 * horizontalMargin;
+  const int buttonInset = rowSideMargin();
+  const int rowInnerLeft = rowBgX + buttonInset;
+  const int rowInnerW = rowBgW - 2 * buttonInset;
   const int buttonHeight = SCALE_Y(44);
   const int buttonSpacing = SCALE_X(6);
   const int bpmRowY = layout.bpmRowY - settingsScrollOffset;
   if (bpmRowY >= layout.viewTop && bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = bpmRowY - SCALE_Y(18);
-    tft.drawString("Shared Tempo", contentLeft, labelY, 2);
+    tft.drawString("Shared Tempo", rowInnerLeft, labelY, 2);
     int buttonY = bpmRowY + (bpmRowHeight() - buttonHeight) / 2;
-    tft.fillRoundRect(contentLeft - SCALE_X(4), bpmRowY, rowWidth + SCALE_X(8), bpmRowHeight(), 12, THEME_BG);
-    int narrowBtnW = max(SCALE_X(26), rowWidth / 8);
-    int remainingWidth = rowWidth - narrowBtnW * 2 - buttonSpacing;
+    tft.fillRoundRect(rowBgX, bpmRowY, rowBgW, bpmRowHeight(), 12, THEME_BG);
+    int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
+    int remainingWidth = rowInnerW - narrowBtnW * 2 - buttonSpacing;
     int labelWidth = max(remainingWidth, SCALE_X(40));
-    int labelX = contentLeft + narrowBtnW + buttonSpacing;
-    drawRoundButton(contentLeft, buttonY, narrowBtnW, buttonHeight, "-", THEME_ERROR, false, 5);
+    int labelX = rowInnerLeft + narrowBtnW + buttonSpacing;
+    drawRoundButton(rowInnerLeft, buttonY, narrowBtnW, buttonHeight, "-", THEME_ERROR, false, 5);
     drawRoundButton(labelX, buttonY, labelWidth, buttonHeight, String(sharedBPM), THEME_PRIMARY, false, 4);
     drawRoundButton(labelX + labelWidth + buttonSpacing, buttonY, narrowBtnW, buttonHeight, "+", THEME_SUCCESS, false, 5);
   }
@@ -132,8 +139,8 @@ void drawSettingsMode() {
   if (clockRowY >= layout.viewTop && clockRowY + compactRowHeight() > layout.viewTop && clockRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = clockRowY - SCALE_Y(18);
-    tft.drawString("Clock Master", contentLeft, labelY, 2);
-    drawRoundButton(contentLeft - SCALE_X(4), clockRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+    tft.drawString("Clock Master", rowInnerLeft, labelY, 2);
+    drawRoundButton(rowInnerLeft, clockRowY, rowInnerW, compactRowHeight(),
                     kClockMasterLabels[static_cast<int>(midiClockMaster)], THEME_ACCENT, false, 2);
   }
 
@@ -143,9 +150,9 @@ void drawSettingsMode() {
       startModeRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = startModeRowY - SCALE_Y(18);
-    tft.drawString("Start Mode", contentLeft, labelY, 2);
+    tft.drawString("Start Mode", rowInnerLeft, labelY, 2);
     String modeLabel = instantStartMode ? "Instant" : "Quantized";
-    drawRoundButton(contentLeft - SCALE_X(4), startModeRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+    drawRoundButton(rowInnerLeft, startModeRowY, rowInnerW, compactRowHeight(),
                     modeLabel, THEME_WARNING, false, 2);
   }
 
@@ -153,14 +160,14 @@ void drawSettingsMode() {
   if (wifiRowY >= layout.viewTop && wifiRowY + statusRowHeight() > layout.viewTop && wifiRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT, THEME_SURFACE);
     String wifiStatus = "WiFi: " + String(isWiFiConnected() ? "Connected" : "Offline");
-    tft.drawString(wifiStatus, contentLeft, wifiRowY, 2);
+    tft.drawString(wifiStatus, rowInnerLeft, wifiRowY, 2);
   }
 
   const int btRowY = layout.bluetoothRowY - settingsScrollOffset;
   if (btRowY >= layout.viewTop && btRowY + statusRowHeight() > layout.viewTop && btRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT, THEME_SURFACE);
     String btStatus = "Bluetooth MIDI: " + String(deviceConnected ? "Connected" : "Idle");
-    tft.drawString(btStatus, contentLeft, btRowY, 2);
+    tft.drawString(btStatus, rowInnerLeft, btRowY, 2);
   }
 
 #if ESP_NOW_ENABLED
@@ -169,10 +176,10 @@ void drawSettingsMode() {
   if (espNowRowY + compactRowHeight() > layout.viewTop && espNowRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = espNowRowY - SCALE_Y(18);
-    tft.drawString("ESP-NOW MIDI", contentLeft, labelY, 2);
+    tft.drawString("ESP-NOW MIDI", rowInnerLeft, labelY, 2);
     const char* espNowLabel = (espNowState.mode == ESP_NOW_OFF) ? "Disabled" : "Enabled";
     uint16_t espNowColor = (espNowState.mode == ESP_NOW_OFF) ? THEME_ERROR : THEME_SUCCESS;
-    drawRoundButton(contentLeft - SCALE_X(4), espNowRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+    drawRoundButton(rowInnerLeft, espNowRowY, rowInnerW, compactRowHeight(),
                     espNowLabel, espNowColor, false, 2);
   }
 
@@ -181,11 +188,11 @@ void drawSettingsMode() {
   if (espNowModeRowY + compactRowHeight() > layout.viewTop && espNowModeRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = espNowModeRowY - SCALE_Y(18);
-    tft.drawString("ESP-NOW Mode", contentLeft, labelY, 2);
+    tft.drawString("ESP-NOW Mode", rowInnerLeft, labelY, 2);
     const char* modeLabel = (espNowState.mode == ESP_NOW_OFF) ? "Off" : 
                            (espNowState.mode == ESP_NOW_BROADCAST) ? "Broadcast" : "Peer";
     uint16_t modeColor = (espNowState.mode == ESP_NOW_OFF) ? THEME_TEXT_DIM : THEME_ACCENT;
-    drawRoundButton(contentLeft - SCALE_X(4), espNowModeRowY, rowWidth + SCALE_X(8), compactRowHeight(),
+    drawRoundButton(rowInnerLeft, espNowModeRowY, rowInnerW, compactRowHeight(),
                     modeLabel, modeColor, false, 2);
   }
 
@@ -196,7 +203,7 @@ void drawSettingsMode() {
     String espNowStatus = String("ESP-NOW: Peers=") + getEspNowPeerCount() + 
                          " TX=" + espNowState.messagesSent + 
                          " RX=" + espNowState.messagesReceived;
-    tft.drawString(espNowStatus, contentLeft, espNowStatusRowY, 2);
+    tft.drawString(espNowStatus, rowInnerLeft, espNowStatusRowY, 2);
   }
 #endif
 
@@ -204,29 +211,35 @@ void drawSettingsMode() {
   if (displayRowY + compactRowHeight() > layout.viewTop && displayRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = displayRowY - SCALE_Y(18);
-    tft.drawString("Display", contentLeft, labelY, 2);
+    tft.drawString("Display", rowInnerLeft, labelY, 2);
     tft.fillRoundRect(rowBgX, displayRowY, rowBgW, compactRowHeight(), 12, THEME_BG);
     int displayButtonHeight = compactRowHeight() - SCALE_Y(10);
     int displayButtonY = displayRowY + (compactRowHeight() - displayButtonHeight) / 2;
-    int displayFirstWidth = (rowWidth - buttonSpacing) / 2;
-    int displaySecondWidth = rowWidth - buttonSpacing - displayFirstWidth;
+    int displayFirstWidth = (rowInnerW - buttonSpacing) / 2;
+    int displaySecondWidth = rowInnerW - buttonSpacing - displayFirstWidth;
     String invertLabel = displayColorsInverted ? "Colors Normal" : "Invert Colors";
     bool rotated = (displayRotationIndex == 1);
     String rotateLabel = rotated ? "Rotate Back" : "Rotate 180";
-    drawRoundButton(contentLeft, displayButtonY, displayFirstWidth, displayButtonHeight, invertLabel,
+    drawRoundButton(rowInnerLeft, displayButtonY, displayFirstWidth, displayButtonHeight, invertLabel,
                     THEME_WARNING, false, 1);
-    drawRoundButton(contentLeft + displayFirstWidth + buttonSpacing, displayButtonY, displaySecondWidth,
+    drawRoundButton(rowInnerLeft + displayFirstWidth + buttonSpacing, displayButtonY, displaySecondWidth,
                     displayButtonHeight, rotateLabel, THEME_PRIMARY, false, 1);
   }
 
   int maxScroll = std::max(0, layout.contentHeight - layout.viewHeight);
   if (maxScroll > 0) {
+    int trackTop = layout.viewTop + SCALE_Y(3);
+    int trackHeight = layout.viewHeight - SCALE_Y(6);
+    int thumbWidth = scrollBarThumbWidth();
+    int radius = SCALE_X(3);
+    tft.fillRoundRect(layout.scrollbarTrackX, trackTop, thumbWidth, trackHeight, radius, THEME_BG);
+    tft.drawRoundRect(layout.scrollbarTrackX, trackTop, thumbWidth, trackHeight, radius, THEME_TEXT_DIM);
     int barHeight = std::max(SCALE_Y(24), (layout.viewHeight * layout.viewHeight) / layout.contentHeight);
-    int trackHeight = layout.viewHeight - barHeight;
-    int scrollable = maxScroll;
-    int barY = layout.viewTop +
-               (scrollable > 0 ? ((scrollable - settingsScrollOffset) * trackHeight) / scrollable : 0);
-    tft.fillRoundRect(layout.scrollbarX, barY, scrollBarWidth(), barHeight, SCALE_X(3), THEME_TEXT_DIM);
+    barHeight = std::min(barHeight, trackHeight);
+    int availableTrack = std::max(0, trackHeight - barHeight);
+    int barY =
+        trackTop + (settingsScrollOffset > 0 ? (settingsScrollOffset * availableTrack) / maxScroll : 0);
+    tft.fillRoundRect(layout.scrollbarTrackX, barY, thumbWidth, barHeight, radius, THEME_TEXT);
   }
 }
 
@@ -245,24 +258,29 @@ void handleSettingsMode() {
   int maxScroll = std::max(0, layout.contentHeight - layout.viewHeight);
   settingsScrollOffset = clampInt(settingsScrollOffset, 0, maxScroll);
 
-  const int contentLeft = layout.viewLeft + SCALE_X(6);
-  const int rowWidth = layout.viewWidth - SCALE_X(12);
+  const int horizontalMargin = rowSideMargin();
+  const int buttonInset = rowSideMargin();
+  const int rowInnerLeft = layout.viewLeft + horizontalMargin + buttonInset;
+  const int rowInnerW = layout.viewWidth - 2 * horizontalMargin - 2 * buttonInset;
   const int buttonHeight = SCALE_Y(44);
   const int buttonSpacing = SCALE_X(6);
   const int displayRowY = layout.displayRowY - settingsScrollOffset;
   const int displayButtonHeight = compactRowHeight() - SCALE_Y(10);
-  const int displayFirstWidth = (rowWidth - buttonSpacing) / 2;
-  const int displaySecondWidth = rowWidth - buttonSpacing - displayFirstWidth;
+  const int displayFirstWidth = (rowInnerW - buttonSpacing) / 2;
+  const int displaySecondWidth = rowInnerW - buttonSpacing - displayFirstWidth;
   const int displayButtonY = displayRowY + (compactRowHeight() - displayButtonHeight) / 2;
-  const int displayRotateX = contentLeft + displayFirstWidth + buttonSpacing;
+  const int displayRotateX = rowInnerLeft + displayFirstWidth + buttonSpacing;
   const bool displayRowVisible = displayRowY >= layout.viewTop && displayRowY + compactRowHeight() > layout.viewTop &&
                                  displayRowY < layout.viewTop + layout.viewHeight;
   const int bpmButtonY = layout.bpmRowY - settingsScrollOffset + (bpmRowHeight() - buttonHeight) / 2;
-  const int narrowBtnW = max(SCALE_X(26), rowWidth / 8);
-  const int bpmLabelWidth = max(rowWidth - 2 * narrowBtnW - buttonSpacing, SCALE_X(48));
-  const int bpmLabelX = contentLeft + narrowBtnW + buttonSpacing;
-  const int minusX = contentLeft;
+  const int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
+  const int bpmLabelWidth = max(rowInnerW - 2 * narrowBtnW - buttonSpacing, SCALE_X(48));
+  const int bpmLabelX = rowInnerLeft + narrowBtnW + buttonSpacing;
+  const int minusX = rowInnerLeft;
   const int plusX = bpmLabelX + bpmLabelWidth + buttonSpacing;
+  const int trackTop = layout.viewTop + SCALE_Y(3);
+  const int trackHeight = layout.viewHeight - SCALE_Y(6);
+  const int scrollTouchRight = layout.scrollbarTouchX + scrollBarTouchWidth();
 
   bool handled = false;
   if (touch.justPressed && isButtonPressed(minusX, bpmButtonY, narrowBtnW, buttonHeight)) {
@@ -280,8 +298,8 @@ void handleSettingsMode() {
   }
 
   const int clockButtonY = layout.clockRowY - settingsScrollOffset;
-  const int clockButtonX = contentLeft - SCALE_X(4);
-  const int clockButtonW = rowWidth + SCALE_X(8);
+  const int clockButtonX = rowInnerLeft;
+  const int clockButtonW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(clockButtonX, clockButtonY, clockButtonW, compactRowHeight())) {
     midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_ESP_NOW + 1));
@@ -292,8 +310,8 @@ void handleSettingsMode() {
 #if ESP_NOW_ENABLED
   // ESP-NOW Enable/Disable button handler
   const int espNowButtonY = layout.espNowRowY - settingsScrollOffset;
-  const int espNowButtonX = contentLeft - SCALE_X(4);
-  const int espNowButtonW = rowWidth + SCALE_X(8);
+  const int espNowButtonX = rowInnerLeft;
+  const int espNowButtonW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(espNowButtonX, espNowButtonY, espNowButtonW, compactRowHeight())) {
     // Toggle ESP-NOW on/off
@@ -308,8 +326,8 @@ void handleSettingsMode() {
 
   // ESP-NOW Mode button handler
   const int espNowModeButtonY = layout.espNowModeRowY - settingsScrollOffset;
-  const int espNowModeButtonX = contentLeft - SCALE_X(4);
-  const int espNowModeButtonW = rowWidth + SCALE_X(8);
+  const int espNowModeButtonX = rowInnerLeft;
+  const int espNowModeButtonW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(espNowModeButtonX, espNowModeButtonY, espNowModeButtonW, compactRowHeight())) {
     // Cycle through modes: OFF -> BROADCAST -> PEER -> OFF
@@ -326,8 +344,8 @@ void handleSettingsMode() {
 #endif
 
   const int startRowY = layout.startModeRowY - settingsScrollOffset;
-  const int startRowX = contentLeft - SCALE_X(4);
-  const int startRowW = rowWidth + SCALE_X(8);
+  const int startRowX = rowInnerLeft;
+  const int startRowW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(startRowX, startRowY, startRowW, compactRowHeight())) {
     instantStartMode = !instantStartMode;
@@ -336,7 +354,7 @@ void handleSettingsMode() {
   }
 
   if (!handled && displayRowVisible && touch.justPressed &&
-      isButtonPressed(contentLeft, displayButtonY, displayFirstWidth, displayButtonHeight)) {
+      isButtonPressed(rowInnerLeft, displayButtonY, displayFirstWidth, displayButtonHeight)) {
     setDisplayInversion(!displayColorsInverted);
     handled = true;
   } else if (!handled && displayRowVisible && touch.justPressed &&
@@ -347,19 +365,25 @@ void handleSettingsMode() {
 
   if (settingsScrollActive && touch.isPressed && maxScroll > 0) {
     int dy = touch.y - settingsScrollStartY;
-    int target = clampInt(settingsScrollStartOffset - dy, 0, maxScroll);
+    int target = clampInt(settingsScrollStartOffset + dy, 0, maxScroll);
     if (target != settingsScrollOffset) {
       settingsScrollOffset = target;
       requestRedraw();
     }
   }
 
-  if (touch.justPressed && !handled && maxScroll > 0 &&
+  const bool touchInsideView =
       touch.x >= layout.viewLeft && touch.x <= layout.viewLeft + layout.viewWidth &&
-      touch.y >= layout.viewTop && touch.y <= layout.viewTop + layout.viewHeight) {
+      touch.y >= layout.viewTop && touch.y <= layout.viewTop + layout.viewHeight;
+  const bool touchInsideScrollbar =
+      touch.x >= layout.scrollbarTouchX && touch.x <= scrollTouchRight &&
+      touch.y >= trackTop && touch.y <= trackTop + trackHeight;
+  if (touch.justPressed && !handled && maxScroll > 0 &&
+      (touchInsideView || touchInsideScrollbar)) {
     settingsScrollActive = true;
     settingsScrollStartY = touch.y;
     settingsScrollStartOffset = settingsScrollOffset;
+    handled = true;
   }
 
   if (touch.justReleased) {

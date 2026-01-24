@@ -389,21 +389,21 @@ static void drawRngIcon(int cx, int cy, int size, uint16_t accent) {
   tft.drawLine(x, y, x + step, cy - step / 2, accent);
 }
 
-static void drawArpIcon(int cx, int cy, int size, uint16_t accent) {
-  int baseY = cy + size / 4;
-  int width = std::max(16, size - 10);
+static void drawArpIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int width = std::max(22, size - 12);
+  int height = std::max(12, size / 3);
+  int baseY = cy + height / 3;
+  int startX = cx - width / 2;
   int steps = 4;
-  int prevX = cx - width / 2;
-  int prevY = baseY;
-  for (int i = 1; i <= steps; ++i) {
-    int nextX = prevX + width / steps;
-    int nextY = baseY - (size * i) / (steps * 3);
-    tft.drawLine(prevX, prevY, nextX, nextY, accent);
-    prevX = nextX;
-    prevY = nextY;
+  tft.drawFastHLine(startX, baseY, width, accent);
+  for (int i = 0; i <= steps; ++i) {
+    int x = startX + (width * i) / steps;
+    int y = baseY - (height * i) / steps;
+    tft.drawLine(x, baseY, x, y, fg);
+    tft.fillCircle(x, y, SCALE_X(2), fg);
   }
-  fillTriangleImpl(tft, prevX, prevY, prevX - SCALE_X(5), prevY + SCALE_Y(6), prevX + SCALE_X(5),
-                   prevY + SCALE_Y(6), accent);
+  fillTriangleImpl(tft, startX + width, baseY, startX + width + SCALE_X(4), baseY - SCALE_Y(3),
+                   startX + width + SCALE_X(4), baseY + SCALE_Y(3), accent);
 }
 
 static void drawGridIcon(int cx, int cy, int size, uint16_t accent) {
@@ -454,22 +454,35 @@ static void drawSlinkIcon(int cx, int cy, int size, uint16_t accent) {
 }
 
 static void drawTb3poIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
-  int cols = 4;
-  int rows = 2;
-  int cellW = std::max(5, size / (cols * 2));
-  int cellH = std::max(4, size / 12);
-  int gridW = cols * cellW + (cols - 1) * SCALE_X(2);
-  int gridH = rows * cellH + (rows - 1) * SCALE_Y(4);
-  int startX = cx - gridW / 2;
-  int startY = cy - gridH / 2;
-  for (int row = 0; row < rows; ++row) {
-    for (int col = 0; col < cols; ++col) {
-      int x = startX + col * (cellW + SCALE_X(2));
-      int y = startY + row * (cellH + SCALE_Y(4));
-      tft.fillRoundRect(x, y, cellW, cellH, 2, (row + col) % 2 ? accent : fg);
-      tft.drawRoundRect(x, y, cellW, cellH, 2, accent);
+  int knobRadius = std::max(3, size / 12);
+  int knobGap = knobRadius * 4;
+  int startX = cx - (knobGap * 3) / 2;
+  int startY = cy - size / 4;
+  for (int row = 0; row < 2; ++row) {
+    for (int col = 0; col < 4; ++col) {
+      int x = startX + col * knobGap;
+      int y = startY + row * (knobGap / 2);
+      tft.fillCircle(x, y, knobRadius, fg);
+      tft.drawCircle(x, y, knobRadius, accent);
+      tft.drawLine(x - knobRadius, y + knobRadius, x + knobRadius, y + knobRadius, accent);
     }
   }
+  int waveY = cy + size / 4;
+  int waveStart = cx - size / 2 + SCALE_X(4);
+  int waveEnd = cx + size / 2 - SCALE_X(4);
+  int segments = 4;
+  int segmentWidth = (waveEnd - waveStart) / segments;
+  int px = waveStart;
+  int py = waveY;
+  for (int i = 0; i <= segments; ++i) {
+    int nextX = waveStart + i * segmentWidth;
+    int nextY = waveY + ((i % 2 == 0) ? -SCALE_Y(4) : SCALE_Y(4));
+    tft.drawLine(px, py, nextX, nextY, fg);
+    px = nextX;
+    py = nextY;
+  }
+  tft.fillCircle(waveStart, waveY, SCALE_X(2), fg);
+  tft.fillCircle(waveEnd, py, SCALE_X(2), accent);
 }
 
 static void drawGridsIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
@@ -488,20 +501,29 @@ static void drawGridsIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg
   }
 }
 
-static void drawRagaIcon(int cx, int cy, int size, uint16_t accent) {
-  int heights[3] = {size / 6, size / 4, size / 3};
+static void drawRagaIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
+  int stringHeight = size / 2;
+  int startX = cx - size / 3;
+  int spacing = size / 3;
   for (int i = 0; i < 3; ++i) {
-    int x = cx - size / 4 + i * (size / 4);
-    int height = heights[i];
-    tft.drawLine(x, cy + size / 4, x, cy + size / 4 - height, accent);
-    tft.fillCircle(x, cy + size / 4 - height, SCALE_X(2), accent);
+    int x = startX + i * spacing;
+    tft.drawLine(x, cy - stringHeight / 2, x, cy + stringHeight / 2, fg);
+    tft.fillCircle(x, cy - stringHeight / 2, SCALE_X(2), accent);
   }
-  tft.drawCircle(cx, cy - size / 6, size / 5, accent);
+  int arcRadius = stringHeight / 3;
+  tft.drawCircle(cx - spacing / 2, cy + stringHeight / 2 - arcRadius, arcRadius, fg);
+  tft.drawCircle(cx + spacing / 2, cy + stringHeight / 2 - arcRadius / 2, arcRadius / 2, accent);
+  tft.fillCircle(cx, cy - stringHeight / 2 - SCALE_Y(3), SCALE_X(3), fg);
+  int waveLength = spacing / 2;
+  tft.drawLine(cx - waveLength, cy + stringHeight / 2, cx + waveLength, cy + stringHeight / 2, accent);
+  tft.drawLine(cx - waveLength, cy + stringHeight / 2 + SCALE_Y(2), cx + waveLength, cy + stringHeight / 2 + SCALE_Y(2), fg);
 }
 
 static void drawEuclidIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
   int radius = std::max(10, size / 3);
+  int inner = radius - SCALE_X(4);
   tft.drawCircle(cx, cy, radius, accent);
+  tft.drawCircle(cx, cy, inner, fg);
   const float twoPi = 6.2831853f;
   const float startAngle = -1.5707963f;
   const int steps = 8;
@@ -510,7 +532,13 @@ static void drawEuclidIcon(int cx, int cy, int size, uint16_t accent, uint16_t f
     int markerX = cx + static_cast<int>(std::cos(angle) * radius);
     int markerY = cy + static_cast<int>(std::sin(angle) * radius);
     tft.fillCircle(markerX, markerY, 2, (i % 2 == 0) ? accent : fg);
+    tft.drawLine(cx, cy, markerX, markerY, fg);
+    float midAngle = angle + (twoPi / steps) / 2.0f;
+    int arcX = cx + static_cast<int>(std::cos(midAngle) * inner);
+    int arcY = cy + static_cast<int>(std::sin(midAngle) * inner);
+    tft.drawLine(markerX, markerY, arcX, arcY, accent);
   }
+  tft.fillCircle(cx, cy, SCALE_X(3), accent);
 }
 
 static void drawMorphIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg) {
@@ -521,8 +549,18 @@ static void drawMorphIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg
   tft.fillRoundRect(left, top, width, height, 6, fg);
   int inset = SCALE_X(5);
   tft.fillRoundRect(left + inset, top + inset / 2, width - 2 * inset, height - inset / 2, 4, accent);
-  tft.fillCircle(cx - inset, cy, SCALE_X(3), accent);
-  tft.fillCircle(cx + inset, cy, SCALE_X(3), accent);
+  int waveAmp = size / 6;
+  int steps = 3;
+  for (int i = 0; i <= steps; ++i) {
+    int x0 = left + (width * i) / steps;
+    int y0 = cy + ((i % 2 == 0) ? -waveAmp / 2 : waveAmp / 2);
+    int x1 = left + (width * (i + 1)) / steps;
+    int y1 = cy + (((i + 1) % 2 == 0) ? -waveAmp / 2 : waveAmp / 2);
+    if (i < steps) {
+      tft.drawLine(x0, y0, x1, y1, fg);
+    }
+    tft.fillCircle(x0, y0, SCALE_X(2), accent);
+  }
 }
 }  // namespace
 
@@ -530,39 +568,39 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
   const uint16_t fg = THEME_SURFACE;
   switch (icon) {
     case ICON_KEYS:
-      drawKeysIcon(cx, cy, size, accent);
+      drawKeysIcon(cx, cy, size, fg);
       break;
     case ICON_SEQUENCER:
-      drawSequencerIcon(cx, cy, size, accent);
+      drawSequencerIcon(cx, cy, size, fg);
       break;
     case ICON_ZEN:
-      drawCircleIcon(cx, cy, size, accent);
+      drawCircleIcon(cx, cy, size, fg);
       break;
     case ICON_DROP:
-      drawDropIcon(cx, cy, size, accent);
+      drawDropIcon(cx, cy, size, fg);
       break;
     case ICON_RNG:
-      drawRngIcon(cx, cy, size, accent);
+      drawRngIcon(cx, cy, size, fg);
       break;
     case ICON_XY:
-      tft.drawLine(cx - size / 2, cy, cx + size / 2, cy, accent);
-      tft.drawLine(cx, cy - size / 2, cx, cy + size / 2, accent);
-      tft.fillCircle(cx, cy, SCALE_X(3), accent);
+      tft.drawLine(cx - size / 2, cy, cx + size / 2, cy, fg);
+      tft.drawLine(cx, cy - size / 2, cx, cy + size / 2, fg);
+      tft.fillCircle(cx, cy, SCALE_X(3), fg);
       break;
     case ICON_ARP:
-      drawArpIcon(cx, cy, size, accent);
+      drawArpIcon(cx, cy, size, accent, fg);
       break;
     case ICON_GRID:
-      drawGridIcon(cx, cy, size, accent);
+      drawGridIcon(cx, cy, size, fg);
       break;
     case ICON_CHORD:
-      drawChordIcon(cx, cy, size, accent);
+      drawChordIcon(cx, cy, size, fg);
       break;
     case ICON_LFO:
-      drawLfoIcon(cx, cy, size, accent);
+      drawLfoIcon(cx, cy, size, fg);
       break;
     case ICON_SLINK:
-      drawSlinkIcon(cx, cy, size, accent);
+      drawSlinkIcon(cx, cy, size, fg);
       break;
     case ICON_TB3PO:
       drawTb3poIcon(cx, cy, size, accent, fg);
@@ -571,7 +609,7 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
       drawGridsIcon(cx, cy, size, accent, fg);
       break;
     case ICON_RAGA:
-      drawRagaIcon(cx, cy, size, accent);
+      drawRagaIcon(cx, cy, size, accent, fg);
       break;
     case ICON_EUCLID:
       drawEuclidIcon(cx, cy, size, accent, fg);
