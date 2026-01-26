@@ -1055,6 +1055,11 @@ void loop() {
     // Initialize ESP-NOW after BLE to avoid conflicts
     // Note: ESP-NOW is disabled by default, enabled via Settings mode
     Serial.println("ESP-NOW MIDI available (disabled by default)");
+    static bool espNowAutoEnabled = false;
+    if (!espNowAutoEnabled) {
+      setEspNowMode(ESP_NOW_BROADCAST);
+      espNowAutoEnabled = true;
+    }
 #endif
   }
 #endif

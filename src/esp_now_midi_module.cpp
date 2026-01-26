@@ -3,7 +3,9 @@
 #if ESP_NOW_ENABLED
 
 #include <esp_now_midi.h>
+#include <esp_wifi.h>
 #include "hardware_midi.h"
+#include "clock_manager.h"
 
 // External declarations for BLE MIDI
 extern BLECharacteristic *pCharacteristic;
@@ -22,6 +24,7 @@ void initEspNowMidi() {
 
   Serial.println("[ESP-NOW] Initializing ESP-NOW MIDI...");
   
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
   // Initialize with auto-peer discovery enabled and low latency
   espNowMIDI.begin(false, true);
   
@@ -260,6 +263,8 @@ void onEspNowClock() {
     
     // Route to Hardware MIDI
     sendHardwareMIDI(0xF8, 0);
+    
+    clockManagerExternalClock();
   }
 }
 
@@ -277,6 +282,9 @@ void onEspNowStart() {
   
   // Route to Hardware MIDI
   sendHardwareMIDI(0xFA, 0);
+  if (midiClockMaster == CLOCK_ESP_NOW) {
+    clockManagerExternalStart();
+  }
   
   Serial.println("[ESP-NOW RX] Start");
 }
@@ -295,6 +303,9 @@ void onEspNowStop() {
   
   // Route to Hardware MIDI
   sendHardwareMIDI(0xFC, 0);
+  if (midiClockMaster == CLOCK_ESP_NOW) {
+    clockManagerExternalStop();
+  }
   
   Serial.println("[ESP-NOW RX] Stop");
 }

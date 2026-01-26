@@ -42,6 +42,11 @@ inline void sendMIDIClock() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xF8);
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xF8, 0x00, 0x00);
+  }
+#endif
   uint8_t wifiClock = 0xF8;
   sendWiFiMidiMessage(&wifiClock, 1);
 }
@@ -55,6 +60,11 @@ inline void sendMIDIStart() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFA);
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xFA, 0x00, 0x00);
+  }
+#endif
   uint8_t wifiStart = 0xFA;
   sendWiFiMidiMessage(&wifiStart, 1);
 }
@@ -68,6 +78,11 @@ inline void sendMIDIStop() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFC);
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xFC, 0x00, 0x00);
+  }
+#endif
   uint8_t wifiStop = 0xFC;
   sendWiFiMidiMessage(&wifiStop, 1);
 }

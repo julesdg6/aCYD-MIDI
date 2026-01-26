@@ -1,5 +1,9 @@
 #include "wifi_manager.h"
 
+#if WIFI_ENABLED
+#include <esp_wifi.h>
+#endif
+
 static bool wifiInitialized = false;
 static bool wifiConnected = false;
 static uint32_t lastWiFiAttempt = 0;
@@ -18,6 +22,9 @@ void initWiFi() {
   wifiInitialized = true;
   Serial.println("Initializing WiFi...");
   WiFi.mode(WIFI_STA);
+#if WIFI_ENABLED
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#endif
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.print("Connecting to WiFi");
@@ -33,6 +40,9 @@ void initWiFi() {
     Serial.println("\nWiFi connected!");
     Serial.print("IP address: ");
     Serial.println(getWiFiIPAddress());
+#if WIFI_ENABLED
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+#endif
   } else {
     Serial.println("\nWiFi connection failed!");
   }
