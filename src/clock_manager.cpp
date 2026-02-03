@@ -225,9 +225,16 @@ void updateClockManager() {
   uint32_t currentTick = clockManagerGetTickCount();
   
   // Process all ticks that have accumulated since last call
+  bool hadNewTicks = false;
   while (lastProcessedTick < currentTick) {
     lastProcessedTick++;
     sendMIDIClock();
+    hadNewTicks = true;
+  }
+  
+  // Request redraw if we processed any ticks (for clock-synced UI animations)
+  if (hadNewTicks) {
+    requestRedraw();
   }
 }
 
