@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
+#include <uClock.h>
 
 namespace {
 struct RunningStateDelta {
@@ -26,12 +27,9 @@ static volatile bool externalClockActive = false;
 static portMUX_TYPE clockManagerMux = portMUX_INITIALIZER_UNLOCKED;
 static const char *const kMasterNames[] = {"INTERNAL", "WIFI", "BLE", "HARDWARE"};
 
-// Microsecond-precision timing using accumulator
-// This fixes the integer truncation issue where (60000 / 120) / 24 = 20ms
-// instead of the correct 20.833ms, which caused tempo to run ~4% fast.
-// By using microseconds: (60000000 / 120) / 24 = 20833.33µs (exact)
-static uint64_t lastTickTimeMicros = 0;
-static uint64_t microAccumulator = 0;
+// uClock integration
+static bool uClockInitialized = false;
+static bool uClockRunning = false;
 
 static inline void lockClockManager() {
   portENTER_CRITICAL(&clockManagerMux);
@@ -71,19 +69,59 @@ static RunningStateDelta updateRunningStateLocked() {
   return delta;
 }
 
+// uClock callback - called on every MIDI clock tick (24 PPQN)
+static void onClockTickCallback(uint32_t tick) {
+  // Increment our tick counter
+  lockClockManager();
+  tickCount++;
+  unlockClockManager();
+  
+  // Send MIDI clock message
+  sendMIDIClock();
+  requestRedraw();
+}
+
+// uClock callback - called when clock starts
+static void onClockStartCallback() {
+  Serial.println("[ClockManager] uClock started");
+}
+
+// uClock callback - called when clock stops
+static void onClockStopCallback() {
+  Serial.println("[ClockManager] uClock stopped");
+}
+
 static RunningStateDelta updateRunningState() {
   lockClockManager();
   RunningStateDelta delta = updateRunningStateLocked();
+  bool shouldStart = delta.running && (midiClockMaster == CLOCK_INTERNAL);
+  bool shouldStop = !delta.running || (midiClockMaster != CLOCK_INTERNAL);
   unlockClockManager();
+  
   if (delta.sendStart) {
     Serial.printf("[ClockManager] INTERNAL START – pending=%d active=%d\n", delta.pendingStarts,
                   delta.activeSequencers);
     sendMIDIStart();
+    if (shouldStart && uClockInitialized) {
+      uClock.start();
+      uClockRunning = true;
+    }
   } else if (delta.sendStop) {
     Serial.printf("[ClockManager] INTERNAL STOP – pending=%d active=%d\n", delta.pendingStarts,
                   delta.activeSequencers);
     sendMIDIStop();
+    if (shouldStop && uClockRunning) {
+      uClock.stop();
+      uClockRunning = false;
+    }
+  } else if (shouldStart && !uClockRunning && uClockInitialized) {
+    uClock.start();
+    uClockRunning = true;
+  } else if (shouldStop && uClockRunning) {
+    uClock.stop();
+    uClockRunning = false;
   }
+  
   return delta;
 }
 }  // namespace
@@ -96,9 +134,26 @@ void initClockManager() {
   activeSequencers = 0;
   running = false;
   externalClockActive = false;
-  lastTickTimeMicros = 0;
-  microAccumulator = 0;
+  uClockRunning = false;
   unlockClockManager();
+  
+  // Initialize uClock library
+  // Set to 24 PPQN (standard MIDI clock)
+  uClock.setOutputPPQN(uClock.PPQN_24);
+  
+  // Set initial tempo
+  uClock.setTempo(120.0);
+  
+  // Register callbacks
+  uClock.setOnOutputPPQN(onClockTickCallback);
+  uClock.setOnClockStart(onClockStartCallback);
+  uClock.setOnClockStop(onClockStopCallback);
+  
+  // Initialize uClock (but don't start it yet)
+  uClock.init();
+  uClockInitialized = true;
+  
+  Serial.println("[ClockManager] uClock initialized at 24 PPQN");
 }
 
 static uint16_t clampBpm(uint16_t bpm) {
@@ -112,41 +167,16 @@ static uint16_t clampBpm(uint16_t bpm) {
 }
 
 void updateClockManager() {
+  // State management and start/stop control
   RunningStateDelta delta = updateRunningState();
-  if (!delta.running || midiClockMaster != CLOCK_INTERNAL) {
-    // Reset accumulator when not running
-    microAccumulator = 0;
-    lastTickTimeMicros = micros();
-    return;
-  }
   
-  // Use microsecond timing for precision
-  uint64_t nowMicros = micros();
-  uint16_t bpm = clampBpm(sharedBPM);
-  
-  // Calculate interval in microseconds: (60,000,000 / BPM) / 24
-  // This avoids integer truncation that would occur with milliseconds
-  uint64_t intervalMicros = (60000000ULL / bpm) / CLOCK_TICKS_PER_QUARTER;
-  
-  // Initialize on first run
-  if (lastTickTimeMicros == 0) {
-    lastTickTimeMicros = nowMicros;
-    return;
-  }
-  
-  // Accumulate elapsed time
-  uint64_t elapsedMicros = nowMicros - lastTickTimeMicros;
-  lastTickTimeMicros = nowMicros;
-  microAccumulator += elapsedMicros;
-  
-  // Generate ticks based on accumulated time
-  while (microAccumulator >= intervalMicros) {
-    microAccumulator -= intervalMicros;
-    lockClockManager();
-    tickCount++;
-    unlockClockManager();
-    sendMIDIClock();
-    requestRedraw();
+  // Update BPM if it changed
+  if (uClockInitialized) {
+    uint16_t bpm = clampBpm(sharedBPM);
+    float currentTempo = uClock.getTempo();
+    if (abs(currentTempo - (float)bpm) > 0.1f) {
+      uClock.setTempo((float)bpm);
+    }
   }
 }
 
