@@ -24,8 +24,13 @@ static volatile int pendingStarts = 0;
 static volatile int activeSequencers = 0;
 static volatile bool running = false;
 static volatile bool externalClockActive = false;
+static volatile bool uClockRunning = false;  // Track uClock running state
 static portMUX_TYPE clockManagerMux = portMUX_INITIALIZER_UNLOCKED;
 static const char *const kMasterNames[] = {"INTERNAL", "WIFI", "BLE", "HARDWARE"};
+
+// Forward declarations
+static inline void lockClockManager();
+static inline void unlockClockManager();
 
 // uClock callback function
 static void onClockTickCallback(uint32_t tick) {
@@ -109,6 +114,7 @@ void initClockManager() {
   activeSequencers = 0;
   running = false;
   externalClockActive = false;
+  uClockRunning = false;
   unlockClockManager();
   
   // Initialize uClock
@@ -144,10 +150,12 @@ void updateClockManager() {
   
   // Start or stop uClock based on running state
   if (midiClockMaster == CLOCK_INTERNAL) {
-    if (delta.running && !uClock.isRunning()) {
+    if (delta.running && !uClockRunning) {
       uClock.start();
-    } else if (!delta.running && uClock.isRunning()) {
+      uClockRunning = true;
+    } else if (!delta.running && uClockRunning) {
       uClock.stop();
+      uClockRunning = false;
     }
   }
 }
