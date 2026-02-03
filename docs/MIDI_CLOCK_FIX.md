@@ -62,10 +62,10 @@ lib_deps =
 // Initialize with 24 PPQN (MIDI standard)
 uClock.init();
 uClock.setTempo(120.0);
-uClock.setPPQN(uClock.PPQN_24);
+uClock.setOutputPPQN(uClock.PPQN_24);
 
 // Register callbacks
-uClock.setOnPPQN(onSync24Callback);
+uClock.setOnOutputPPQN(onSync24Callback);
 uClock.setOnClockStart(onClockStartCallback);
 uClock.setOnClockStop(onClockStopCallback);
 ```
@@ -164,8 +164,8 @@ void initClockManager() {
   
   uClock.init();
   uClock.setTempo(120.0);
-  uClock.setPPQN(uClock.PPQN_24);
-  uClock.setOnPPQN(onSync24Callback);
+  uClock.setOutputPPQN(uClock.PPQN_24);
+  uClock.setOnOutputPPQN(onSync24Callback);
   uClock.setOnClockStart(onClockStartCallback);
   uClock.setOnClockStop(onClockStopCallback);
   
