@@ -76,7 +76,7 @@ The interface features a 4-row pattern display, similar to the classic TB-303, w
 ### Display Information
 - **Top Left**: Playback status (PLAYING / WAITING / STOPPED)
 - **Top Right**: Seed mode (SEED LOCKED / SEED AUTO)
-- **Bottom**: Current density value (0-14)
+- **Above buttons**: Current density value (0-16)
 
 ## Color Palette
 
@@ -105,15 +105,32 @@ The interface uses a consistent color theme:
 - **More colorful**: Better visual distinction between different pattern elements
 - **Improved usability**: Easier to understand pattern structure while editing
 
+### Layout Optimization (Feb 2026)
+1. **Grid Height Increased**: Row height increased from 15px to 20px (33% taller)
+   - Less cramped appearance
+   - Better visibility of pattern elements
+   - Total pattern height: 60px → 80px
+2. **Button Repositioning**: Moved control buttons to bottom of screen
+   - Eliminates wasted space at bottom
+   - Buttons now 56px tall (doubled from 28px)
+   - Larger button text (font size 2)
+   - Easier to tap on touchscreen
+3. **Density Range**: Maximum density increased from 14 to 16
+   - Now matches the full 16-step sequencer
+   - Default density set to 16 (maximum)
+   - Full utilization of available steps
+
 ## Technical Details
 
 ### Implementation
 - File: `src/module_tb3po_mode.cpp`
 - Drawing function: `drawTB3POMode()`
 - Step width: 18 pixels (scaled)
-- Row height: 15 pixels (scaled)
-- Total pattern height: 4 rows × 15 pixels = 60 pixels
+- Row height: 20 pixels (scaled) - increased from 15 pixels for better visibility
+- Total pattern height: 4 rows × 20 pixels = 80 pixels
 - Number of steps: 16
+- Button height: 56 pixels (scaled) - doubled from 28 pixels
+- Button position: Anchored to bottom of screen for optimal space utilization
 
 ### Scaling
 The interface uses the project's scaling system to adapt to different display sizes:
