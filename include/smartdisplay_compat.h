@@ -251,7 +251,7 @@ public:
     lv_draw_label(layer_, &dsc, &bg_coords);
   }
 
-  static uint16_t maybeInvert565_(uint16_t color) {
+  static inline uint16_t maybeInvert565_(uint16_t color) {
     if (getInvertColors()) {
       return static_cast<uint16_t>(color ^ 0xFFFF);
     }
