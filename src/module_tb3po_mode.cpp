@@ -203,7 +203,7 @@ void drawTB3POMode() {
 
   // Draw 4-row pattern visualization (like TB-303)
   int stepW = SCALE_X(18);
-  int rowH = SCALE_Y(15);
+  int rowH = SCALE_Y(20);  // Increased from 15 to 20 for more space
   int spacing = SCALE_X(1);
   int startX = SCALE_X(10);
   int patternY = y + SCALE_Y(2);
@@ -275,23 +275,24 @@ void drawTB3POMode() {
     }
   }
   
-  y = patternY + rowH * 4 + SCALE_Y(10);
-
+  // Position buttons at the bottom of the screen
   int btnW = SCALE_X(70);
-  int btnH = SCALE_Y(28);
+  int btnH = SCALE_Y(56);  // Doubled from 28 to 56
   int btnSpacing = SCALE_X(8);
   int btnStartX = MARGIN_SMALL;
-
-  drawRoundButton(btnStartX, y, btnW, btnH,
-                  tb3poSync.playing || tb3poSync.startPending ? "STOP" : "PLAY",
-                  THEME_PRIMARY);
-  drawRoundButton(btnStartX + (btnW + btnSpacing), y, btnW, btnH, "REGEN", THEME_SECONDARY);
-  drawRoundButton(btnStartX + 2 * (btnW + btnSpacing), y, btnW, btnH, "DENS+", THEME_ACCENT);
-  drawRoundButton(btnStartX + 3 * (btnW + btnSpacing), y, btnW, btnH, "DENS-", THEME_WARNING);
+  int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(10);  // 10px from bottom
   
-  // Show density value
+  // Show density value above buttons
+  int densityY = btnY - SCALE_Y(18);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Density: " + String(tb3po.density), MARGIN_SMALL, y + btnH + SCALE_Y(8), 1);
+  tft.drawString("Density: " + String(tb3po.density), MARGIN_SMALL, densityY, 1);
+
+  drawRoundButton(btnStartX, btnY, btnW, btnH,
+                  tb3poSync.playing || tb3poSync.startPending ? "STOP" : "PLAY",
+                  THEME_PRIMARY, false, 2);
+  drawRoundButton(btnStartX + (btnW + btnSpacing), btnY, btnW, btnH, "REGEN", THEME_SECONDARY, false, 2);
+  drawRoundButton(btnStartX + 2 * (btnW + btnSpacing), btnY, btnW, btnH, "DENS+", THEME_ACCENT, false, 2);
+  drawRoundButton(btnStartX + 3 * (btnW + btnSpacing), btnY, btnW, btnH, "DENS-", THEME_WARNING, false, 2);
 }
 
 void initializeTB3POMode() {
@@ -299,7 +300,7 @@ void initializeTB3POMode() {
   tb3po.currentNote = -1;
   tb3poSync.reset();
   tb3po.readyForInput = false;
-  tb3po.density = 7;
+  tb3po.density = 16;
   tb3po.scaleIndex = 0;
   tb3po.rootNote = 0;
   tb3po.octaveOffset = 0;
@@ -321,14 +322,13 @@ void handleTB3POMode() {
   updateTB3POPlayback();
   if (touch.justPressed) {
     // Calculate button positions (must match drawTB3POMode)
-    int rowH = SCALE_Y(15);
-    int y = HEADER_HEIGHT + SCALE_Y(8) + SCALE_Y(20) + SCALE_Y(2) + rowH * 4 + SCALE_Y(10);
     int btnW = SCALE_X(70);
-    int btnH = SCALE_Y(28);
+    int btnH = SCALE_Y(56);  // Doubled from 28 to 56
     int btnSpacing = SCALE_X(8);
     int btnStartX = MARGIN_SMALL;
+    int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(10);  // 10px from bottom
     
-    if (isButtonPressed(btnStartX, y, btnW, btnH)) {
+    if (isButtonPressed(btnStartX, btnY, btnW, btnH)) {
       if (tb3poSync.playing || tb3poSync.startPending) {
         tb3poSync.stopPlayback();
       } else {
@@ -337,18 +337,18 @@ void handleTB3POMode() {
       requestRedraw();
       return;
     }
-    if (isButtonPressed(btnStartX + (btnW + btnSpacing), y, btnW, btnH)) {
+    if (isButtonPressed(btnStartX + (btnW + btnSpacing), btnY, btnW, btnH)) {
       regenerateAll();
       requestRedraw();
       return;
     }
-    if (isButtonPressed(btnStartX + 2 * (btnW + btnSpacing), y, btnW, btnH)) {
-      tb3po.density = min(14, tb3po.density + 1);
+    if (isButtonPressed(btnStartX + 2 * (btnW + btnSpacing), btnY, btnW, btnH)) {
+      tb3po.density = min(16, tb3po.density + 1);  // Changed max from 14 to 16
       regenerateAll();
       requestRedraw();
       return;
     }
-    if (isButtonPressed(btnStartX + 3 * (btnW + btnSpacing), y, btnW, btnH)) {
+    if (isButtonPressed(btnStartX + 3 * (btnW + btnSpacing), btnY, btnW, btnH)) {
       tb3po.density = max(0, tb3po.density - 1);
       regenerateAll();
       requestRedraw();
