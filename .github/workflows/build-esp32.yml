@@ -25,9 +25,9 @@ jobs:
           - esp32-3248S035R
           - esp32-3248S035R-uart2
           - esp32-3248S035R-uart0
-          - esp32-4032S040R
-          - esp32-4032S040R-uart2
-          - esp32-4032S040R-uart0
+          - esp32-4832S040R
+          - esp32-4832S040R-uart2
+          - esp32-4832S040R-uart0
           - esp32-headless-midi-master
           - esp32s3-headless
           # uncomment if you also want the non-v2 board
