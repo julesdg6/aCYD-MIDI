@@ -1,5 +1,6 @@
 #include "module_sequencer_mode.h"
 #include "clock_manager.h"
+#include <uClock.h>
 #include <cstring>
 
 bool sequencePattern[SEQ_TRACKS][SEQ_STEPS] = {};
@@ -7,6 +8,18 @@ int currentStep = 0;
 unsigned long noteOffTime[SEQ_TRACKS] = {0};
 static SequencerSyncState sequencerSync;
 static const uint8_t kDrumNotes[SEQ_TRACKS] = {36, 38, 42, 46};
+
+// ISR-safe step counter from uClock step extension
+static volatile uint32_t sequencerStepCount = 0;
+static const uint8_t sequencerTrackIndex = 5;  // Track 5 to avoid conflict with TB3PO (track 0)
+
+// ISR callback for uClock step sequencer extension
+static void onSequencerStepISR(uint32_t step, uint8_t track) {
+  (void)step;
+  if (track == sequencerTrackIndex) {
+    sequencerStepCount++;
+  }
+}
 
 static bool sequencerModuleRunning() {
   return sequencerSync.playing || sequencerSync.startPending;
@@ -39,6 +52,9 @@ void initializeSequencerMode() {
       sequencePattern[t][s] = false;
     }
   }
+  
+  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  uClock.setOnStep(onSequencerStepISR, 1);
 }
 
 void drawSequencerMode() {
@@ -204,12 +220,21 @@ void updateSequencer() {
     return;
   }
 
-  sequencerSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = sequencerSync.tryStartIfReady(!instantStartMode) && !sequencerSync.playing;
+  if (justStarted) {
+    currentStep = 0;
+  }
   if (!sequencerSync.playing) {
     return;
   }
 
-  uint32_t readySteps = sequencerSync.consumeReadySteps();
+  // Get steps from uClock step extension (ISR-safe)
+  uint32_t readySteps = 0;
+  noInterrupts();
+  readySteps = sequencerStepCount;
+  sequencerStepCount = 0;
+  interrupts();
+  
   if (readySteps == 0) {
     return;
   }

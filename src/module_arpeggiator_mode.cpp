@@ -1,13 +1,28 @@
 #include "module_arpeggiator_mode.h"
 #include "clock_manager.h"
+#include <uClock.h>
 
 #include <algorithm>
 
 Arpeggiator arp;
 static SequencerSyncState arpSync;
+
+// ISR-safe step counter from uClock step extension
+static volatile uint32_t arpStepCount = 0;
+static const uint8_t arpTrackIndex = 1;
+
+// ISR callback for uClock step sequencer extension
+static void onArpStepISR(uint32_t step, uint8_t track) {
+  (void)step;
+  if (track == arpTrackIndex) {
+    arpStepCount++;
+  }
+}
+
 static inline bool arpActive() {
   return arpSync.playing || arpSync.startPending;
 }
+
 String patternNames[] = {"UP", "DOWN", "UP/DN", "RAND", "CHANCE"};
 String chordTypeNames[] = {"MAJ", "MIN", "7TH"};
 int pianoOctave = 4;
@@ -28,6 +43,9 @@ void initializeArpeggiatorMode() {
   calculateStepInterval();
   arp.tickAccumulator = 0.0f;
   arpSync.reset();
+  
+  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  uClock.setOnStep(onArpStepISR, 1);
 }
 
 void drawArpeggiatorMode() {
@@ -280,10 +298,18 @@ void updateArpeggiator() {
   if (!arpSync.playing) {
     return;
   }
-  uint32_t readySteps = arpSync.consumeReadySteps();
+  
+  // Get steps from uClock step extension (ISR-safe)
+  uint32_t readySteps = 0;
+  noInterrupts();
+  readySteps = arpStepCount;
+  arpStepCount = 0;
+  interrupts();
+  
   if (readySteps == 0) {
     return;
   }
+  
   arp.tickAccumulator += static_cast<float>(readySteps);
   while (arp.tickAccumulator >= arp.stepTicks) {
     playArpNote();
