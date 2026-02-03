@@ -62,11 +62,7 @@ void showSplashScreen(const String &status, unsigned long delayMs) {
   lv_obj_set_pos(canvas, startX, startY);
   
   // Allocate buffer for canvas (RGB565 format: 2 bytes per pixel)
-  static lv_color_t *cbuf = nullptr;
-  if (cbuf) {
-    free(cbuf);
-  }
-  cbuf = (lv_color_t *)malloc(canvasWidth * canvasHeight * sizeof(lv_color_t));
+  lv_color_t *cbuf = (lv_color_t *)malloc(canvasWidth * canvasHeight * sizeof(lv_color_t));
   
   if (cbuf) {
     lv_canvas_set_buffer(canvas, cbuf, canvasWidth, canvasHeight, LV_COLOR_FORMAT_RGB565);
@@ -107,25 +103,25 @@ void showSplashScreen(const String &status, unsigned long delayMs) {
   lv_obj_align(title_label, LV_ALIGN_TOP_MID, 0, HEADER_TITLE_Y + SCALE_Y(8));
   
   // Create version label
-  String version_str = String("v") + ACYD_MIDI_VERSION;
   lv_obj_t *version_label = lv_label_create(splash_container);
-  lv_label_set_text(version_label, version_str.c_str());
+  lv_label_set_text_fmt(version_label, "v%s", ACYD_MIDI_VERSION);
   lv_obj_set_style_text_font(version_label, fontFor(2), 0);
   lv_obj_set_style_text_color(version_label, colorFrom565(THEME_TEXT_DIM), 0);
   lv_obj_align(version_label, LV_ALIGN_TOP_MID, 0, HEADER_TITLE_Y + SCALE_Y(36));
   
   // Create status message label
-  String message;
-  if (status.length()) {
-    message = status;
-  } else if (isRemoteDisplayConnected()) {
-    message = "WiFi: " + getRemoteDisplayIP();
-  } else {
-    message = "WiFi: Connecting...";
-  }
-  
   lv_obj_t *status_label = lv_label_create(splash_container);
-  lv_label_set_text(status_label, message.c_str());
+  if (status.length()) {
+    // Copy the provided status string
+    lv_label_set_text_fmt(status_label, "%s", status.c_str());
+  } else if (isRemoteDisplayConnected()) {
+    // Copy the WiFi IP string
+    String wifi_msg = "WiFi: " + getRemoteDisplayIP();
+    lv_label_set_text_fmt(status_label, "%s", wifi_msg.c_str());
+  } else {
+    // Static string - can use directly
+    lv_label_set_text_static(status_label, "WiFi: Connecting...");
+  }
   lv_obj_set_style_text_font(status_label, fontFor(2), 0);
   lv_obj_set_style_text_color(status_label, colorFrom565(THEME_TEXT), 0);
   lv_obj_align(status_label, LV_ALIGN_BOTTOM_MID, 0, -SCALE_Y(32));
@@ -135,11 +131,10 @@ void showSplashScreen(const String &status, unsigned long delayMs) {
   
   delay(delayMs);
   
-  // Clean up splash screen objects
-  lv_obj_delete(splash_container);
+  // Clean up splash screen objects and free canvas buffer
   if (cbuf) {
     free(cbuf);
-    cbuf = nullptr;
   }
+  lv_obj_delete(splash_container);
   lv_refr_now(disp);
 }
