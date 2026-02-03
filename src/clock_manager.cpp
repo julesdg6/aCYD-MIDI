@@ -142,10 +142,10 @@ void initClockManager() {
   uClock.setTempo(120.0);
   
   // Set to 24 PPQN (MIDI standard)
-  uClock.setPPQN(uClock.PPQN_24);
+  uClock.setOutputPPQN(uClock.PPQN_24);
   
   // Register callbacks
-  uClock.setOnPPQN(onSync24Callback);
+  uClock.setOnOutputPPQN(onSync24Callback);
   uClock.setOnClockStart(onClockStartCallback);
   uClock.setOnClockStop(onClockStopCallback);
   
