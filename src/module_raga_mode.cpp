@@ -1,5 +1,6 @@
 #include "module_raga_mode.h"
 #include "clock_manager.h"
+#include <uClock.h>
 
 #include <Arduino.h>
 #include <algorithm>
@@ -111,6 +112,18 @@ static int g_talaBeatIndex = 0;
 static int g_lastTalaBeatIndex = -1;
 static SequencerSyncState ragaSync;
 
+// ISR-safe step counter from uClock step extension
+static volatile uint32_t ragaStepCount = 0;
+static const uint8_t ragaTrackIndex = 4;
+
+// ISR callback for uClock step sequencer extension
+static void onRagaStepISR(uint32_t step, uint8_t track) {
+  (void)step;
+  if (track == ragaTrackIndex) {
+    ragaStepCount++;
+  }
+}
+
 static bool updateRagaTempo();
 static void generateRagaPhrase();
 static void scheduleNextNote(unsigned long now);
@@ -135,6 +148,9 @@ void initializeRagaMode() {
   g_activeTempo = 0;
   ragaSync.reset();
   updateRagaTempo();
+  
+  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  uClock.setOnStep(onRagaStepISR, 1);
 }
 
 void drawRagaMode() {
@@ -349,7 +365,13 @@ static void updateRagaPlayback() {
     return;
   }
 
-  uint32_t readySteps = ragaSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
+  // Get steps from uClock step extension (ISR-safe)
+  uint32_t readySteps = 0;
+  noInterrupts();
+  readySteps = ragaStepCount;
+  ragaStepCount = 0;
+  interrupts();
+  
   if (readySteps == 0) {
     return;
   }

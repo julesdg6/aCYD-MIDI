@@ -1,8 +1,21 @@
 #include "module_random_generator_mode.h"
 #include "clock_manager.h"
+#include <uClock.h>
 
 RandomGen randomGen;
 static SequencerSyncState randomSync;
+
+// ISR-safe step counter from uClock step extension
+static volatile uint32_t randomStepCount = 0;
+static const uint8_t randomTrackIndex = 3;
+
+// ISR callback for uClock step sequencer extension
+static void onRandomStepISR(uint32_t step, uint8_t track) {
+  (void)step;
+  if (track == randomTrackIndex) {
+    randomStepCount++;
+  }
+}
 
 static bool randomModuleRunning() {
   return randomSync.playing || randomSync.startPending;
@@ -46,6 +59,9 @@ void initializeRandomGeneratorMode() {
   randomGen.subdivision = 4;
   randomGen.currentNote = -1;
   randomSync.reset();
+  
+  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  uClock.setOnStep(onRandomStepISR, 1);
 }
 
 void drawRandomGeneratorMode() {
@@ -254,11 +270,30 @@ void updateRandomGenerator() {
   if (!randomSync.playing) {
     return;
   }
-  uint32_t readySteps = randomSync.consumeReadySteps(getRandomStepIntervalTicks());
-  if (readySteps == 0) {
+  
+  // Get steps from uClock step extension (ISR-safe)
+  uint32_t readySteps = 0;
+  noInterrupts();
+  readySteps = randomStepCount;
+  randomStepCount = 0;
+  interrupts();
+  
+  // Apply subdivision: we get 16th notes from uClock, but may need to skip some
+  static uint32_t subdivAccumulator = 0;
+  subdivAccumulator += readySteps;
+  
+  uint32_t stepsToPlay = 0;
+  uint32_t subdivFactor = randomGen.subdivision / 4; // 4 = quarter, 8 = eighth, 16 = sixteenth
+  if (subdivFactor == 0) subdivFactor = 1;
+  
+  stepsToPlay = subdivAccumulator / subdivFactor;
+  subdivAccumulator %= subdivFactor;
+  
+  if (stepsToPlay == 0) {
     return;
   }
-  for (uint32_t i = 0; i < readySteps; ++i) {
+  
+  for (uint32_t i = 0; i < stepsToPlay; ++i) {
     playRandomNote();
   }
 }
