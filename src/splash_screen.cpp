@@ -57,14 +57,13 @@ void showSplashScreen(const String &status, unsigned long delayMs) {
   const int startX = std::max(0, (DISPLAY_WIDTH - canvasWidth) / 2);
   const int startY = std::max(0, (DISPLAY_HEIGHT - canvasHeight) / 2 - SCALE_Y(10));
   
-  // Create canvas for the logo
-  lv_obj_t *canvas = lv_canvas_create(splash_container);
-  lv_obj_set_pos(canvas, startX, startY);
-  
   // Allocate buffer for canvas (RGB565 format: 2 bytes per pixel)
   lv_color_t *cbuf = (lv_color_t *)malloc(canvasWidth * canvasHeight * sizeof(lv_color_t));
   
   if (cbuf) {
+    // Create canvas for the logo
+    lv_obj_t *canvas = lv_canvas_create(splash_container);
+    lv_obj_set_pos(canvas, startX, startY);
     lv_canvas_set_buffer(canvas, cbuf, canvasWidth, canvasHeight, LV_COLOR_FORMAT_RGB565);
     
     lv_color_t bg_color = colorFrom565(THEME_BG);
@@ -97,7 +96,7 @@ void showSplashScreen(const String &status, unsigned long delayMs) {
   
   // Create title label
   lv_obj_t *title_label = lv_label_create(splash_container);
-  lv_label_set_text(title_label, "aCYD MIDI");
+  lv_label_set_text_static(title_label, "aCYD MIDI");
   lv_obj_set_style_text_font(title_label, fontFor(5), 0);
   lv_obj_set_style_text_color(title_label, colorFrom565(THEME_TEXT), 0);
   lv_obj_align(title_label, LV_ALIGN_TOP_MID, 0, HEADER_TITLE_Y + SCALE_Y(8));
