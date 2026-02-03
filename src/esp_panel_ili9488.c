@@ -328,6 +328,8 @@ esp_err_t esp_lcd_new_panel_ili9488(const esp_lcd_panel_io_handle_t io, const es
     if (ph == NULL)
     {
         log_e("No memory available for ili9488_panel_t");
+        if (config->reset_gpio_num != GPIO_NUM_NC)
+            gpio_reset_pin(config->reset_gpio_num);
         return ESP_ERR_NO_MEM;
     }
 

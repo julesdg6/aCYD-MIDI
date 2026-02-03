@@ -23,7 +23,10 @@ void initEspNowMidi() {
   }
 
   Serial.println("[ESP-NOW] Initializing ESP-NOW MIDI...");
-  
+  // Ensure the WiFi stack is in STA mode before touching modem power-save
+  // This avoids calling esp_wifi_set_ps() before the WiFi driver is ready,
+  // which can trigger an abort when BLE and WiFi are both active.
+  WiFi.mode(WIFI_STA);
   esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
   // Initialize with auto-peer discovery enabled and low latency
   espNowMIDI.begin(false, true);
@@ -136,46 +139,58 @@ void sendEspNowMidi(uint8_t status, uint8_t data1, uint8_t data2) {
     return;
   }
   
-  // Extract channel and message type
-  uint8_t channel = status & 0x0F;
-  uint8_t messageType = status & 0xF0;
-  
   esp_err_t result = ESP_OK;
-  
-  switch (messageType) {
-    case 0x90: // Note On
-      result = espNowMIDI.sendNoteOn(data1, data2, channel);
-      break;
-    case 0x80: // Note Off
-      result = espNowMIDI.sendNoteOff(data1, data2, channel);
-      break;
-    case 0xB0: // Control Change
-      result = espNowMIDI.sendControlChange(data1, data2, channel);
-      break;
-    case 0xC0: // Program Change
-      result = espNowMIDI.sendProgramChange(data1, channel);
-      break;
-    case 0xE0: // Pitch Bend
-      {
-        int16_t pitchValue = ((data2 << 7) | data1) - 8192;
-        result = espNowMIDI.sendPitchBend(pitchValue, channel);
-      }
-      break;
-    case 0xF8: // MIDI Clock
-      result = espNowMIDI.sendClock();
-      break;
-    case 0xFA: // MIDI Start
-      result = espNowMIDI.sendStart();
-      break;
-    case 0xFC: // MIDI Stop
-      result = espNowMIDI.sendStop();
-      break;
-    case 0xFB: // MIDI Continue
-      result = espNowMIDI.sendContinue();
-      break;
-    default:
-      // Unsupported message type for ESP-NOW
-      return;
+
+  /* Real-time system messages (0xF8 and above) are single-byte and
+   * should be handled by their raw status value. Masking with 0xF0
+   * collapses these into 0xF0, so handle them first using the raw
+   * status byte, then fall back to channel-based messages. */
+  if (status >= 0xF8) {
+    switch (status) {
+      case 0xF8: // MIDI Clock
+        result = espNowMIDI.sendClock();
+        break;
+      case 0xFA: // MIDI Start
+        result = espNowMIDI.sendStart();
+        break;
+      case 0xFB: // MIDI Continue
+        result = espNowMIDI.sendContinue();
+        break;
+      case 0xFC: // MIDI Stop
+        result = espNowMIDI.sendStop();
+        break;
+      default:
+        // Other system realtime messages not supported here
+        return;
+    }
+  } else {
+    // Channel voice messages: mask out channel and switch on high nibble
+    uint8_t channel = status & 0x0F;
+    uint8_t messageType = status & 0xF0;
+
+    switch (messageType) {
+      case 0x90: // Note On
+        result = espNowMIDI.sendNoteOn(data1, data2, channel);
+        break;
+      case 0x80: // Note Off
+        result = espNowMIDI.sendNoteOff(data1, data2, channel);
+        break;
+      case 0xB0: // Control Change
+        result = espNowMIDI.sendControlChange(data1, data2, channel);
+        break;
+      case 0xC0: // Program Change
+        result = espNowMIDI.sendProgramChange(data1, channel);
+        break;
+      case 0xE0: // Pitch Bend
+        {
+          int16_t pitchValue = ((data2 << 7) | data1) - 8192;
+          result = espNowMIDI.sendPitchBend(pitchValue, channel);
+        }
+        break;
+      default:
+        // Unsupported message type for ESP-NOW
+        return;
+    }
   }
   
   if (result == ESP_OK) {
@@ -195,11 +210,9 @@ void onEspNowNoteOn(byte channel, byte note, byte velocity) {
     midiPacket[3] = note;
     midiPacket[4] = velocity;
     pCharacteristic->setValue(midiPacket, 5);
-    pCharacteristic->notify();
-  }
-  
   // Route to Hardware MIDI
   sendHardwareMIDI(status, note, velocity);
+  
   sendHardwareMIDI(status, note, velocity);
   
   Serial.printf("[ESP-NOW RX] Note On: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
@@ -239,9 +252,7 @@ void onEspNowControlChange(byte channel, byte control, byte value) {
     pCharacteristic->setValue(midiPacket, 5);
     pCharacteristic->notify();
   }
-  
   // Route to Hardware MIDI
-  sendHardwareMIDI(status, control, value);
   sendHardwareMIDI(status, control, value);
   
   Serial.printf("[ESP-NOW RX] CC: Ch=%d, CC=%d, Val=%d\n", channel, control, value);
@@ -325,6 +336,10 @@ void onEspNowContinue() {
   // Route to Hardware MIDI
   sendHardwareMIDI(0xFB, 0);
   
+  if (midiClockMaster == CLOCK_ESP_NOW) {
+    clockManagerExternalContinue();
+  }
+
   Serial.println("[ESP-NOW RX] Continue");
 }
 

@@ -27,7 +27,6 @@ void initializeArpeggiatorMode() {
   pianoOctave = 4;
   calculateStepInterval();
   arp.tickAccumulator = 0.0f;
-  arp.stepTicks = max(0.125f, 16.0f / max(arp.speed, 1));
   arpSync.reset();
 }
 

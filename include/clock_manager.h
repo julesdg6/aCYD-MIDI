@@ -18,6 +18,7 @@ void clockManagerSequencerStopped();
 void clockManagerExternalStart();
 void clockManagerExternalStop();
 void clockManagerExternalClock();
+void clockManagerExternalContinue();
 uint32_t clockManagerGetTickCount();
 bool clockManagerHasTickAdvanced(uint32_t &lastSeenTick);
 bool clockManagerIsBarStart();

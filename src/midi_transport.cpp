@@ -108,7 +108,9 @@ static void handleWiFiMidiInput() {
     static uint8_t buffer[256];
     int len = wifiMidiUdp.read(buffer, sizeof(buffer));
     if (len > 0) {
-      midiTransportProcessIncomingBytes(buffer, static_cast<size_t>(len));
+      for (int i = 0; i < len; ++i) {
+        processTransportByte(buffer[i]);
+      }
     }
     packetSize = wifiMidiUdp.parsePacket();
   }

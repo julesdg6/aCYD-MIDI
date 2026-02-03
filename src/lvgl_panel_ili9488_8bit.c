@@ -8,10 +8,14 @@
 #include <esp_panel_ili9488.h>
 #include <lvgl_panel_common.h>
 
-lv_display_t *lvgl_lcd_init()
+lv_display_t *lvgl_lcd_init(void)
 {
     lv_display_t *display = lvgl_create_display();
-    log_v("display:0x%08x", display);
+    log_v("display:%p", (void *)display);
+    if (display == NULL) {
+        log_e("Failed to create LVGL display");
+        return NULL;
+    }
 
 #if ILI9488_8BIT_RD >= 0
     pinMode(ILI9488_8BIT_RD, OUTPUT);

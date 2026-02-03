@@ -128,7 +128,7 @@ void drawSettingsMode() {
     tft.fillRoundRect(rowBgX, bpmRowY, rowBgW, bpmRowHeight(), 12, THEME_BG);
     int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
     int remainingWidth = rowInnerW - narrowBtnW * 2 - buttonSpacing;
-    int labelWidth = max(remainingWidth, SCALE_X(40));
+    int labelWidth = max(remainingWidth, SCALE_X(48));
     int labelX = rowInnerLeft + narrowBtnW + buttonSpacing;
     drawRoundButton(rowInnerLeft, buttonY, narrowBtnW, buttonHeight, "-", THEME_ERROR, false, 5);
     drawRoundButton(labelX, buttonY, labelWidth, buttonHeight, String(sharedBPM), THEME_PRIMARY, false, 4);

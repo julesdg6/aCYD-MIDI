@@ -53,7 +53,6 @@ static uint32_t ble_init_start_ms = 0;
 static String uniqueDeviceName;
 
 TFT_eSPI tft;
-bool TFT_eSPI::invertColors_ = false;
 BLECharacteristic *pCharacteristic = nullptr;
 bool deviceConnected = false;
 volatile bool ble_request_redraw = false;
@@ -722,7 +721,6 @@ void requestRedraw() {
 
 void setDisplayInversion(bool invert) {
   if (displayColorsInverted == invert) {
-    requestRedraw();
     return;
   }
   displayColorsInverted = invert;
@@ -1056,18 +1054,13 @@ void loop() {
     setupBLE();
     ble_initialized = true;
     
-#if ESP_NOW_ENABLED
+  #if ESP_NOW_ENABLED
+  #if ESP_NOW_ENABLED
     // Initialize ESP-NOW after BLE to avoid conflicts
-    // Note: ESP-NOW is disabled by default, enabled via Settings mode
-    Serial.println("ESP-NOW MIDI available (disabled by default)");
-    static bool espNowAutoEnabled = false;
-    if (!espNowAutoEnabled) {
-      setEspNowMode(ESP_NOW_BROADCAST);
-      espNowAutoEnabled = true;
+    Serial.println("ESP-NOW MIDI available (enable via Settings)");
+  #endif
+  #endif
     }
-#endif
-  }
-#endif
 
   updateTouch();
   updateHeaderCapture();
@@ -1092,6 +1085,8 @@ void loop() {
     ble_request_redraw = false;
     requestRedraw();
   }
+
+#endif
 
   switch (currentMode) {
     case MENU:

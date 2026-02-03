@@ -91,7 +91,7 @@ static inline void drawStatusIndicators() {
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
   String bpmLabel = String(sharedBPM);
-  int bpmX = max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
+  int bpmX = std::max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
   int bpmY = iconsStartY + totalHeight / 2 - SCALE_Y(6);
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);
   tft.drawString(bpmLabel, bpmX, bpmY, 2);
@@ -114,8 +114,30 @@ static inline void drawStatusIndicators() {
   };
 
   for (int i = 0; i < 4; ++i) {
-    tft.fillRect(iconsStartX + icons[i].dx, iconsStartY + icons[i].dy, iconSize,
-                 iconSize, icons[i].color);
+    int x = iconsStartX + icons[i].dx;
+    int y = iconsStartY + icons[i].dy;
+    int centerX = x + iconSize / 2;
+    int centerY = y + iconSize / 2;
+
+    switch (i) {
+      case 0:
+        // WiFi icon (top-left)
+        drawWifiIndicator(centerX, centerY, icons[i].color);
+        break;
+      case 1:
+        // Bluetooth icon (top-right)
+        drawBluetoothIndicator(centerX, centerY, icons[i].color);
+        break;
+      case 2:
+        // Clock indicator (bottom-left) - small filled circle
+        tft.fillCircle(centerX, centerY, SCALE_X(4), icons[i].color);
+        break;
+      case 3:
+        // MIDI pulse indicator (bottom-right) - small rounded rect
+        tft.fillRoundRect(centerX - SCALE_X(4), centerY - SCALE_Y(4),
+                          SCALE_X(8), SCALE_Y(8), 3, icons[i].color);
+        break;
+    }
   }
 }
 

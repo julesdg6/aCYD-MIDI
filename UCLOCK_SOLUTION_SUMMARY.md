@@ -48,21 +48,80 @@ lib_deps =
 #include <uClock.h>
 
 // Called on every MIDI clock tick (24 PPQN)
-static void onClockTickCallback(uint32_t tick) {
-  lockClockManager();
+/*
+ * ISR-safe callbacks
+ * ------------------
+ * The uClock callbacks run in ISR context and must not call non-ISR-safe
+ * functions such as `sendMIDIClock()`, `requestRedraw()` or `Serial.println()`.
+ * Instead the ISR should perform minimal, ISR-safe work (update volatile
+ * counters and notify a FreeRTOS task). The `ClockWorker` task (created at
+ * initialization) will dequeue events and run the non-ISR work in thread
+ * context.
+ */
+
+// Example shared objects (created elsewhere during init):
+// static QueueHandle_t clockEventQueue; // queue of uint8_t event codes
+// enum ClockEvent { CLOCK_EVENT_TICK = 1, CLOCK_EVENT_START = 2, CLOCK_EVENT_STOP = 3 };
+
+static void onClockTickCallback(uint32_t /*tick*/) {
+  // Minimal ISR work: update protected tickCount and notify worker
+  portENTER_CRITICAL_ISR(&clockManagerMux);
   tickCount++;
-  unlockClockManager();
-  sendMIDIClock();
-  requestRedraw();
+  portEXIT_CRITICAL_ISR(&clockManagerMux);
+
+  uint8_t ev = CLOCK_EVENT_TICK;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  if (clockEventQueue) {
+    xQueueSendFromISR(clockEventQueue, &ev, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
 }
 
 static void onClockStartCallback() {
-  Serial.println("[uClock] Clock started");
+  uint8_t ev = CLOCK_EVENT_START;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  if (clockEventQueue) {
+    xQueueSendFromISR(clockEventQueue, &ev, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
 }
 
 static void onClockStopCallback() {
-  Serial.println("[uClock] Clock stopped");
+  uint8_t ev = CLOCK_EVENT_STOP;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  if (clockEventQueue) {
+    xQueueSendFromISR(clockEventQueue, &ev, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
 }
+
+/*
+ * ClockWorker (thread context)
+ * ----------------------------
+ * Runs in task context and performs non-ISR-safe operations:
+ * - sendMIDIClock()
+ * - requestRedraw()
+ * - Serial logging for start/stop
+ */
+// void ClockWorker(void *param) {
+//   uint8_t ev;
+//   for (;;) {
+//     if (xQueueReceive(clockEventQueue, &ev, portMAX_DELAY) == pdTRUE) {
+//       switch (ev) {
+//         case CLOCK_EVENT_TICK:
+//           sendMIDIClock();
+//           requestRedraw();
+//           break;
+//         case CLOCK_EVENT_START:
+//           Serial.println("[uClock] Clock started");
+//           break;
+//         case CLOCK_EVENT_STOP:
+//           Serial.println("[uClock] Clock stopped");
+//           break;
+//       }
+//     }
+//   }
+// }
 ```
 
 #### Initialization

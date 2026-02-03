@@ -101,7 +101,7 @@ void drawRandomGenControls() {
   int barY = y + SCALE_Y(10);
   tft.fillRect(barX, barY, barW, SCALE_Y(15), THEME_BG);
   tft.drawRect(barX, barY, barW, SCALE_Y(15), THEME_TEXT_DIM);
-  int fillW = (barW * randomGen.probability) / 100;
+  int fillW = ((barW - 2) * randomGen.probability) / 100;
   if (fillW > 0) {
     tft.fillRect(barX + 1, barY + 1, fillW, SCALE_Y(13), THEME_PRIMARY);
   }

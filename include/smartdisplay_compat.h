@@ -211,7 +211,7 @@ public:
   }
 
  private:
-  static bool invertColors_;
+  static inline bool invertColors_ = false;
   void drawText_(const char *text, int16_t x, int16_t y, uint8_t font, bool centered) {
     if (!layer_ || !text) {
       return;

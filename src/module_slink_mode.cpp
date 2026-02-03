@@ -170,7 +170,8 @@ void updateSlinkEngine() {
     
     // Process note offs
     processVoiceNoteOffs();
-    requestRedraw();
+    // Process note offs
+    processVoiceNoteOffs();
 }
 
 // ============================================================

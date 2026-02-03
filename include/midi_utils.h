@@ -13,10 +13,8 @@
 inline void sendMIDI(byte cmd, byte note, byte vel) {
   // Send via BLE MIDI
   if (deviceConnected) {
-    midiPacket[2] = cmd;
-    midiPacket[3] = note;
-    midiPacket[4] = vel;
-    pCharacteristic->setValue(midiPacket, 5);
+    uint8_t localPacket[5] = {midiPacket[0], midiPacket[1], cmd, note, vel};
+    pCharacteristic->setValue(localPacket, 5);
     pCharacteristic->notify();
   }
   
