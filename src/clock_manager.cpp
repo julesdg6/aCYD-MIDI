@@ -281,3 +281,8 @@ bool clockManagerIsRunning() {
   unlockClockManager();
   return isRunning;
 }
+
+void clockManagerUpdateBPM() {
+  uint16_t bpm = clampBpm(sharedBPM);
+  uClock.setTempo((float)bpm);
+}
