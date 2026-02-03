@@ -11,15 +11,16 @@ static SequencerSyncState arpSync;
 static volatile uint32_t arpStepCount = 0;
 static const uint8_t arpTrackIndex = 1;
 
-static inline bool arpActive() {
-  return arpSync.playing || arpSync.startPending;
-}
 // ISR callback for uClock step sequencer extension
 static void onArpStepISR(uint32_t step, uint8_t track) {
   (void)step;
   if (track == arpTrackIndex) {
     arpStepCount++;
   }
+}
+
+static inline bool arpActive() {
+  return arpSync.playing || arpSync.startPending;
 }
 
 String patternNames[] = {"UP", "DOWN", "UP/DN", "RAND", "CHANCE"};

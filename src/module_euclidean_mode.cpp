@@ -206,8 +206,9 @@ void updateEuclideanSequencer() {
     tripletAccumulator += readySteps;
     // Advance every 1.5 steps (6 ticks per 16th in triplet vs 4 in straight)
     // This is approximate; actual timing handled by step interval
-    readySteps = tripletAccumulator;
-    tripletAccumulator = 0;
+    uint32_t tripletDivisor = 3;  // Process every 3rd step in triplet mode
+    readySteps = tripletAccumulator / tripletDivisor;
+    tripletAccumulator %= tripletDivisor;
   }
   
   if (readySteps == 0) {

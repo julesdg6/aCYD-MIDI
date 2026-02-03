@@ -283,7 +283,8 @@ void updateRandomGenerator() {
   subdivAccumulator += readySteps;
   
   uint32_t stepsToPlay = 0;
-  uint32_t subdivFactor = randomGen.subdivision / 4; // 4 = quarter, 8 = eighth, 16 = sixteenth
+  // subdivision: 4=quarter, 8=eighth, 16=sixteenth note intervals
+  uint32_t subdivFactor = randomGen.subdivision / 4;
   if (subdivFactor == 0) subdivFactor = 1;
   
   stepsToPlay = subdivAccumulator / subdivFactor;
