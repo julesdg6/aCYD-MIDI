@@ -237,9 +237,11 @@ void drawTB3POMode() {
     int midiNote = getMIDINoteForStep(step);
     String noteName = getNoteNameFromMIDI(midiNote);
     // Remove octave number from display to keep it concise
-    int octavePos = noteName.length() - 1;
-    if (noteName[octavePos] >= '0' && noteName[octavePos] <= '9') {
-      noteName = noteName.substring(0, octavePos);
+    if (noteName.length() > 0) {
+      int octavePos = noteName.length() - 1;
+      if (noteName[octavePos] >= '0' && noteName[octavePos] <= '9') {
+        noteName = noteName.substring(0, octavePos);
+      }
     }
     tft.setTextColor(noteTextColor, noteBgColor);
     tft.drawCentreString(noteName, x + stepW / 2, patternY + SCALE_Y(3), 1);
@@ -248,8 +250,7 @@ void drawTB3POMode() {
     tft.fillRect(x, patternY + rowH, stepW, rowH, transposeColor);
     tft.drawRect(x, patternY + rowH, stepW, rowH, THEME_TEXT_DIM);
     if (hasOctUp || hasOctDown) {
-      uint16_t transposeTextColor = hasOctUp ? THEME_BG : (hasOctDown ? THEME_BG : THEME_TEXT);
-      tft.setTextColor(transposeTextColor, transposeColor);
+      tft.setTextColor(THEME_BG, transposeColor);
       tft.drawCentreString(hasOctUp ? "+" : "-", x + stepW / 2, patternY + rowH + SCALE_Y(3), 1);
     }
     
