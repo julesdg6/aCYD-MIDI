@@ -11,7 +11,7 @@ static const uint8_t kDrumNotes[SEQ_TRACKS] = {36, 38, 42, 46};
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t sequencerStepCount = 0;
-static const uint8_t sequencerTrackIndex = 0;
+static const uint8_t sequencerTrackIndex = 5;  // Track 5 to avoid conflict with TB3PO (track 0)
 
 // ISR callback for uClock step sequencer extension
 static void onSequencerStepISR(uint32_t step, uint8_t track) {
