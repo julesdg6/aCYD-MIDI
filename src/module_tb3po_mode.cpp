@@ -122,7 +122,7 @@ static int getMIDINoteForStep(int stepNum) {
     noteIndex -= scale.numNotes;
   }
   noteIndex = constrain(noteIndex, 0, 127);
-  return getNoteInScale(tb3po.scaleIndex, noteIndex - 60, 4);
+  return getNoteInScale(tb3po.scaleIndex, noteIndex - 60, 3); // Changed from 4 to 3 to lower by 1 octave
 }
 
 static bool stepIsGated(int stepNum) {
@@ -199,14 +199,21 @@ void drawTB3POMode() {
   tft.drawString(tb3poSync.playing ? "PLAYING" : (tb3poSync.startPending ? "WAITING" : "STOPPED"),
                  SCALE_X(10), y, 2);
   tft.drawString(tb3po.lockSeed ? "SEED LOCKED" : "SEED AUTO", SCALE_X(180), y, 2);
-  y += SCALE_Y(18);
+  y += SCALE_Y(20);
 
-  // Draw pattern visualization
-  int patternY = y + SCALE_Y(5);
+  // Draw 4-row pattern visualization (like TB-303)
   int stepW = SCALE_X(18);
-  int stepH = SCALE_Y(40);
+  int rowH = SCALE_Y(15);
   int spacing = SCALE_X(1);
   int startX = SCALE_X(10);
+  int patternY = y + SCALE_Y(2);
+  
+  // Row headers
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Note", SCALE_X(2), patternY, 1);
+  tft.drawString("Up/Dn", SCALE_X(2), patternY + rowH, 1);
+  tft.drawString("A/S", SCALE_X(2), patternY + rowH * 2, 1);
+  tft.drawString("Gate", SCALE_X(2), patternY + rowH * 3, 1);
   
   for (int step = 0; step < TB3PO_MAX_STEPS; step++) {
     int x = startX + step * (stepW + spacing);
@@ -214,30 +221,60 @@ void drawTB3POMode() {
     bool isCurrent = (tb3poSync.playing && step == tb3po.step);
     bool isAccent = stepIsAccent(step);
     bool isSlide = stepIsSlid(step);
+    bool hasOctUp = (tb3po.oct_ups & (1 << step)) != 0;
+    bool hasOctDown = (tb3po.oct_downs & (1 << step)) != 0;
     
-    uint16_t color;
-    if (isCurrent && isGated) {
-      color = THEME_TEXT; // White for current gated step
-    } else if (isCurrent) {
-      color = THEME_ACCENT; // Cyan for current ungated step
-    } else if (isGated && isAccent) {
-      color = THEME_WARNING; // Yellow for accented steps
-    } else if (isGated) {
-      color = THEME_PRIMARY; // Cyan for gated steps
-    } else {
-      color = THEME_SURFACE; // Dark for ungated steps
+    // Determine colors
+    uint16_t noteBgColor = isCurrent ? THEME_ACCENT : THEME_SURFACE;
+    uint16_t noteTextColor = isCurrent ? THEME_BG : THEME_TEXT;
+    uint16_t transposeColor = hasOctUp ? THEME_SUCCESS : (hasOctDown ? THEME_WARNING : THEME_SURFACE);
+    uint16_t accentSlideColor = isAccent ? THEME_WARNING : (isSlide ? THEME_PRIMARY : THEME_SURFACE);
+    uint16_t gateColor = isGated ? THEME_PRIMARY : THEME_SURFACE;
+    
+    // Row 1: Note name
+    tft.fillRect(x, patternY, stepW, rowH, noteBgColor);
+    tft.drawRect(x, patternY, stepW, rowH, THEME_TEXT_DIM);
+    int midiNote = getMIDINoteForStep(step);
+    String noteName = getNoteNameFromMIDI(midiNote);
+    // Remove octave number from display to keep it concise
+    int octavePos = noteName.length() - 1;
+    if (noteName[octavePos] >= '0' && noteName[octavePos] <= '9') {
+      noteName = noteName.substring(0, octavePos);
+    }
+    tft.setTextColor(noteTextColor, noteBgColor);
+    tft.drawCentreString(noteName, x + stepW / 2, patternY + SCALE_Y(3), 1);
+    
+    // Row 2: Transpose up/down
+    tft.fillRect(x, patternY + rowH, stepW, rowH, transposeColor);
+    tft.drawRect(x, patternY + rowH, stepW, rowH, THEME_TEXT_DIM);
+    if (hasOctUp || hasOctDown) {
+      uint16_t transposeTextColor = hasOctUp ? THEME_BG : (hasOctDown ? THEME_BG : THEME_TEXT);
+      tft.setTextColor(transposeTextColor, transposeColor);
+      tft.drawCentreString(hasOctUp ? "+" : "-", x + stepW / 2, patternY + rowH + SCALE_Y(3), 1);
     }
     
-    tft.fillRect(x, patternY, stepW, stepH, color);
-    tft.drawRect(x, patternY, stepW, stepH, THEME_TEXT_DIM);
+    // Row 3: Accent/Slide
+    tft.fillRect(x, patternY + rowH * 2, stepW, rowH, accentSlideColor);
+    tft.drawRect(x, patternY + rowH * 2, stepW, rowH, THEME_TEXT_DIM);
+    if (isAccent || isSlide) {
+      tft.setTextColor(THEME_BG, accentSlideColor);
+      String accentSlideText = "";
+      if (isAccent && isSlide) accentSlideText = "A/S";
+      else if (isAccent) accentSlideText = "A";
+      else if (isSlide) accentSlideText = "S";
+      tft.drawCentreString(accentSlideText, x + stepW / 2, patternY + rowH * 2 + SCALE_Y(3), 1);
+    }
     
-    // Draw slide indicator
-    if (isSlide && isGated) {
-      tft.fillRect(x + stepW - SCALE_X(3), patternY, SCALE_X(3), stepH, THEME_ACCENT);
+    // Row 4: Gate/timing (filled circle)
+    tft.fillRect(x, patternY + rowH * 3, stepW, rowH, THEME_BG);
+    tft.drawRect(x, patternY + rowH * 3, stepW, rowH, THEME_TEXT_DIM);
+    if (isGated) {
+      int circleRadius = SCALE_X(4);
+      tft.fillCircle(x + stepW / 2, patternY + rowH * 3 + rowH / 2, circleRadius, gateColor);
     }
   }
   
-  y += stepH + SCALE_Y(15);
+  y = patternY + rowH * 4 + SCALE_Y(10);
 
   int btnW = SCALE_X(70);
   int btnH = SCALE_Y(28);
@@ -283,7 +320,8 @@ void handleTB3POMode() {
   updateTB3POPlayback();
   if (touch.justPressed) {
     // Calculate button positions (must match drawTB3POMode)
-    int y = HEADER_HEIGHT + SCALE_Y(8) + SCALE_Y(18) + SCALE_Y(5) + SCALE_Y(40) + SCALE_Y(15);
+    int rowH = SCALE_Y(15);
+    int y = HEADER_HEIGHT + SCALE_Y(8) + SCALE_Y(20) + SCALE_Y(2) + rowH * 4 + SCALE_Y(10);
     int btnW = SCALE_X(70);
     int btnH = SCALE_Y(28);
     int btnSpacing = SCALE_X(8);
