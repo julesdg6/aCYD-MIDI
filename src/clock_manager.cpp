@@ -96,9 +96,8 @@ static void IRAM_ATTR onClockTimer(void* /*arg*/) {
   
   portEXIT_CRITICAL_ISR(&clockManagerMux);
   
-  // Trigger deferred MIDI send - this will be handled by the task
-  // We cannot call BLE/UART functions from ISR
-  needsRedraw = true;
+  // Note: MIDI messages are sent by updateClockManager() which polls the tick counter
+  // We don't trigger anything here - just increment the counter
 }
 
 static void startHardwareTimer(uint16_t bpm) {

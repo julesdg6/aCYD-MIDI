@@ -1402,8 +1402,8 @@ void handleClockTab() {
         } else {
             newBPM = sharedBPM - 5;
         }
+        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
         setSharedBPM(newBPM);
-        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
         requestRedraw();
         return;
     } else if (isButtonPressed(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH)) {
@@ -1413,8 +1413,8 @@ void handleClockTab() {
         } else {
             newBPM = sharedBPM + 5;
         }
+        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
         setSharedBPM(newBPM);
-        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
         requestRedraw();
         return;
     }

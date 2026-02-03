@@ -311,15 +311,15 @@ void handleGridsMode() {
   }
   if (bpmDownPressed) {
     int target = std::max<int>(GRIDS_MIN_BPM, static_cast<int>(sharedBPM) - 5);
+    grids.bpm = static_cast<float>(target);
     setSharedBPM(static_cast<uint16_t>(target));
-    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }
   if (bpmUpPressed) {
     int target = std::min<int>(GRIDS_MAX_BPM, static_cast<int>(sharedBPM) + 5);
+    grids.bpm = static_cast<float>(target);
     setSharedBPM(static_cast<uint16_t>(target));
-    grids.bpm = static_cast<float>(sharedBPM);
     requestRedraw();
     return;
   }
