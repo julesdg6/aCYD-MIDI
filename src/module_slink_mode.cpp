@@ -170,7 +170,8 @@ void updateSlinkEngine() {
     
     // Process note offs
     processVoiceNoteOffs();
-    requestRedraw();
+    // Process note offs
+    processVoiceNoteOffs();
 }
 
 // ============================================================
@@ -1396,21 +1397,25 @@ void handleClockTab() {
     int adjustW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
 
     if (isButtonPressed(MARGIN_SMALL, adjustY, adjustW, adjustH)) {
+        uint16_t newBPM;
         if (sharedBPM <= 45) {
-            sharedBPM = 40;
+            newBPM = 40;
         } else {
-            sharedBPM -= 5;
+            newBPM = sharedBPM - 5;
         }
-        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
+        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
+        setSharedBPM(newBPM);
         requestRedraw();
         return;
     } else if (isButtonPressed(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH)) {
+        uint16_t newBPM;
         if (sharedBPM >= 235) {
-            sharedBPM = 240;
+            newBPM = 240;
         } else {
-            sharedBPM += 5;
+            newBPM = sharedBPM + 5;
         }
-        slink_state.clock_engine.bpm = static_cast<float>(sharedBPM);
+        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
+        setSharedBPM(newBPM);
         requestRedraw();
         return;
     }

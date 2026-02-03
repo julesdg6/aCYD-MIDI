@@ -1,8 +1,20 @@
 #include "module_tb3po_mode.h"
 #include "clock_manager.h"
+#include <uClock.h>
 
 TB3POState tb3po;
 static SequencerSyncState tb3poSync;
+
+// ISR-safe step counter from uClock step extension
+static volatile uint32_t tb3poStepCount = 0;
+static const uint8_t tb3poTrackIndex = 0;
+
+static void onTb3poStepISR(uint32_t step, uint8_t track) {
+  (void)step;
+  if (track == tb3poTrackIndex) {
+    tb3poStepCount++;
+  }
+}
 
 static bool randBit(int probability) {
   return (random(100) < probability);
@@ -126,12 +138,10 @@ static bool stepIsAccent(int stepNum) {
 }
 
 void updateTB3POPlayback() {
-  static uint32_t lastStartTick = UINT32_MAX;
   bool wasPlaying = tb3poSync.playing;
   bool justStarted = tb3poSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
   if (justStarted) {
     uint32_t tick = clockManagerGetTickCount();
-    lastStartTick = tick;
     uint32_t elapsedMs = (tb3poSync.startRequestMs == UINT32_MAX)
                              ? 0
                              : millis() - tb3poSync.startRequestMs;
@@ -143,7 +153,15 @@ void updateTB3POPlayback() {
   if (!tb3poSync.playing) {
     return;
   }
-  uint32_t readySteps = tb3poSync.consumeReadySteps();
+  uint32_t readySteps = 0;
+  if (tb3po.useInternalClock) {
+    noInterrupts();
+    readySteps = tb3poStepCount;
+    tb3poStepCount = 0;
+    interrupts();
+  } else {
+    readySteps = tb3poSync.consumeReadySteps();
+  }
   if (readySteps == 0) {
     return;
   }
@@ -167,7 +185,7 @@ void updateTB3POPlayback() {
     if (tb3po.step >= tb3po.numSteps) {
       tb3po.step = 0;
     }
-    Serial.printf("[TB3PO] nextStep=%u numSteps=%u stepAfterWrap=%u\n", currentTick, tb3po.numSteps,
+    Serial.printf("[TB3PO] tick=%u numSteps=%u stepAfterWrap=%u\n", currentTick, tb3po.numSteps,
                   tb3po.step);
   }
   requestRedraw();  // Request redraw to show step progress and pattern
@@ -252,6 +270,8 @@ void initializeTB3POMode() {
   tb3po.bpm = 120.0f;
   tb3po.useInternalClock = true;
   regenerateAll();
+  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  uClock.setOnStep(onTb3poStepISR, 1);
   drawTB3POMode();
 }
 

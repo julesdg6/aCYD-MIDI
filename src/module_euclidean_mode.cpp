@@ -7,6 +7,9 @@
 EuclideanState euclideanState;
 static SequencerSyncState euclidSync;
 
+// Y offset from bottom of display where control buttons are drawn.
+static const int CONTROL_Y_OFFSET = SCALE_Y(50);
+
 static uint32_t getEuclideanStepIntervalTicks() {
   if (euclideanState.tripletMode) {
     return CLOCK_TICKS_PER_QUARTER / 6;
@@ -25,8 +28,8 @@ static void adjustEuclidTempo(int delta) {
   if (target == sharedBPM) {
     return;
   }
-  sharedBPM = target;
   euclideanState.bpm = target;
+  setSharedBPM(target);
   requestRedraw();
 }
 
@@ -149,7 +152,7 @@ void drawEuclideanMode() {
                   String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(10), 1);
   }
 
-  int controlY = DISPLAY_HEIGHT - SCALE_Y(50);
+  int controlY = DISPLAY_HEIGHT - CONTROL_Y_OFFSET;
   bool playing = euclidSync.playing;
   drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
                   playing ? "STOP" : "PLAY",
@@ -205,7 +208,7 @@ void handleEuclideanMode() {
     return;
   }
 
-  int controlY = DISPLAY_HEIGHT - SCALE_Y(60);
+  int controlY = DISPLAY_HEIGHT - CONTROL_Y_OFFSET;
   if (isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32))) {
     if (euclidSync.playing || euclidSync.startPending) {
       euclidSync.stopPlayback();

@@ -194,9 +194,11 @@ void handleLFOMode() {
     }
     if (isButtonPressed(140, y, 25, 25)) {
       if (!lfo.pitchWheelMode) {
-        lfo.ccTarget = min(127, lfo.ccTarget + 1);
+        if (lfo.ccTarget < 127) {
+          lfo.ccTarget = lfo.ccTarget + 1;
+          requestRedraw();
+        }
       }
-      requestRedraw();
       return;
     }
     

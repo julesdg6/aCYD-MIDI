@@ -144,11 +144,11 @@ void handleGridPianoMode() {
   
   // Handle note changes
   if (pressedNote != gridPressedNote) {
-    // Turn off old note - MIDI first
-    if (gridPressedNote != -1) {
+    // Turn off old note - MIDI first (only if device connected)
+    if (gridPressedNote != -1 && deviceConnected) {
       sendMIDI(0x80, gridPressedNote, 0);
     }
-    
+
     // Turn on new note - MIDI first
     if (pressedNote != -1 && deviceConnected) {
       sendMIDI(0x90, pressedNote, 100);

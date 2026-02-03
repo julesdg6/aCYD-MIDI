@@ -309,7 +309,11 @@ void handleRemoteDisplay() {
 }
 
 bool isRemoteDisplayConnected() {
+#if !(REMOTE_DISPLAY_ENABLED && WIFI_ENABLED)
+    return false;
+#else
     return isWiFiConnected() && clientConnected;
+#endif
 }
 
 String getRemoteDisplayIP() {

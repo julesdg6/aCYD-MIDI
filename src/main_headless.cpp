@@ -79,12 +79,14 @@ void setupBLE() {
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->setScanResponse(true);
   advertising->setMinPreferred(0x06);
-  advertising->setMinPreferred(0x12);
+  advertising->setMaxPreferred(0x12);
   BLEDevice::startAdvertising();
 }
 
 #define MIDI_BPM 120
-#define MIDI_CLOCK_INTERVAL_MS (1000.0 / (MIDI_BPM * 24.0 / 60.0))
+/* MIDI clock runs at 24 ticks per quarter note. Compute interval in microseconds
+ * to avoid millisecond truncation and improve timing precision. */
+#define MIDI_CLOCK_INTERVAL_US (60000000UL / (MIDI_BPM * 24UL))
 
 
 
@@ -102,7 +104,7 @@ void setup() {
   Serial.println("Step 2: setupBLE()");
   setupBLE();
   Serial.println("Step 3: (initHardwareMIDI() skipped)");
-  // initHardwareMIDI(); // Disabled for debug
+  initHardwareMIDI();
   Serial.println("Step 4: esp_now_init()");
   if (esp_now_init() != ESP_OK) {
     Serial.println("ESP-NOW init failed");
@@ -113,7 +115,9 @@ void setup() {
   memset(peerInfo.peer_addr, 0xFF, 6);
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
-  esp_now_add_peer(&peerInfo);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("ESP-NOW add peer failed");
+  }
   Serial.println("Step 6: Setup complete");
 }
 
@@ -167,9 +171,9 @@ void sendMidiStop() {
 }
 
 void loop() {
-  unsigned long now = millis();
-  if (now - lastClock >= MIDI_CLOCK_INTERVAL_MS) {
-    lastClock = now;
+  unsigned long now = micros();
+  if (now - lastClock >= MIDI_CLOCK_INTERVAL_US) {
+    lastClock += MIDI_CLOCK_INTERVAL_US;
     sendMidiClock();
     clockTick++;
     // Optionally: send Start/Stop at appropriate times

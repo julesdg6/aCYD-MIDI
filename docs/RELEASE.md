@@ -65,7 +65,7 @@ The `docs/CHANGELOG.md` content can be copied into the release notes.
 Before creating a release, verify:
 
 - [ ] Version updated in `common_definitions.h`
-- [ ] CHANGELOG.md updated with new version
+- [ ] docs/CHANGELOG.md updated with new version
 - [ ] All changes committed and pushed to main
 - [ ] Code builds successfully
 - [ ] All tests pass (if applicable)

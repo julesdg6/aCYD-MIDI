@@ -158,5 +158,6 @@ extern bool instantStartMode;
 void setDisplayInversion(bool invert);
 void rotateDisplay180();
 void requestRedraw();
+void setSharedBPM(uint16_t bpm);
 
 #endif

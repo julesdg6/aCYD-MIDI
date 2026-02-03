@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
+#include <uClock.h>
 
 namespace {
 struct RunningStateDelta {
@@ -18,13 +19,41 @@ struct RunningStateDelta {
 };
 
 static volatile uint32_t tickCount = 0;
+static volatile bool tickPending = false;
 static uint32_t lastTickTime = 0;
 static volatile int pendingStarts = 0;
 static volatile int activeSequencers = 0;
 static volatile bool running = false;
 static volatile bool externalClockActive = false;
+static volatile bool uClockRunning = false;  // Track uClock running state
+// Aggregated tick statistics (ISR-updated, main-loop printed)
+// (tick sampling moved to main-loop to avoid ISR work)
 static portMUX_TYPE clockManagerMux = portMUX_INITIALIZER_UNLOCKED;
 static const char *const kMasterNames[] = {"INTERNAL", "WIFI", "BLE", "HARDWARE"};
+
+// Forward declarations
+static inline void lockClockManager();
+static inline void unlockClockManager();
+
+// uClock callback function
+static void onClockTickCallback(uint32_t tick) {
+  // Use the tick value provided by uClock to avoid double-counting
+  // Minimal ISR: record tick and mark pending for main loop processing.
+  lockClockManager();
+  tickCount = tick;
+  tickPending = true;
+  unlockClockManager();
+}
+
+static void onClockStartCallback() {
+  // Called when uClock starts
+  Serial.println("[uClock] Clock started");
+}
+
+static void onClockStopCallback() {
+  // Called when uClock stops
+  Serial.println("[uClock] Clock stopped");
+}
 
 static inline void lockClockManager() {
   portENTER_CRITICAL(&clockManagerMux);
@@ -89,7 +118,20 @@ void initClockManager() {
   activeSequencers = 0;
   running = false;
   externalClockActive = false;
+  uClockRunning = false;
   unlockClockManager();
+  
+  // Initialize uClock
+  uClock.init();
+  // Configure PPQN before setting tempo so tempo calculation uses correct resolution.
+  uClock.setOutputPPQN(uClock.PPQN_24);
+  uClock.setOnOutputPPQN(onClockTickCallback);
+  uClock.setOnClockStart(onClockStartCallback);
+  uClock.setOnClockStop(onClockStopCallback);
+  uClock.setTempo(120.0);
+  
+  Serial.printf("[ClockManager] uClock initialized tempo=%.1f PPQN=%u\n", uClock.getTempo(),
+                static_cast<unsigned>(uClock.PPQN_24));
 }
 
 static uint16_t clampBpm(uint16_t bpm) {
@@ -104,20 +146,63 @@ static uint16_t clampBpm(uint16_t bpm) {
 
 void updateClockManager() {
   RunningStateDelta delta = updateRunningState();
-  if (!delta.running || midiClockMaster != CLOCK_INTERNAL) {
-    return;
-  }
-  uint32_t now = millis();
+  
+  // Update uClock tempo if BPM has changed
   uint16_t bpm = clampBpm(sharedBPM);
-  uint32_t interval = (60000UL / bpm) / CLOCK_TICKS_PER_QUARTER;
-  if (interval == 0) {
-    interval = 1;
+  float currentTempo = uClock.getTempo();
+  if (fabsf(currentTempo - (float)bpm) > 0.1f) {
+    uClock.setTempo((float)bpm);
   }
-  while (now - lastTickTime >= interval) {
-    lastTickTime += interval;
+  
+  // Start or stop uClock based on running state.
+  // Protect reading/writing of `uClockRunning` and calls to uClock
+  // with the same clock manager lock to avoid TOCTOU races.
+  if (midiClockMaster == CLOCK_INTERNAL) {
+    bool needStart = false;
+    bool needStop = false;
     lockClockManager();
-    tickCount++;
+    bool shouldRun = running; // read protected state
+    if (shouldRun && !uClockRunning) {
+      needStart = true;
+    } else if (!shouldRun && uClockRunning) {
+      needStop = true;
+    }
     unlockClockManager();
+
+    if (needStart) {
+      uClock.start();
+      lockClockManager();
+      uClockRunning = true;
+      unlockClockManager();
+    } else if (needStop) {
+      uClock.stop();
+      lockClockManager();
+      uClockRunning = false;
+      unlockClockManager();
+    }
+  } else {
+    // If master is external, ensure uClock is not left running (prevents
+    // internal uClock and external clock both advancing tick counters).
+    lockClockManager();
+    if (uClockRunning) {
+      uClock.stop();
+      uClockRunning = false;
+      Serial.println("[ClockManager] uClock stopped because master is not INTERNAL");
+    }
+    unlockClockManager();
+  }
+  
+  // Handle any pending ticks (deferred from ISR). Do this after start/stop logic
+  // so heavy work runs in task context and won't trigger the interrupt WDT.
+  while (true) {
+    bool pending = false;
+    lockClockManager();
+    if (tickPending) {
+      tickPending = false;
+      pending = true;
+    }
+    unlockClockManager();
+    if (!pending) break;
     sendMIDIClock();
     requestRedraw();
   }
@@ -125,15 +210,23 @@ void updateClockManager() {
 
 void clockManagerRequestStart() {
   uint32_t now = millis();
+  bool doReset = false;
   lockClockManager();
   if (pendingStarts == 0 && activeSequencers == 0) {
     tickCount = 0;
     lastTickTime = now;
+    // Request reset of uClock when starting fresh (do outside lock)
+    if (midiClockMaster == CLOCK_INTERNAL) {
+      doReset = true;
+    }
   }
   pendingStarts++;
   int pending = pendingStarts;
   int active = activeSequencers;
   unlockClockManager();
+  if (doReset) {
+    uClock.resetCounters();
+  }
   uint16_t bpm = clampBpm(sharedBPM);
   uint32_t barMs = (60000UL * CLOCK_QUARTERS_PER_BAR) / bpm;
   Serial.printf("[ClockManager] request start (master=%s pending=%d active=%d bpm=%u barMs=%u startMs=%u)\n",
@@ -197,6 +290,16 @@ void clockManagerExternalStop() {
   updateRunningState();
 }
 
+void clockManagerExternalContinue() {
+  uint32_t now = millis();
+  lockClockManager();
+  // Continue should enable external clock without resetting tick counters
+  externalClockActive = true;
+  unlockClockManager();
+  Serial.println("[ClockManager] external Continue");
+  updateRunningState();
+}
+
 void clockManagerExternalClock() {
   lockClockManager();
   if (!externalClockActive || midiClockMaster == CLOCK_INTERNAL) {
@@ -239,4 +342,9 @@ bool clockManagerIsRunning() {
   bool isRunning = running;
   unlockClockManager();
   return isRunning;
+}
+
+void clockManagerUpdateBPM() {
+  uint16_t bpm = clampBpm(sharedBPM);
+  uClock.setTempo((float)bpm);
 }

@@ -18,7 +18,7 @@
   #endif
 
 #ifndef WIFI_SSID
-#warning "config/wifi_config.h not found - using obviously invalid WiFi credentials"
+#warning "WIFI_SSID not defined - using obviously invalid WiFi credentials"
 #define WIFI_SSID "INVALID_SSID_CONFIGURE_ME"
 #endif
 

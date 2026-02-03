@@ -8,6 +8,10 @@ uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio);
 
 MorphState morphState;
 
+// Time between auto-played morph notes (ms)
+static const unsigned long MORPH_NOTE_INTERVAL_MS = 200;
+static unsigned long lastMorphNoteTime = 0;
+
 static const uint16_t PROGMEM slotColors[MORPH_SLOTS] = {
     THEME_ERROR,
     THEME_WARNING,
@@ -161,7 +165,11 @@ void handleMorphMode() {
       morphState.morphY = (float)(touch.y - layout.sliderY) / (float)layout.sliderH;
       morphState.morphX = std::min(std::max(morphState.morphX, 0.0f), 1.0f);
       morphState.morphY = std::min(std::max(morphState.morphY, 0.0f), 1.0f);
-      playMorphNote();  // Play note as you morph
+      unsigned long now = millis();
+      if (now - lastMorphNoteTime >= MORPH_NOTE_INTERVAL_MS) {
+        playMorphNote();
+        lastMorphNoteTime = now;
+      }
       requestRedraw();
       return;
     }

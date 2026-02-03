@@ -199,10 +199,6 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 
 - All MIDI messages now stream simultaneously to BLE and a DIN-5 connector with selectable UART0 (production) or UART2 (development) pins, plus detailed wiring/circuit guidance and platformio build_flag examples to keep configuration centralized ([docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md), [docs/CIRCUIT_DIAGRAMS.md](docs/CIRCUIT_DIAGRAMS.md), [docs/HARDWARE_MIDI_CONFIG.md](docs/HARDWARE_MIDI_CONFIG.md)).
 - Conditional `MIDI_DEBUG` macros disable USB prints when UART0 owns Serial while keeping them for UART2 so debugging remains reliable without disturbing hardware MIDI timing ([docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)).
-1. Grab a pre-built firmware from the GitHub [releases page](https://github.com/julesdg6/aCYD-MIDI/releases).
-2. Flash with `pio run -e esp32-2432S028Rv2 -t upload` (or the matching board when using 3248S035C/R).
-3. Pair “CYD MIDI” via Bluetooth or plug in a DIN-5 breakout for hardware MIDI.
-4. Use the touchscreen menu to open any mode; the UI resizes automatically thanks to the scaling helpers.
 
 ## Documentation
 

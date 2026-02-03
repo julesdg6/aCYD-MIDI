@@ -56,7 +56,9 @@ def raga_to_midi(raga_name, bars=16, notes_per_bar=4, bpm=90,
     phrase = generate_phrase(scale, length=total_notes, start_octave=0)
 
     for semitones in phrase:
+        # compute note and clamp to valid MIDI range 0-127
         note = tonic + semitones
+        note = max(0, min(127, int(note)))
         track.append(Message('note_on', note=note, velocity=80,
                              time=0, channel=channel))
         track.append(Message('note_off', note=note, velocity=0,
