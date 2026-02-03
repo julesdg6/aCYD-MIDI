@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/portmacro.h>
+#include <esp_timer.h>
 
 namespace {
 struct RunningStateDelta {
@@ -25,6 +26,18 @@ static volatile bool running = false;
 static volatile bool externalClockActive = false;
 static portMUX_TYPE clockManagerMux = portMUX_INITIALIZER_UNLOCKED;
 static const char *const kMasterNames[] = {"INTERNAL", "WIFI", "BLE", "HARDWARE"};
+
+// Hardware timer for precise MIDI clock
+static esp_timer_handle_t clockTimer = nullptr;
+static volatile bool timerActive = false;
+static uint64_t timerIntervalUs = 0;
+
+// Timing statistics
+static volatile uint32_t tickIntervalMin = UINT32_MAX;
+static volatile uint32_t tickIntervalMax = 0;
+static volatile uint64_t tickIntervalSum = 0;
+static volatile uint32_t tickIntervalCount = 0;
+static uint64_t lastTickTimeUs = 0;
 
 static inline void lockClockManager() {
   portENTER_CRITICAL(&clockManagerMux);
@@ -64,19 +77,102 @@ static RunningStateDelta updateRunningStateLocked() {
   return delta;
 }
 
+// Hardware timer callback (ISR context - must be IRAM_ATTR and minimal)
+static void IRAM_ATTR onClockTimer(void* /*arg*/) {
+  // Increment tick counter in ISR-safe manner
+  portENTER_CRITICAL_ISR(&clockManagerMux);
+  tickCount++;
+  
+  // Track timing statistics
+  uint64_t nowUs = esp_timer_get_time();
+  if (lastTickTimeUs > 0) {
+    uint32_t intervalUs = (uint32_t)(nowUs - lastTickTimeUs);
+    if (intervalUs < tickIntervalMin) tickIntervalMin = intervalUs;
+    if (intervalUs > tickIntervalMax) tickIntervalMax = intervalUs;
+    tickIntervalSum += intervalUs;
+    tickIntervalCount++;
+  }
+  lastTickTimeUs = nowUs;
+  
+  portEXIT_CRITICAL_ISR(&clockManagerMux);
+  
+  // Trigger deferred MIDI send - this will be handled by the task
+  // We cannot call BLE/UART functions from ISR
+  needsRedraw = true;
+}
+
+static void startHardwareTimer(uint16_t bpm) {
+  if (clockTimer == nullptr) {
+    return;
+  }
+  
+  // Calculate interval in microseconds with high precision
+  // 60,000,000 us/min ÷ BPM ÷ 24 ticks/quarter
+  timerIntervalUs = (60000000ULL / bpm) / CLOCK_TICKS_PER_QUARTER;
+  
+  // Stop timer if running
+  if (timerActive) {
+    esp_timer_stop(clockTimer);
+    timerActive = false;
+  }
+  
+  // Reset timing statistics
+  lockClockManager();
+  tickIntervalMin = UINT32_MAX;
+  tickIntervalMax = 0;
+  tickIntervalSum = 0;
+  tickIntervalCount = 0;
+  lastTickTimeUs = 0;
+  unlockClockManager();
+  
+  // Start periodic timer
+  esp_err_t err = esp_timer_start_periodic(clockTimer, timerIntervalUs);
+  if (err == ESP_OK) {
+    timerActive = true;
+    Serial.printf("[ClockManager] Hardware timer started: %u BPM, interval=%llu us (%.3f ms)\n",
+                  bpm, timerIntervalUs, timerIntervalUs / 1000.0);
+  } else {
+    Serial.printf("[ClockManager] Failed to start timer: %d\n", err);
+  }
+}
+
+static void stopHardwareTimer() {
+  if (clockTimer && timerActive) {
+    esp_timer_stop(clockTimer);
+    timerActive = false;
+    Serial.println("[ClockManager] Hardware timer stopped");
+  }
+}
+
 static RunningStateDelta updateRunningState() {
   lockClockManager();
   RunningStateDelta delta = updateRunningStateLocked();
+  bool shouldStartTimer = delta.running && (midiClockMaster == CLOCK_INTERNAL);
+  bool shouldStopTimer = !delta.running || (midiClockMaster != CLOCK_INTERNAL);
   unlockClockManager();
+  
   if (delta.sendStart) {
     Serial.printf("[ClockManager] INTERNAL START – pending=%d active=%d\n", delta.pendingStarts,
                   delta.activeSequencers);
     sendMIDIStart();
+    if (shouldStartTimer) {
+      uint16_t bpm = clampBpm(sharedBPM);
+      startHardwareTimer(bpm);
+    }
   } else if (delta.sendStop) {
     Serial.printf("[ClockManager] INTERNAL STOP – pending=%d active=%d\n", delta.pendingStarts,
                   delta.activeSequencers);
     sendMIDIStop();
+    if (shouldStopTimer) {
+      stopHardwareTimer();
+    }
+  } else if (shouldStartTimer && !timerActive) {
+    uint16_t bpm = clampBpm(sharedBPM);
+    startHardwareTimer(bpm);
+  } else if (shouldStopTimer && timerActive) {
+    stopHardwareTimer();
   }
+  
   return delta;
 }
 }  // namespace
@@ -89,7 +185,25 @@ void initClockManager() {
   activeSequencers = 0;
   running = false;
   externalClockActive = false;
+  timerActive = false;
   unlockClockManager();
+  
+  // Create high-precision hardware timer
+  esp_timer_create_args_t timerConfig = {
+    .callback = &onClockTimer,
+    .arg = nullptr,
+    .dispatch_method = ESP_TIMER_TASK,
+    .name = "midi_clock",
+    .skip_unhandled_events = false
+  };
+  
+  esp_err_t err = esp_timer_create(&timerConfig, &clockTimer);
+  if (err != ESP_OK) {
+    Serial.printf("[ClockManager] Failed to create timer: %d\n", err);
+    clockTimer = nullptr;
+  } else {
+    Serial.println("[ClockManager] Hardware timer initialized");
+  }
 }
 
 static uint16_t clampBpm(uint16_t bpm) {
@@ -104,22 +218,17 @@ static uint16_t clampBpm(uint16_t bpm) {
 
 void updateClockManager() {
   RunningStateDelta delta = updateRunningState();
-  if (!delta.running || midiClockMaster != CLOCK_INTERNAL) {
-    return;
-  }
-  uint32_t now = millis();
-  uint16_t bpm = clampBpm(sharedBPM);
-  uint32_t interval = (60000UL / bpm) / CLOCK_TICKS_PER_QUARTER;
-  if (interval == 0) {
-    interval = 1;
-  }
-  while (now - lastTickTime >= interval) {
-    lastTickTime += interval;
-    lockClockManager();
-    tickCount++;
-    unlockClockManager();
+  
+  // The hardware timer generates ticks automatically, so we just need to
+  // send MIDI clock messages for any new ticks that have accumulated
+  static uint32_t lastProcessedTick = 0;
+  
+  uint32_t currentTick = clockManagerGetTickCount();
+  
+  // Process all ticks that have accumulated since last call
+  while (lastProcessedTick < currentTick) {
+    lastProcessedTick++;
     sendMIDIClock();
-    requestRedraw();
   }
 }
 
@@ -239,4 +348,20 @@ bool clockManagerIsRunning() {
   bool isRunning = running;
   unlockClockManager();
   return isRunning;
+}
+
+void clockManagerUpdateBPM() {
+  // Called when sharedBPM changes - restart timer with new interval if running
+  if (timerActive && midiClockMaster == CLOCK_INTERNAL) {
+    uint16_t bpm = clampBpm(sharedBPM);
+    startHardwareTimer(bpm);
+  }
+}
+
+void clockManagerGetTimingStats(uint32_t &minUs, uint32_t &maxUs, uint32_t &avgUs) {
+  lockClockManager();
+  minUs = tickIntervalMin;
+  maxUs = tickIntervalMax;
+  avgUs = (tickIntervalCount > 0) ? (uint32_t)(tickIntervalSum / tickIntervalCount) : 0;
+  unlockClockManager();
 }

@@ -7,7 +7,7 @@
 #include <freertos/task.h>
 
 namespace {
-static constexpr TickType_t kClockTaskDelay = pdMS_TO_TICKS(1);
+static constexpr TickType_t kClockTaskDelay = pdMS_TO_TICKS(10);  // Reduced from 1ms - timer handles precision
 static constexpr const char *kTaskName = "MidiClock";
 static constexpr UBaseType_t kTaskPriority = configMAX_PRIORITIES - 2;
 static constexpr uint16_t kStackDepth = 4096;
