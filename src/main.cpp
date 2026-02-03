@@ -738,7 +738,7 @@ void rotateDisplay180() {
 
 void setSharedBPM(uint16_t bpm) {
   sharedBPM = bpm;
-  clockManagerUpdateBPM();
+  // BPM update handled automatically in updateClockManager()
 }
 
 void processRedraw() {

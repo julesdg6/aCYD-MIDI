@@ -23,8 +23,6 @@ bool clockManagerHasTickAdvanced(uint32_t &lastSeenTick);
 bool clockManagerIsBarStart();
 bool clockManagerIsSixteenthTick(uint32_t tick);
 bool clockManagerIsRunning();
-void clockManagerUpdateBPM();
-void clockManagerGetTimingStats(uint32_t &minUs, uint32_t &maxUs, uint32_t &avgUs);
 
 struct SequencerSyncState {
   bool playing = false;
