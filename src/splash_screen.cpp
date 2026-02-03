@@ -18,9 +18,8 @@ static lv_color_t colorFrom565(uint16_t color) {
 // Helper function to get LVGL font for TFT_eSPI font size
 static const lv_font_t *fontFor(uint8_t font) {
   switch (font) {
-    case 5:
-      return &lv_font_montserrat_32;
     case 4:
+    case 5:
       return &lv_font_montserrat_32;
     case 2:
       return &lv_font_montserrat_20;
