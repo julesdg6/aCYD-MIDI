@@ -285,13 +285,15 @@ void handleSettingsMode() {
   bool handled = false;
   if (touch.justPressed && isButtonPressed(minusX, bpmButtonY, narrowBtnW, buttonHeight)) {
     if (sharedBPM > kBpmMin) {
-      sharedBPM = (sharedBPM - kBpmStep < kBpmMin) ? kBpmMin : sharedBPM - kBpmStep;
+      uint16_t newBPM = (sharedBPM - kBpmStep < kBpmMin) ? kBpmMin : sharedBPM - kBpmStep;
+      setSharedBPM(newBPM);
       requestRedraw();
     }
     handled = true;
   } else if (touch.justPressed && isButtonPressed(plusX, bpmButtonY, narrowBtnW, buttonHeight)) {
     if (sharedBPM < kBpmMax) {
-      sharedBPM = (sharedBPM + kBpmStep > kBpmMax) ? kBpmMax : sharedBPM + kBpmStep;
+      uint16_t newBPM = (sharedBPM + kBpmStep > kBpmMax) ? kBpmMax : sharedBPM + kBpmStep;
+      setSharedBPM(newBPM);
       requestRedraw();
     }
     handled = true;

@@ -23,7 +23,7 @@ static void changeSequencerTempo(int delta) {
   if (target == sharedBPM) {
     return;
   }
-  sharedBPM = target;
+  setSharedBPM(target);
   requestRedraw();
 }
 

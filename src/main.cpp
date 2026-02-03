@@ -736,6 +736,11 @@ void rotateDisplay180() {
   requestRedraw();
 }
 
+void setSharedBPM(uint16_t bpm) {
+  sharedBPM = bpm;
+  clockManagerUpdateBPM();
+}
+
 void processRedraw() {
   if (needsRedraw && render_obj) {
     lv_obj_invalidate(render_obj);

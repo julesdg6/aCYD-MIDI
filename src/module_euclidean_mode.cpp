@@ -25,7 +25,7 @@ static void adjustEuclidTempo(int delta) {
   if (target == sharedBPM) {
     return;
   }
-  sharedBPM = target;
+  setSharedBPM(target);
   euclideanState.bpm = target;
   requestRedraw();
 }
