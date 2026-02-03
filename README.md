@@ -1,6 +1,6 @@
 # aCYD MIDI Controller
 
-Touchscreen Bluetooth MIDI controller for ESP32-based displays including the ESP32-2432S028R "Cheap Yellow Display" (CYD) and ESP32-3248S035 series.
+Touchscreen Bluetooth MIDI controller for ESP32-based displays including the ESP32-2432S028R "Cheap Yellow Display" (CYD) and ESP32-4832S035 series.
 
 [![Release](https://img.shields.io/github/v/release/julesdg6/aCYD-MIDI)](https://github.com/julesdg6/aCYD-MIDI/releases)
 [![Build](https://github.com/julesdg6/aCYD-MIDI/workflows/Build%20ESP32%20firmware%20(PlatformIO)/badge.svg)](https://github.com/julesdg6/aCYD-MIDI/actions)
@@ -53,9 +53,9 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 ### Supported Hardware
 
 - **ESP32-2432S028R (CYD)** - 2.8" 320x240 display - ~$15 from AliExpress/Amazon
-- **ESP32-3248S035C** - 3.5" 480x320 display with capacitive touch
-- **ESP32-3248S035R** - 3.5" 480x320 display with resistive touch
-- **ESP32-3248S040R** - 4.0" 320x480 display with resistive touch
+- **ESP32-4832S035C** - 3.5" 480x320 display with capacitive touch
+- **ESP32-4832S035R** - 3.5" 480x320 display with resistive touch
+- **ESP32-4832S040R** - 4.0" 480x320 display with resistive touch
 - **ESP32-S3 Dongles** - Headless USB MIDI mode (no display)
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
@@ -74,20 +74,20 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
      - `firmware-esp32-2432S028Rv2-uart0` - Production (UART0 for hardware MIDI, no debug)
      - `firmware-esp32-2432S028Rv2-uart2` - Explicit UART2 configuration
      
-     **ESP32-3248S035C (Capacitive Touch):**
-     - `firmware-esp32-3248S035C` - Default (UART2 for development with debug)
-     - `firmware-esp32-3248S035C-uart0` - Production (UART0 for hardware MIDI, no debug)
-     - `firmware-esp32-3248S035C-uart2` - Explicit UART2 configuration
+     **ESP32-4832S035C (Capacitive Touch):**
+     - `firmware-esp32-4832S035C` - Default (UART2 for development with debug)
+     - `firmware-esp32-4832S035C-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-4832S035C-uart2` - Explicit UART2 configuration
      
-     **ESP32-3248S035R (Resistive Touch):**
-     - `firmware-esp32-3248S035R` - Default (UART2 for development with debug)
-     - `firmware-esp32-3248S035R-uart0` - Production (UART0 for hardware MIDI, no debug)
-     - `firmware-esp32-3248S035R-uart2` - Explicit UART2 configuration
+     **ESP32-4832S035R (Resistive Touch):**
+     - `firmware-esp32-4832S035R` - Default (UART2 for development with debug)
+     - `firmware-esp32-4832S035R-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-4832S035R-uart2` - Explicit UART2 configuration
      
-     **ESP32-3248S040R (4.0" Resistive Touch):**
-     - `firmware-esp32-3248S040R` - Default (UART2 for development with debug)
-     - `firmware-esp32-3248S040R-uart0` - Production (UART0 for hardware MIDI, no debug)
-     - `firmware-esp32-3248S040R-uart2` - Explicit UART2 configuration
+     **ESP32-4832S040R (4.0" Resistive Touch):**
+     - `firmware-esp32-4832S040R` - Default (UART2 for development with debug)
+     - `firmware-esp32-4832S040R-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-esp32-4832S040R-uart2` - Explicit UART2 configuration
      
      **Headless USB MIDI:**
      - `firmware-esp32-headless-midi-master` - ESP32 headless USB MIDI
@@ -113,14 +113,14 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
    # For ESP32-2432S028R (CYD)
    pio run -e esp32-2432S028Rv2 -t upload
    
-   # For ESP32-3248S035C (Capacitive Touch)
-   pio run -e esp32-3248S035C -t upload
+   # For ESP32-4832S035C (Capacitive Touch)
+   pio run -e esp32-4832S035C -t upload
    
-   # For ESP32-3248S035R (Resistive Touch)
-   pio run -e esp32-3248S035R -t upload
+   # For ESP32-4832S035R (Resistive Touch)
+   pio run -e esp32-4832S035R -t upload
    
-   # For ESP32-3248S040R (4.0" Resistive Touch)
-   pio run -e esp32-3248S040R -t upload
+   # For ESP32-4832S040R (4.0" Resistive Touch)
+   pio run -e esp32-4832S040R -t upload
    
    # For Headless ESP32 USB MIDI
    pio run -e esp32-headless-midi-master -t upload

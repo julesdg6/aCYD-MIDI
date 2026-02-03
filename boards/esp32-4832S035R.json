@@ -6,7 +6,7 @@
     "core": "esp32",
     "extra_flags": [
       "'-D ARDUINO_ESP32_DEV'",
-      "'-D ESP32_3248S035R'",
+      "'-D ESP32_4832S035R'",
       "'-D DISPLAY_WIDTH=320'",
       "'-D DISPLAY_HEIGHT=480'",
       "'-D LVGL_BUFFER_PIXELS=(DISPLAY_WIDTH*DISPLAY_HEIGHT/4)'",
@@ -109,7 +109,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "esp32-3248S035R",
+  "name": "esp32-4832S035R",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

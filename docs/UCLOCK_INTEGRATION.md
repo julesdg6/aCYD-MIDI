@@ -166,8 +166,8 @@ void updateClockManager() {
 ### Tested Boards
 - ✅ ESP32-2432S028R (CYD)
 - ✅ ESP32-2432S028Rv2 (CYD v2)
-- ✅ ESP32-3248S035C (3.5" capacitive)
-- ✅ ESP32-3248S035R (3.5" resistive)
+- ✅ ESP32-4832S035C (3.5" capacitive)
+- ✅ ESP32-4832S035R (3.5" resistive)
 
 ## Troubleshooting
 

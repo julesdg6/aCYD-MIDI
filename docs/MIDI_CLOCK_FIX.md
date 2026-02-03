@@ -126,7 +126,7 @@ uClock.stop();   // Stop the clock
 ## Compatibility
 
 - ✅ ESP32-2432S028R (CYD)
-- ✅ ESP32-3248S035C/R variants
+- ✅ ESP32-4832S035C/R variants
 - ✅ All ESP32 family boards
 - ✅ PlatformIO builds
 - ✅ Arduino IDE builds (with library installed via Library Manager)

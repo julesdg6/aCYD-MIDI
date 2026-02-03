@@ -154,8 +154,8 @@ This implementation:
 ```bash
 # Test all board variants
 pio run -e esp32-2432S028Rv2
-pio run -e esp32-3248S035C
-pio run -e esp32-3248S035R
+pio run -e esp32-4832S035C
+pio run -e esp32-4832S035R
 ```
 
 ### Runtime Testing
