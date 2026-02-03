@@ -207,11 +207,15 @@ public:
   }
 
   void setDisplayInversion(bool invert) {
-    invertColors_ = invert;
+    getInvertColors() = invert;
   }
 
  private:
-  static inline bool invertColors_ = false;
+  static bool& getInvertColors() {
+    static bool invertColors = false;
+    return invertColors;
+  }
+  
   void drawText_(const char *text, int16_t x, int16_t y, uint8_t font, bool centered) {
     if (!layer_ || !text) {
       return;
@@ -248,7 +252,7 @@ public:
   }
 
   static inline uint16_t maybeInvert565_(uint16_t color) {
-    if (invertColors_) {
+    if (getInvertColors()) {
       return static_cast<uint16_t>(color ^ 0xFFFF);
     }
     return color;
@@ -265,6 +269,7 @@ public:
   static const lv_font_t *fontFor_(uint8_t font) {
     switch (font) {
       case 4:
+      case 5:
         return &lv_font_montserrat_32;
       case 2:
         return &lv_font_montserrat_20;

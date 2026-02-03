@@ -1016,13 +1016,21 @@ void setup() {
 #endif
   
   tft.init();
-  showSplashScreen("Booting...", 400);
+  
+  // Create render object and register event callback BEFORE showing splash screen
+  // This ensures tft.setLayer() is called via render_event before splash screen draws
   render_obj = lv_obj_create(lv_screen_active());
   lv_obj_set_size(render_obj,
                   lv_display_get_horizontal_resolution(display),
                   lv_display_get_vertical_resolution(display));
   lv_obj_set_style_bg_opa(render_obj, LV_OPA_TRANSP, 0);
   lv_obj_add_event_cb(render_obj, render_event, LV_EVENT_DRAW_MAIN, NULL);
+  
+  // Force initial render to initialize the TFT layer before splash screen
+  lv_obj_invalidate(render_obj);
+  lv_refr_now(lv_display_get_default());
+  
+  showSplashScreen("Booting...", 400);
   
   ble_init_start_ms = millis();
   initHardwareMIDI();  // Initialize hardware MIDI output
