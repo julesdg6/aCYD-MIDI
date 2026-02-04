@@ -169,18 +169,29 @@ void updateTB3POPlayback() {
   for (uint32_t i = 0; i < readySteps; ++i) {
     uint32_t currentTick = clockManagerGetTickCount();
     bool gated = stepIsGated(tb3po.step);
-    Serial.printf("[TB3PO] tick=%u step=%u gate=%d playing=%d\n", currentTick, tb3po.step, gated,
+    bool slid = stepIsSlid(tb3po.step);
+    Serial.printf("[TB3PO] tick=%u step=%u gate=%d slide=%d playing=%d\n", currentTick, tb3po.step, gated, slid,
                   tb3poSync.playing);
-    if (tb3po.currentNote >= 0) {
+    
+    // Only send note-off if not sliding
+    if (tb3po.currentNote >= 0 && !slid) {
       sendMIDI(0x80, tb3po.currentNote, 0);
       tb3po.currentNote = -1;
     }
+    
     if (gated) {
       int note = getMIDINoteForStep(tb3po.step);
       int velocity = stepIsAccent(tb3po.step) ? 127 : 100;
+      
+      // If sliding and note is different, send note-off for old note first
+      if (slid && tb3po.currentNote >= 0 && tb3po.currentNote != note) {
+        sendMIDI(0x80, tb3po.currentNote, 0);
+      }
+      
       sendMIDI(0x90, note, velocity);
       tb3po.currentNote = note;
     }
+    
     tb3po.step++;
     if (tb3po.step >= tb3po.numSteps) {
       tb3po.step = 0;

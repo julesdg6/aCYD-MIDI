@@ -376,12 +376,20 @@ static void updateRagaPlayback() {
     return;
   }
 
-  for (uint32_t i = 0; i < readySteps; ++i) {
-    unsigned long loopNow = millis();
-    if (g_noteActive && loopNow >= g_noteOffTime) {
+  // Use time-based note scheduling instead of step-based
+  static unsigned long lastNoteTime = 0;
+  unsigned long now = millis();
+  
+  // Check if it's time to play the next note
+  if (now - lastNoteTime >= g_noteIntervalMs) {
+    if (g_noteActive && now >= g_noteOffTime) {
       stopCurrentNote();
     }
-    scheduleNextNote(loopNow);
+    scheduleNextNote(now);
+    lastNoteTime = now;
+  } else if (g_noteActive && now >= g_noteOffTime) {
+    // Still turn off notes even if not scheduling new ones
+    stopCurrentNote();
   }
 }
 
