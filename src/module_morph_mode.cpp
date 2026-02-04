@@ -48,7 +48,7 @@ static MorphLayout calculateMorphLayout() {
   layout.sliderY = HEADER_HEIGHT + SCALE_Y(10);
   layout.sliderW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
   layout.sliderH = SCALE_Y(80);
-  layout.slotSpacing = SCALE_X(12);
+  layout.slotSpacing = SCALE_X(8);  // Reduced spacing to fit better
   layout.slotStartY = layout.sliderY + layout.sliderH + SCALE_Y(10);
   layout.controlButtonHeight = SCALE_Y(32);
 
@@ -58,15 +58,15 @@ static MorphLayout calculateMorphLayout() {
   availableHeight = std::max(availableHeight, 0);
   int slotCapacity = std::max(availableHeight - layout.slotSpacing, 0);
   int slotSize = slotCapacity / 2;
-  const int preferredMin = SCALE_X(20);
+  const int preferredMin = SCALE_X(25);  // Increased minimum size
   if (slotCapacity >= 2 * preferredMin) {
     slotSize = std::max(slotSize, preferredMin);
   }
-  slotSize = std::min(slotSize, SCALE_X(60));
-  slotSize = std::max(slotSize, 1);
+  slotSize = std::min(slotSize, SCALE_X(55));  // Slightly reduced max
+  slotSize = std::max(slotSize, preferredMin);  // Ensure minimum size
   layout.slotSize = slotSize;
 
-  layout.controlY = layout.slotStartY + 2 * layout.slotSize + layout.slotSpacing + SCALE_Y(10);
+  layout.controlY = layout.slotStartY + 2 * layout.slotSize + layout.slotSpacing + SCALE_Y(8);  // Reduced gap
   int maxControlY = DISPLAY_HEIGHT - layout.controlButtonHeight - controlBottomMargin;
   layout.controlY = std::min(layout.controlY, maxControlY);
   return layout;
