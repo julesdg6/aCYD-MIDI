@@ -26,6 +26,9 @@ static volatile int activeSequencers = 0;
 static volatile bool running = false;
 static volatile bool externalClockActive = false;
 static volatile bool uClockRunning = false;  // Track uClock running state
+static volatile bool tickCountersReset = false;  // Track when resetCounters() is called
+static volatile bool clockStarted = false;  // ISR flag for clock start
+static volatile bool clockStopped = false;  // ISR flag for clock stop
 // Aggregated tick statistics (ISR-updated, main-loop printed)
 // (tick sampling moved to main-loop to avoid ISR work)
 static portMUX_TYPE clockManagerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -34,25 +37,31 @@ static const char *const kMasterNames[] = {"INTERNAL", "WIFI", "BLE", "HARDWARE"
 // Forward declarations
 static inline void lockClockManager();
 static inline void unlockClockManager();
+static inline void lockClockManagerFromISR();
+static inline void unlockClockManagerFromISR();
 
 // uClock callback function
 static void onClockTickCallback(uint32_t tick) {
   // Use the tick value provided by uClock to avoid double-counting
   // Minimal ISR: record tick and mark pending for main loop processing.
-  lockClockManager();
+  lockClockManagerFromISR();
   tickCount = tick;
   tickPending = true;
-  unlockClockManager();
+  unlockClockManagerFromISR();
 }
 
 static void onClockStartCallback() {
-  // Called when uClock starts
-  Serial.println("[uClock] Clock started");
+  // Called when uClock starts - ISR-safe: just set a flag
+  lockClockManagerFromISR();
+  clockStarted = true;
+  unlockClockManagerFromISR();
 }
 
 static void onClockStopCallback() {
-  // Called when uClock stops
-  Serial.println("[uClock] Clock stopped");
+  // Called when uClock stops - ISR-safe: just set a flag
+  lockClockManagerFromISR();
+  clockStopped = true;
+  unlockClockManagerFromISR();
 }
 
 static inline void lockClockManager() {
@@ -61,6 +70,14 @@ static inline void lockClockManager() {
 
 static inline void unlockClockManager() {
   portEXIT_CRITICAL(&clockManagerMux);
+}
+
+static inline void lockClockManagerFromISR() {
+  portENTER_CRITICAL_ISR(&clockManagerMux);
+}
+
+static inline void unlockClockManagerFromISR() {
+  portEXIT_CRITICAL_ISR(&clockManagerMux);
 }
 
 static RunningStateDelta updateRunningStateLocked() {
@@ -119,6 +136,9 @@ void initClockManager() {
   running = false;
   externalClockActive = false;
   uClockRunning = false;
+  tickCountersReset = false;
+  clockStarted = false;
+  clockStopped = false;
   unlockClockManager();
   
   // Initialize uClock
@@ -146,6 +166,27 @@ static uint16_t clampBpm(uint16_t bpm) {
 
 void updateClockManager() {
   RunningStateDelta delta = updateRunningState();
+  
+  // Handle ISR flags for clock start/stop events (moved from ISR to task context)
+  bool shouldPrintStart = false;
+  bool shouldPrintStop = false;
+  lockClockManager();
+  if (clockStarted) {
+    clockStarted = false;
+    shouldPrintStart = true;
+  }
+  if (clockStopped) {
+    clockStopped = false;
+    shouldPrintStop = true;
+  }
+  unlockClockManager();
+  
+  if (shouldPrintStart) {
+    Serial.println("[uClock] Clock started");
+  }
+  if (shouldPrintStop) {
+    Serial.println("[uClock] Clock stopped");
+  }
   
   // Update uClock tempo if BPM has changed
   uint16_t bpm = clampBpm(sharedBPM);
@@ -175,10 +216,12 @@ void updateClockManager() {
       uClockRunning = true;
       unlockClockManager();
     } else if (needStop) {
-      uClock.stop();
+      // Set uClockRunning to false first to prevent new ticks from being processed,
+      // then call uClock.stop() to halt the clock
       lockClockManager();
       uClockRunning = false;
       unlockClockManager();
+      uClock.stop();
     }
   } else {
     // If master is external, ensure uClock is not left running (prevents
@@ -196,19 +239,66 @@ void updateClockManager() {
     }
   }
   
+  // Handle tick counter reset flag
+  static uint32_t lastProcessedTick = 0;
+  bool resetDetected = false;
+  lockClockManager();
+  if (tickCountersReset) {
+    tickCountersReset = false;
+    resetDetected = true;
+  }
+  unlockClockManager();
+  
+  if (resetDetected) {
+    lastProcessedTick = 0;
+  }
+  
   // Handle any pending ticks (deferred from ISR). Do this after start/stop logic
   // so heavy work runs in task context and won't trigger the interrupt WDT.
+  // Process ticks with wrap/reset detection.
+  bool isFirstIterationAfterReset = resetDetected;
   while (true) {
     bool pending = false;
+    uint32_t currentTickCount = 0;
     lockClockManager();
-    if (tickPending) {
-      tickPending = false;
-      pending = true;
-    }
+    pending = tickPending;
+    currentTickCount = tickCount;
     unlockClockManager();
-    if (!pending) break;
-    sendMIDIClock();
-    requestRedraw();
+    
+    // Detect counter wrap or reset: if tickCount < lastProcessedTick, treat as reset.
+    // Skip wrap detection on first iteration after a reset flag was processed,
+    // to avoid incorrectly treating the reset as a wrap.
+    if (currentTickCount < lastProcessedTick) {
+      if (!isFirstIterationAfterReset) {
+        lastProcessedTick = 0;
+      }
+    }
+    isFirstIterationAfterReset = false;
+    
+    // Process ticks while we haven't caught up to current tick
+    // The pending flag indicates ISR has set a new tick value
+    bool didProcessTick = false;
+    if (lastProcessedTick < currentTickCount) {
+      // Process one tick at a time to avoid blocking the main loop for too long.
+      // This allows other tasks to run between tick processing.
+      lastProcessedTick++;
+      didProcessTick = true;
+    }
+    
+    // Clear pending flag if we read it as true
+    if (pending) {
+      lockClockManager();
+      tickPending = false;
+      unlockClockManager();
+    }
+    
+    // If we processed a tick, send MIDI and request redraw, then continue loop
+    if (didProcessTick) {
+      sendMIDIClock();
+      requestRedraw();
+    } else {
+      break;
+    }
   }
 }
 
@@ -230,6 +320,10 @@ void clockManagerRequestStart() {
   unlockClockManager();
   if (doReset) {
     uClock.resetCounters();
+    // Notify updateClockManager to clear lastProcessedTick
+    lockClockManager();
+    tickCountersReset = true;
+    unlockClockManager();
   }
   uint16_t bpm = clampBpm(sharedBPM);
   uint32_t barMs = (60000UL * CLOCK_QUARTERS_PER_BAR) / bpm;
@@ -295,7 +389,6 @@ void clockManagerExternalStop() {
 }
 
 void clockManagerExternalContinue() {
-  uint32_t now = millis();
   lockClockManager();
   // Continue should enable external clock without resetting tick counters
   externalClockActive = true;
