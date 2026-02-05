@@ -7,12 +7,24 @@ int ballScale = 0;  // Scale selection
 int ballKey = 0;    // Key selection
 int ballOctave = 4;
 
+// Note scheduling for 16th note durations
+struct ScheduledNote {
+  uint8_t note;
+  unsigned long offTime;
+  bool active;
+};
+static ScheduledNote scheduledNotes[8];  // Track up to 8 concurrent notes
+
 // Implementations
 void initializeBouncingBallMode() {
   ballScale = 0;
   ballKey = 0;
   ballOctave = 4;
   numActiveBalls = 1;
+  // Clear scheduled notes
+  for (int i = 0; i < 8; i++) {
+    scheduledNotes[i].active = false;
+  }
   initializeBalls();
   initializeWalls();
 }
@@ -205,6 +217,16 @@ void updateBouncingBall() {
   if (!balls || !walls) {
     return;
   }
+  
+  // Check for scheduled note-offs
+  unsigned long now = millis();
+  for (int i = 0; i < 8; i++) {
+    if (scheduledNotes[i].active && now >= scheduledNotes[i].offTime) {
+      sendMIDI(0x80, scheduledNotes[i].note, 0);
+      scheduledNotes[i].active = false;
+    }
+  }
+  
   // Smooth 60 FPS animation
   static unsigned long lastUpdate = 0;
   if (millis() - lastUpdate > 16) {
@@ -346,8 +368,20 @@ void checkWallCollisions() {
       
       if (collision) {
         if (deviceConnected) {
+          // Calculate 16th note duration in ms (60000 ms/min / BPM / 4 beats/bar)
+          unsigned long sixteenthNoteDuration = (60000 / sharedBPM) / 4;
+          
           sendMIDI(0x90, walls[w].note, random(70, 110));
-          sendMIDI(0x80, walls[w].note, 0);
+          
+          // Schedule note-off for a 16th note later
+          for (int i = 0; i < 8; i++) {
+            if (!scheduledNotes[i].active) {
+              scheduledNotes[i].note = walls[w].note;
+              scheduledNotes[i].offTime = millis() + sixteenthNoteDuration;
+              scheduledNotes[i].active = true;
+              break;
+            }
+          }
         }
         
         walls[w].active = true;
