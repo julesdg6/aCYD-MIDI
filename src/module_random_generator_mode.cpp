@@ -290,23 +290,12 @@ void updateRandomGenerator() {
   randomSync.tryStartIfReady(!instantStartMode);
   bool justStarted = randomSync.playing && !wasPlaying;
   
-  // Don't reset subdivAccumulator - let it accumulate naturally
-  // This allows immediate playback if enough steps have accumulated
-  
   if (!randomSync.playing) {
     return;
   }
   
-  if (randomAssignedFlag) {
-    Serial.printf("[RNG] assignedTrack=%u requested=%u\n", (unsigned)randomAssignedTrack, (unsigned)randomRequestedTracks);
-    randomAssignedFlag = false;
-  }
-  // Get steps from uClock step extension (ISR-safe)
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = randomStepCount;
-  randomStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = randomSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   // Apply subdivision: we get 16th notes from uClock, but may need to skip some
   subdivAccumulator += readySteps;

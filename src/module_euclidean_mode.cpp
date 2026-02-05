@@ -209,24 +209,14 @@ void updateEuclideanSequencer() {
   
   if (justStarted) {
     euclideanState.currentStep = 0;
-    // Don't clear euclidStepCount - let it process accumulated steps naturally
   }
   
   if (!euclidSync.playing) {
     return;
   }
   
-  if (euclidAssignedFlag) {
-    Serial.printf("[EUCLID] assignedTrack=%u requested=%u\n", (unsigned)euclidAssignedTrack, (unsigned)euclidRequestedTracks);
-    euclidAssignedFlag = false;
-  }
-  // Get steps from uClock step extension (ISR-safe)
-  // For triplet mode, we need to handle differently based on division
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = euclidStepCount;
-  euclidStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = euclidSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   // Adjust for triplet mode if needed
   if (euclideanState.tripletMode) {

@@ -307,26 +307,19 @@ void updateArpeggiator() {
     arp.currentStep = 0;
     arp.tickAccumulator = 0.0f;
     arp.currentNote = -1;
-    // Don't clear arpStepCount - let it process accumulated steps naturally
   }
   if (!arpSync.playing) {
     return;
   }
   
-  if (arpAssignedFlag) {
-    Serial.printf("[ARP] assignedTrack=%u requested=%u\n", (unsigned)arpAssignedTrack, (unsigned)arpRequestedTracks);
-    arpAssignedFlag = false;
-  }
-  // Get steps from uClock step extension (ISR-safe)
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = arpStepCount;
-  arpStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = arpSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   if (readySteps == 0) {
     return;
   }
+  
+  Serial.printf("[ARP] readySteps=%u tickAccumulator=%.2f stepTicks=%.2f\n", readySteps, arp.tickAccumulator, arp.stepTicks);
   
   arp.tickAccumulator += static_cast<float>(readySteps);
   while (arp.tickAccumulator >= arp.stepTicks) {

@@ -250,26 +250,19 @@ void updateSequencer() {
   bool justStarted = sequencerSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
   if (justStarted) {
     currentStep = 0;
-    // Don't clear stepCount - let it process accumulated steps naturally
   }
   if (!sequencerSync.playing) {
     return;
   }
 
-  if (sequencerAssignedFlag) {
-    Serial.printf("[SEQ] assignedTrack=%u requested=%u\n", (unsigned)sequencerAssignedTrack, (unsigned)sequencerRequestedTracks);
-    sequencerAssignedFlag = false;
-  }
-  // Get steps from uClock step extension (ISR-safe)
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = sequencerStepCount;
-  sequencerStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = sequencerSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   if (readySteps == 0) {
     return;
   }
+
+  Serial.printf("[SEQ] readySteps=%u currentStep=%u\n", readySteps, currentStep);
 
   for (uint32_t i = 0; i < readySteps; ++i) {
     playSequencerStep();
