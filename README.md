@@ -56,7 +56,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **ESP32-4832S035C** - 3.5" 480x320 display with capacitive touch
 - **ESP32-4832S035R** - 3.5" 480x320 display with resistive touch
 - **ESP32-4832S040R** - 4.0" 480x320 display with resistive touch
-- **ESP32-S3 Dongles** - Headless USB MIDI mode (no display)
+- **ESP32-S3 Dongles** - Headless USB MIDI mode (no display) with native USB MIDI support
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
 - **MicroSD Card** (optional) - For screenshot capture feature
@@ -90,8 +90,8 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
      - `firmware-esp32-4832S040R-uart2` - Explicit UART2 configuration
      
      **Headless USB MIDI:**
-     - `firmware-esp32-headless-midi-master` - ESP32 headless USB MIDI
-     - `firmware-esp32s3-headless` - ESP32-S3 headless USB MIDI dongle
+     - `firmware-esp32-headless-midi-master` - ESP32 headless USB MIDI (BLE + Hardware MIDI + ESP-NOW master)
+     - `firmware-esp32s3-headless` - ESP32-S3 headless USB MIDI dongle (native USB MIDI + BLE + Hardware MIDI + ESP-NOW master)
 
 2. **Flash using ESP32 Flash Tool** or **esptool.py**:
    ```bash

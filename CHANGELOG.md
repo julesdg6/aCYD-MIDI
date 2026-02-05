@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - ESP32-4832S040R (4" 480x320 resistive touch) board support with UART variants (#98)
-- ESP32-S3 headless USB MIDI dongle support (#98)
+- **ESP32-S3 headless USB MIDI dongle support with full USB MIDI implementation** (#98)
+- **USB MIDI device support for headless builds** (PC/Mac/Android/iOS compatible)
+- **ESP-NOW MIDI networking enabled for headless builds** (master role)
 - ESP-NOW MIDI networking support between CYD devices (#56)
 - Unique Bluetooth names for each device based on MAC address (#53)
 - TB-303-style 4-row pattern display for TB3PO mode (#91)
