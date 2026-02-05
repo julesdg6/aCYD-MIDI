@@ -120,9 +120,12 @@ void drawSettingsMode() {
   const int buttonHeight = SCALE_Y(44);
   const int buttonSpacing = SCALE_X(6);
   const int bpmRowY = layout.bpmRowY - settingsScrollOffset;
-  if (bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) {
+  const int bpmLabelY = bpmRowY - SCALE_Y(18);
+  const int bpmLabelH = SCALE_Y(18);
+  if ((bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) ||
+      (bpmLabelY + bpmLabelH > layout.viewTop && bpmLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = bpmRowY - SCALE_Y(18);
+    int labelY = bpmLabelY;
     tft.drawString("Shared Tempo", rowInnerLeft, labelY, 2);
     int buttonY = bpmRowY + (bpmRowHeight() - buttonHeight) / 2;
     tft.fillRoundRect(rowBgX, bpmRowY, rowBgW, bpmRowHeight(), 12, THEME_BG);
@@ -136,18 +139,24 @@ void drawSettingsMode() {
   }
 
   const int clockRowY = layout.clockRowY - settingsScrollOffset;
-  if (clockRowY + compactRowHeight() > layout.viewTop && clockRowY < viewBottom) {
+  const int clockLabelY = clockRowY - SCALE_Y(18);
+  const int clockLabelH = SCALE_Y(18);
+  if ((clockRowY + compactRowHeight() > layout.viewTop && clockRowY < viewBottom) ||
+      (clockLabelY + clockLabelH > layout.viewTop && clockLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = clockRowY - SCALE_Y(18);
+    int labelY = clockLabelY;
     tft.drawString("Clock Master", rowInnerLeft, labelY, 2);
     drawRoundButton(rowInnerLeft, clockRowY, rowInnerW, compactRowHeight(),
                     kClockMasterLabels[static_cast<int>(midiClockMaster)], THEME_ACCENT, false, 2);
   }
 
   const int startModeRowY = layout.startModeRowY - settingsScrollOffset;
-  if (startModeRowY + compactRowHeight() > layout.viewTop && startModeRowY < viewBottom) {
+  const int startLabelY = startModeRowY - SCALE_Y(18);
+  const int startLabelH = SCALE_Y(18);
+  if ((startModeRowY + compactRowHeight() > layout.viewTop && startModeRowY < viewBottom) ||
+      (startLabelY + startLabelH > layout.viewTop && startLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = startModeRowY - SCALE_Y(18);
+    int labelY = startLabelY;
     tft.drawString("Start Mode", rowInnerLeft, labelY, 2);
     String modeLabel = instantStartMode ? "Instant" : "Quantized";
     drawRoundButton(rowInnerLeft, startModeRowY, rowInnerW, compactRowHeight(),
@@ -171,9 +180,12 @@ void drawSettingsMode() {
 #if ESP_NOW_ENABLED
   // ESP-NOW Enable/Disable button
   const int espNowRowY = layout.espNowRowY - settingsScrollOffset;
-  if (espNowRowY + compactRowHeight() > layout.viewTop && espNowRowY < viewBottom) {
+  const int espNowLabelY = espNowRowY - SCALE_Y(18);
+  const int espNowLabelH = SCALE_Y(18);
+  if ((espNowRowY + compactRowHeight() > layout.viewTop && espNowRowY < viewBottom) ||
+      (espNowLabelY + espNowLabelH > layout.viewTop && espNowLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = espNowRowY - SCALE_Y(18);
+    int labelY = espNowLabelY;
     tft.drawString("ESP-NOW MIDI", rowInnerLeft, labelY, 2);
     const char* espNowLabel = (espNowState.mode == ESP_NOW_OFF) ? "Disabled" : "Enabled";
     uint16_t espNowColor = (espNowState.mode == ESP_NOW_OFF) ? THEME_ERROR : THEME_SUCCESS;
@@ -183,9 +195,12 @@ void drawSettingsMode() {
 
   // ESP-NOW Mode selection
   const int espNowModeRowY = layout.espNowModeRowY - settingsScrollOffset;
-  if (espNowModeRowY + compactRowHeight() > layout.viewTop && espNowModeRowY < viewBottom) {
+  const int espNowModeLabelY = espNowModeRowY - SCALE_Y(18);
+  const int espNowModeLabelH = SCALE_Y(18);
+  if ((espNowModeRowY + compactRowHeight() > layout.viewTop && espNowModeRowY < viewBottom) ||
+      (espNowModeLabelY + espNowModeLabelH > layout.viewTop && espNowModeLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = espNowModeRowY - SCALE_Y(18);
+    int labelY = espNowModeLabelY;
     tft.drawString("ESP-NOW Mode", rowInnerLeft, labelY, 2);
     const char* modeLabel = (espNowState.mode == ESP_NOW_OFF) ? "Off" : 
                            (espNowState.mode == ESP_NOW_BROADCAST) ? "Broadcast" : "Peer";
@@ -196,7 +211,9 @@ void drawSettingsMode() {
 
   // ESP-NOW Status
   const int espNowStatusRowY = layout.espNowStatusRowY - settingsScrollOffset;
-  if (espNowStatusRowY + statusRowHeight() > layout.viewTop && espNowStatusRowY < viewBottom) {
+  const int espNowStatusLabelY = espNowStatusRowY - SCALE_Y(0);
+  if ((espNowStatusRowY + statusRowHeight() > layout.viewTop && espNowStatusRowY < viewBottom) ||
+      (espNowStatusLabelY + statusRowHeight() > layout.viewTop && espNowStatusLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT, THEME_SURFACE);
     String espNowStatus = String("ESP-NOW: Peers=") + getEspNowPeerCount() + 
                          " TX=" + espNowState.messagesSent + 
@@ -206,9 +223,12 @@ void drawSettingsMode() {
 #endif
 
   const int displayRowY = layout.displayRowY - settingsScrollOffset;
-  if (displayRowY + compactRowHeight() > layout.viewTop && displayRowY < viewBottom) {
+  const int displayLabelY = displayRowY - SCALE_Y(18);
+  const int displayLabelH = SCALE_Y(18);
+  if ((displayRowY + compactRowHeight() > layout.viewTop && displayRowY < viewBottom) ||
+      (displayLabelY + displayLabelH > layout.viewTop && displayLabelY < viewBottom)) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = displayRowY - SCALE_Y(18);
+    int labelY = displayLabelY;
     tft.drawString("Display", rowInnerLeft, labelY, 2);
     tft.fillRoundRect(rowBgX, displayRowY, rowBgW, compactRowHeight(), 12, THEME_BG);
     int displayButtonHeight = compactRowHeight() - SCALE_Y(10);
@@ -302,7 +322,8 @@ void handleSettingsMode() {
   const int clockButtonW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(clockButtonX, clockButtonY, clockButtonW, compactRowHeight())) {
-    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % (CLOCK_ESP_NOW + 1));
+    const int kCount = static_cast<int>(sizeof(kClockMasterLabels) / sizeof(kClockMasterLabels[0]));
+    midiClockMaster = static_cast<MidiClockMaster>((static_cast<int>(midiClockMaster) + 1) % kCount);
     requestRedraw();
     handled = true;
   }

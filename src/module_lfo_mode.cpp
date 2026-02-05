@@ -25,76 +25,106 @@ void drawLFOMode() {
 }
 
 void drawLFOControls() {
-  int y = 55;
-  int spacing = 30;
+  int y = HEADER_HEIGHT + SCALE_Y(10);
+  int lineSpacing = SCALE_Y(40);
   
-  // Play/Stop and Rate
-  drawRoundButton(10, y, 60, 25, lfo.isRunning ? "STOP" : "START", 
-                 lfo.isRunning ? THEME_ERROR : THEME_SUCCESS);
+  // Row 1: Start/Stop and Waveform selector  
+  drawRoundButton(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(30), 
+                  lfo.isRunning ? "STOP" : "START", 
+                  lfo.isRunning ? THEME_ERROR : THEME_SUCCESS, false, 2);
   
+  drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), y, SCALE_X(80), SCALE_Y(30),
+                  waveNames[lfo.waveform], THEME_ACCENT, false, 2);
+  
+  y += lineSpacing;
+  
+  // Row 2: Rate slider
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("Rate:", 80, y + 6, 1);
-  tft.drawString(String(lfo.rate, 1) + "Hz", 115, y + 6, 1);
-  drawRoundButton(160, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(190, y, 25, 25, "+", THEME_SECONDARY);
+  tft.drawString("Rate", MARGIN_SMALL, y, 2);
+  tft.drawString(String(lfo.rate, 1) + " Hz", MARGIN_SMALL, y + SCALE_Y(16), 4);
   
-  // Waveform selector
-  drawRoundButton(230, y, 60, 25, waveNames[lfo.waveform], THEME_ACCENT);
+  // Rate slider bar
+  int sliderX = DISPLAY_WIDTH / 2 - SCALE_X(10);
+  int sliderY = y + SCALE_Y(10);
+  int sliderW = SCALE_X(130);
+  int sliderH = SCALE_Y(20);
+  tft.drawRoundRect(sliderX, sliderY, sliderW, sliderH, 3, THEME_TEXT_DIM);
   
-  y += spacing;
-  
-  // Amount
-  tft.drawString("Amount:", 10, y + 6, 1);
-  tft.drawString(String(lfo.amount), 60, y + 6, 1);
-  drawRoundButton(85, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(115, y, 25, 25, "+", THEME_SECONDARY);
-  
-  // Amount bar
-  int barW = 100;
-  int barX = 150;
-  tft.drawRect(barX, y + 8, barW, 10, THEME_TEXT_DIM);
-  int fillW = (barW * lfo.amount) / 127;
-  tft.fillRect(barX + 1, y + 9, fillW, 8, THEME_PRIMARY);
-  
-  y += spacing;
-  
-  // Target selection
-  tft.drawString("Target:", 10, y + 6, 1);
-  if (lfo.pitchWheelMode) {
-    tft.drawString("PITCH", 60, y + 6, 1);
-  } else {
-    tft.drawString("CC" + String(lfo.ccTarget), 60, y + 6, 1);
+  float rateNorm = (lfo.rate - 0.1) / (10.0 - 0.1);  // Normalize to 0-1
+  int fillW = (int)((sliderW - 4) * rateNorm);
+  if (fillW > 0) {
+    tft.fillRoundRect(sliderX + 2, sliderY + 2, fillW, sliderH - 4, 2, THEME_PRIMARY);
   }
   
-  drawRoundButton(110, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(140, y, 25, 25, "+", THEME_SECONDARY);
-  drawRoundButton(180, y, 70, 25, "PITCH", lfo.pitchWheelMode ? THEME_PRIMARY : THEME_WARNING);
+  y += lineSpacing;
   
-  y += spacing;
+  // Row 3: Amount slider
+  tft.drawString("Amount", MARGIN_SMALL, y, 2);
+  tft.drawString(String(lfo.amount), MARGIN_SMALL, y + SCALE_Y(16), 4);
   
-  // Current value display
-  tft.setTextColor(THEME_PRIMARY, THEME_BG);
-  tft.drawString("Value: ", 10, y, 1);
+  // Amount slider bar
+  sliderY = y + SCALE_Y(10);
+  tft.drawRoundRect(sliderX, sliderY, sliderW, sliderH, 3, THEME_TEXT_DIM);
+  fillW = ((sliderW - 4) * lfo.amount) / 127;
+  if (fillW > 0) {
+    tft.fillRoundRect(sliderX + 2, sliderY + 2, fillW, sliderH - 4, 2, THEME_SUCCESS);
+  }
+  
+  y += lineSpacing;
+  
+  // Row 4: Target selection
+  tft.drawString("Target", MARGIN_SMALL, y, 2);
+  
+  String targetText;
+  if (lfo.pitchWheelMode) {
+    targetText = "PITCH";
+  } else {
+    targetText = "CC " + String(lfo.ccTarget);
+  }
+  tft.drawString(targetText, MARGIN_SMALL, y + SCALE_Y(16), 4);
+  
+  // CC increment/decrement buttons (small, right side)
+  if (!lfo.pitchWheelMode) {
+    drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(70), y + SCALE_Y(10), 
+                    SCALE_X(30), SCALE_Y(25), "-", THEME_SECONDARY, false, 1);
+    drawRoundButton(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(35), y + SCALE_Y(10), 
+                    SCALE_X(30), SCALE_Y(25), "+", THEME_SECONDARY, false, 1);
+  }
+  
+  // Pitch mode toggle
+  drawRoundButton(DISPLAY_WIDTH / 2 - SCALE_X(40), y + SCALE_Y(10), SCALE_X(80), SCALE_Y(25),
+                  "PITCH", lfo.pitchWheelMode ? THEME_PRIMARY : THEME_WARNING, 
+                  lfo.pitchWheelMode, 2);
+  
+  y += lineSpacing + SCALE_Y(5);
+  
+  // Current value display (prominent)
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Output:", MARGIN_SMALL, y, 2);
   tft.setTextColor(THEME_ACCENT, THEME_BG);
-  tft.drawString(String(lfo.lastValue), 60, y, 2);
+  tft.drawString(String(lfo.lastValue), MARGIN_SMALL + SCALE_X(60), y, 4);
   
   // Status indicator
+  int indicatorX = DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(30);
   if (lfo.isRunning) {
-    tft.fillCircle(250, y + 8, 8, THEME_SUCCESS);
-    tft.drawCircle(250, y + 8, 8, THEME_TEXT);
+    tft.fillCircle(indicatorX, y + SCALE_Y(10), SCALE_X(10), THEME_SUCCESS);
+    tft.drawCircle(indicatorX, y + SCALE_Y(10), SCALE_X(10), THEME_TEXT);
   } else {
-    tft.drawCircle(250, y + 8, 8, THEME_TEXT_DIM);
+    tft.drawCircle(indicatorX, y + SCALE_Y(10), SCALE_X(10), THEME_TEXT_DIM);
   }
 }
 
 void drawWaveform() {
-  // Draw a mini waveform visualization
+  // Draw LARGER waveform visualization at bottom
   int waveX = MARGIN_SMALL;
-  int waveY = SCALE_Y(180);
-  int waveW = SCALE_X(200);
-  int waveH = SCALE_Y(30);
+  int waveY = DISPLAY_HEIGHT - SCALE_Y(50);
+  int waveW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+  int waveH = SCALE_Y(40);  // Much larger!
   
-  tft.drawRect(waveX, waveY, waveW, waveH, THEME_TEXT_DIM);
+  tft.drawRoundRect(waveX, waveY, waveW, waveH, 3, THEME_TEXT_DIM);
+  
+  // Draw center line
+  tft.drawFastHLine(waveX + 1, waveY + waveH / 2, waveW - 2, THEME_TEXT_DIM);
   
   // Draw waveform based on type
   for (int x = 0; x < waveW - 2; x++) {
@@ -116,11 +146,21 @@ void drawWaveform() {
         break;
     }
     
-    int y = waveY + waveH/2 - (value * waveH/4);
+    int y = waveY + waveH/2 - (int)(value * (waveH/2 - 3));
     tft.drawPixel(waveX + 1 + x, y, THEME_PRIMARY);
+    
+    // Draw thicker line for better visibility
+    if (y > 0 && y < DISPLAY_HEIGHT) {
+      tft.drawPixel(waveX + 1 + x, y - 1, THEME_PRIMARY);
+    }
   }
   
-  // Phase indicator removed per user request
+  // Current phase indicator
+  if (lfo.isRunning) {
+    float phaseNorm = lfo.phase / (2 * PI);
+    int phaseX = waveX + 1 + (int)(phaseNorm * (waveW - 2));
+    tft.drawFastVLine(phaseX, waveY + 1, waveH - 2, THEME_ACCENT);
+  }
 }
 
 void handleLFOMode() {
@@ -132,11 +172,11 @@ void handleLFOMode() {
   }
   
   if (touch.justPressed) {
-    int y = 55;
-    int spacing = 30;
+    int y = HEADER_HEIGHT + SCALE_Y(10);
+    int lineSpacing = SCALE_Y(40);
     
-    // Start/Stop
-    if (isButtonPressed(10, y, 60, 25)) {
+    // Start/Stop button
+    if (isButtonPressed(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(30))) {
       lfo.isRunning = !lfo.isRunning;
       if (lfo.isRunning) {
         lfo.phase = 0.0;
@@ -146,68 +186,61 @@ void handleLFOMode() {
       return;
     }
     
-    // Rate controls
-    if (isButtonPressed(160, y, 25, 25)) {
-      lfo.rate = max(0.1, lfo.rate - 0.1);
-      drawLFOControls();
-      return;
-    }
-    if (isButtonPressed(190, y, 25, 25)) {
-      lfo.rate = min(10.0, lfo.rate + 0.1);
-      drawLFOControls();
-      return;
-    }
-    
     // Waveform selector
-    if (isButtonPressed(230, y, 60, 25)) {
+    if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), y, SCALE_X(80), SCALE_Y(30))) {
       lfo.waveform = (lfo.waveform + 1) % 4;
       requestRedraw();
       return;
     }
     
-    y += spacing;
+    y += lineSpacing;
     
-    // Amount controls
-    if (isButtonPressed(85, y, 25, 25)) {
-      lfo.amount = max(0, lfo.amount - 5);
-      drawLFOControls();
-      return;
-    }
-    if (isButtonPressed(115, y, 25, 25)) {
-      lfo.amount = min(127, lfo.amount + 5);
-      drawLFOControls();
-      return;
-    }
-    
-    y += spacing;
-    
-    // Target controls
-    if (isButtonPressed(110, y, 25, 25)) {
-      if (lfo.pitchWheelMode) {
-        lfo.pitchWheelMode = false;
-        lfo.ccTarget = 1; // Back to modulation wheel
-      } else {
-        lfo.ccTarget = max(0, lfo.ccTarget - 1);
-      }
+    // Rate slider
+    int sliderX = DISPLAY_WIDTH / 2 - SCALE_X(10);
+    int sliderY = y + SCALE_Y(10);
+    int sliderW = SCALE_X(130);
+    int sliderH = SCALE_Y(20);
+    if (isButtonPressed(sliderX, sliderY, sliderW, sliderH)) {
+      float normX = (touch.x - sliderX) / (float)sliderW;
+      normX = constrain(normX, 0.0f, 1.0f);
+      lfo.rate = 0.1 + normX * (10.0 - 0.1);
       requestRedraw();
       return;
     }
-    if (isButtonPressed(140, y, 25, 25)) {
-      if (lfo.pitchWheelMode) {
-        lfo.pitchWheelMode = false;
-        lfo.ccTarget = 1; // Back to modulation wheel
-        requestRedraw();
-        return;
-      }
-      if (lfo.ccTarget < 127) {
-        lfo.ccTarget = lfo.ccTarget + 1;
-        requestRedraw();
-      }
+    
+    y += lineSpacing;
+    
+    // Amount slider
+    sliderY = y + SCALE_Y(10);
+    if (isButtonPressed(sliderX, sliderY, sliderW, sliderH)) {
+      float normX = (touch.x - sliderX) / (float)sliderW;
+      normX = constrain(normX, 0.0f, 1.0f);
+      lfo.amount = (int)(normX * 127);
+      requestRedraw();
       return;
     }
     
-    // Pitchwheel mode toggle
-    if (isButtonPressed(180, y, 70, 25)) {
+    y += lineSpacing;
+    
+    // CC +/- buttons (if not in pitch mode)
+    if (!lfo.pitchWheelMode) {
+      if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(70), y + SCALE_Y(10), 
+                          SCALE_X(30), SCALE_Y(25))) {
+        lfo.ccTarget = max(0, lfo.ccTarget - 1);
+        requestRedraw();
+        return;
+      }
+      if (isButtonPressed(DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(35), y + SCALE_Y(10), 
+                          SCALE_X(30), SCALE_Y(25))) {
+        lfo.ccTarget = min(127, lfo.ccTarget + 1);
+        requestRedraw();
+        return;
+      }
+    }
+    
+    // Pitch mode toggle
+    if (isButtonPressed(DISPLAY_WIDTH / 2 - SCALE_X(40), y + SCALE_Y(10), 
+                        SCALE_X(80), SCALE_Y(25))) {
       lfo.pitchWheelMode = !lfo.pitchWheelMode;
       requestRedraw();
       return;

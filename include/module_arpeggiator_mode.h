@@ -12,7 +12,7 @@ struct Arpeggiator {
   int pattern = 0; // 0=Up, 1=Down, 2=UpDown, 3=Random
   int octaves = 2;
   int speed = 8; // 16th notes
-  int bpm = 120; // BPM control
+  // BPM removed - uses global sharedBPM
   int currentStep = 0;
   int currentNote = -1; // Current single note being played
   int triggeredKey = -1; // Which piano key triggered the arp

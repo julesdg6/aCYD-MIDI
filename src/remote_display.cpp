@@ -195,20 +195,42 @@ void initRemoteDisplay() {
         return;
     }
 
+    bool createdServer = false;
+    bool createdWs = false;
     if (!server) {
         server = new (std::nothrow) AsyncWebServer(REMOTE_DISPLAY_PORT);
+        createdServer = (server != nullptr);
     }
     if (!ws) {
         ws = new (std::nothrow) AsyncWebSocket(WEBSOCKET_PATH);
+        createdWs = (ws != nullptr);
     }
     if (!server || !ws) {
         Serial.println("Remote Display disabled: unable to allocate server resources.");
+        // Clean up any object we created in this call to avoid leaks
+        if (createdServer && server) {
+            delete server;
+            server = nullptr;
+        }
+        if (createdWs && ws) {
+            delete ws;
+            ws = nullptr;
+        }
         return;
     }
     
     initWiFi();
     if (!isWiFiConnected()) {
         Serial.println("Remote Display disabled (WiFi not connected).");
+        // If we allocated server/ws above in this call, free them before returning
+        if (createdServer && server) {
+            delete server;
+            server = nullptr;
+        }
+        if (createdWs && ws) {
+            delete ws;
+            ws = nullptr;
+        }
         return;
     }
 

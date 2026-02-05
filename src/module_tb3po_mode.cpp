@@ -223,13 +223,16 @@ void updateTB3POPlayback() {
 
 void drawTB3POMode() {
   tft.fillScreen(THEME_BG);
-  drawHeader("TB-3PO", "", 3);
-  int y = HEADER_HEIGHT + SCALE_Y(8);
+  drawHeader("TB-3PO", "Acid Pattern Generator", 3);
+  int y = HEADER_HEIGHT + SCALE_Y(4);
+  
+  // Status line with playing state and seed info grouped
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString(tb3poSync.playing ? "PLAYING" : (tb3poSync.startPending ? "WAITING" : "STOPPED"),
-                 SCALE_X(10), y, 2);
-  tft.drawString(tb3po.lockSeed ? "SEED LOCKED" : "SEED AUTO", SCALE_X(180), y, 2);
-  y += SCALE_Y(20);
+  String status = tb3poSync.playing ? "PLAYING" : (tb3poSync.startPending ? "WAITING" : "STOPPED");
+  tft.drawString(status, MARGIN_SMALL, y, 2);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Seed: " + String(tb3po.seed), DISPLAY_WIDTH - SCALE_X(90), y, 1);
+  y += SCALE_Y(16);
 
   // Draw 4-row pattern visualization (like TB-303)
   int stepW = SCALE_X(18);
@@ -305,24 +308,32 @@ void drawTB3POMode() {
     }
   }
   
-  // Position buttons at the bottom of the screen
-  int btnW = SCALE_X(70);
-  int btnH = SCALE_Y(56);  // Doubled from 28 to 56
-  int btnSpacing = SCALE_X(8);
-  int btnStartX = MARGIN_SMALL;
-  int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(10);  // 10px from bottom
+  // Position controls at bottom - group SEED and REGEN together
+  int btnH = SCALE_Y(44);
+  int btnSpacing = SCALE_X(6);
+  int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(6);
   
-  // Show density value above buttons
-  int densityY = btnY - SCALE_Y(18);
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Density: " + String(tb3po.density), MARGIN_SMALL, densityY, 1);
-
-  drawRoundButton(btnStartX, btnY, btnW, btnH,
+  // Left side: Play control
+  int playBtnW = SCALE_X(60);
+  drawRoundButton(MARGIN_SMALL, btnY, playBtnW, btnH,
                   tb3poSync.playing || tb3poSync.startPending ? "STOP" : "PLAY",
                   THEME_PRIMARY, false, 2);
-  drawRoundButton(btnStartX + (btnW + btnSpacing), btnY, btnW, btnH, "REGEN", THEME_SECONDARY, false, 2);
-  drawRoundButton(btnStartX + 2 * (btnW + btnSpacing), btnY, btnW, btnH, "DENS+", THEME_ACCENT, false, 2);
-  drawRoundButton(btnStartX + 3 * (btnW + btnSpacing), btnY, btnW, btnH, "DENS-", THEME_WARNING, false, 2);
+  
+  // Center: Density controls (grouped)
+  int densStartX = MARGIN_SMALL + playBtnW + btnSpacing + SCALE_X(4);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("DENSITY", densStartX, btnY - SCALE_Y(14), 1);
+  int densBtnW = SCALE_X(50);
+  drawRoundButton(densStartX, btnY, densBtnW, btnH, "-", THEME_WARNING, false, 4);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawCentreString(String(tb3po.density), densStartX + densBtnW + SCALE_X(18), btnY + SCALE_Y(14), 4);
+  drawRoundButton(densStartX + densBtnW + SCALE_X(36), btnY, densBtnW, btnH, "+", THEME_ACCENT, false, 4);
+  
+  // Right side: SEED and REGEN grouped
+  int seedRegenX = DISPLAY_WIDTH - SCALE_X(66);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("SEED", seedRegenX, btnY - SCALE_Y(14), 1);
+  drawRoundButton(seedRegenX, btnY, SCALE_X(60), btnH, "REGEN", THEME_SECONDARY, false, 2);
 }
 
 void initializeTB3POMode() {
@@ -354,14 +365,18 @@ void handleTB3POMode() {
   updateTB3POPlayback();
   if (touch.justPressed) {
     // Calculate button positions (must match drawTB3POMode)
-    int btnW = SCALE_X(70);
-    int btnH = SCALE_Y(56);  // Doubled from 28 to 56
-    int btnSpacing = SCALE_X(8);
-    int btnStartX = MARGIN_SMALL;
-    int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(10);  // 10px from bottom
+    int btnH = SCALE_Y(44);
+    int btnSpacing = SCALE_X(6);
+    int btnY = DISPLAY_HEIGHT - btnH - SCALE_Y(6);
     
-    if (isButtonPressed(btnStartX, btnY, btnW, btnH)) {
+    // Play button (left)
+    int playBtnW = SCALE_X(60);
+    if (isButtonPressed(MARGIN_SMALL, btnY, playBtnW, btnH)) {
       if (tb3poSync.playing || tb3poSync.startPending) {
+        if (tb3po.currentNote >= 0) {
+          sendMIDI(0x80, tb3po.currentNote, 0);
+          tb3po.currentNote = -1;
+        }
         tb3poSync.stopPlayback();
       } else {
         tb3poSync.requestStart();
@@ -369,19 +384,26 @@ void handleTB3POMode() {
       requestRedraw();
       return;
     }
-    if (isButtonPressed(btnStartX + (btnW + btnSpacing), btnY, btnW, btnH)) {
-      regenerateAll();
-      requestRedraw();
-      return;
-    }
-    if (isButtonPressed(btnStartX + 2 * (btnW + btnSpacing), btnY, btnW, btnH)) {
-      tb3po.density = min(16, tb3po.density + 1);  // Changed max from 14 to 16
-      regenerateAll();
-      requestRedraw();
-      return;
-    }
-    if (isButtonPressed(btnStartX + 3 * (btnW + btnSpacing), btnY, btnW, btnH)) {
+    
+    // Density controls (center)
+    int densStartX = MARGIN_SMALL + playBtnW + btnSpacing + SCALE_X(4);
+    int densBtnW = SCALE_X(50);
+    if (isButtonPressed(densStartX, btnY, densBtnW, btnH)) {
       tb3po.density = max(0, tb3po.density - 1);
+      regenerateAll();
+      requestRedraw();
+      return;
+    }
+    if (isButtonPressed(densStartX + densBtnW + SCALE_X(36), btnY, densBtnW, btnH)) {
+      tb3po.density = min(16, tb3po.density + 1);
+      regenerateAll();
+      requestRedraw();
+      return;
+    }
+    
+    // REGEN button (right)
+    int seedRegenX = DISPLAY_WIDTH - SCALE_X(66);
+    if (isButtonPressed(seedRegenX, btnY, SCALE_X(60), btnH)) {
       regenerateAll();
       requestRedraw();
       return;

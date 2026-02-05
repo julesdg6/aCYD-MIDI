@@ -45,7 +45,7 @@ static GridsLayout calculateGridsLayout() {
       DISPLAY_HEIGHT - layout.padY - sliderPadGap - layout.sliderH - sliderBottomMargin;
   padVerticalLimit = std::max(padVerticalLimit, 0);
   int padSizeLimit = std::min(layout.padSize, padVerticalLimit);
-  if (padVerticalLimit >= SCALE_X(110)) {
+  if (padVerticalLimit >= SCALE_Y(110)) {
     layout.padSize = std::max(padSizeLimit, SCALE_X(110));
   } else {
     layout.padSize = padSizeLimit;
@@ -202,11 +202,18 @@ void drawGridsMode() {
   
   // Show current step position if playing - positioned just above the slider area
   if (grids.playing) {
-    int stepIndicatorY = sliderY - SCALE_Y(8);  // Moved closer to bottom, just above sliders
+    int stepIndicatorY = sliderY - SCALE_Y(38);  // Adjusted for new slider position
     int stepW = SCALE_X(18);
     int stepSpacing = SCALE_X(1);
-    int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
-    
+    int totalWidth = GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing;
+    if (totalWidth > padSize) {
+      // Shrink stepW to fit, keep spacing at least 1px
+      stepSpacing = 1;
+      stepW = std::max(1, (padSize + stepSpacing) / GRIDS_STEPS - stepSpacing);
+      totalWidth = GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing;
+    }
+    int stepStartX = padX + std::max(0, (padSize - totalWidth) / 2);
+
     for (int i = 0; i < GRIDS_STEPS; i++) {
       int x = stepStartX + i * (stepW + stepSpacing);
       bool isCurrent = (i == grids.step);
@@ -217,34 +224,55 @@ void drawGridsMode() {
 
   const uint8_t densities[3] = {grids.kickDensity, grids.snareDensity, grids.hatDensity};
   const uint16_t sliderColor[3] = {THEME_ERROR, THEME_WARNING, THEME_ACCENT};
-  const char *sliderLabels[3] = {"K", "S", "H"};
-
+  
+  // K/S/H sliders with better spacing and labels
+  const char *sliderLabels[3] = {"KICK", "SNARE", "HIHAT"};
+  
+  // Position sliders higher to leave more room at bottom
+  int sliderYPos = sliderY - SCALE_Y(8);
+  int sliderLabelY = sliderYPos - SCALE_Y(14);
+  
   for (int i = 0; i < 3; ++i) {
     int x = layout.sliderPositions[i];
-    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-    tft.drawString(sliderLabels[i], x - SCALE_X(15), sliderY, 2);
-    tft.drawRect(x, sliderY, sliderW, sliderH, THEME_TEXT);
+    // Label above slider
+    tft.setTextColor(sliderColor[i], THEME_BG);
+    tft.drawString(sliderLabels[i], x, sliderLabelY, 1);
+    
+    // Slider
+    tft.drawRect(x, sliderYPos, sliderW, sliderH, THEME_TEXT);
     int fillWidth = (densities[i] * sliderW) / 255;
     if (fillWidth > 0) {
-      tft.fillRect(x + 1, sliderY + 1, fillWidth, sliderH - 2, sliderColor[i]);
+      tft.fillRect(x + 1, sliderYPos + 1, fillWidth, sliderH - 2, sliderColor[i]);
     }
+    
+    // Value below slider
+    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+    tft.drawCentreString(String(densities[i]), x + sliderW/2, sliderYPos + sliderH + SCALE_Y(2), 1);
   }
 
   int buttonY = padY;
-  drawRoundButton(controlX, buttonY, controlW, buttonH, grids.playing ? "STOP" : "PLAY", THEME_PRIMARY);
+  drawRoundButton(controlX, buttonY, controlW, buttonH, grids.playing ? "STOP" : "PLAY", 
+                  grids.playing ? THEME_ERROR : THEME_SUCCESS, false, 2);
   buttonY += buttonH + buttonSpacing;
+  
+  // BPM controls with label
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("BPM", controlX, buttonY, 1);
+  buttonY += SCALE_Y(12);
   
   // BPM buttons side by side with half width each
   int halfButtonW = (controlW - buttonSpacing) / 2;
-  drawRoundButton(controlX, buttonY, halfButtonW, buttonH, "BPM-", THEME_SECONDARY);
-  drawRoundButton(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH, "BPM+", THEME_SECONDARY);
-  buttonY += buttonH + buttonSpacing;
+  drawRoundButton(controlX, buttonY, halfButtonW, buttonH, "-", THEME_SECONDARY, false, 4);
+  drawRoundButton(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH, "+", THEME_SECONDARY, false, 4);
+  buttonY += buttonH + SCALE_Y(4);
   
-  drawRoundButton(controlX, buttonY, controlW, buttonH, "RNDM", THEME_ACCENT);
-  buttonY += buttonH + buttonSpacing;
-
+  // BPM value
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM: " + String(sharedBPM), controlX, buttonY, 2);
+  tft.drawCentreString(String(sharedBPM), controlX + controlW/2, buttonY, 4);
+  buttonY += SCALE_Y(26);
+  
+  // Random button with better spacing from BPM
+  drawRoundButton(controlX, buttonY, controlW, buttonH, "RNDM", THEME_ACCENT, false, 2);
 }
 
 void initializeGridsMode() {
@@ -302,16 +330,15 @@ void handleGridsMode() {
   int buttonY = layout.padY;
 
   bool playPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
-  buttonY += buttonH + buttonSpacing;
+  buttonY += buttonH + buttonSpacing + SCALE_Y(12);  // Skip BPM label
   
   // BPM buttons side by side with half width each
   int halfButtonW = (controlW - buttonSpacing) / 2;
   bool bpmDownPressed = isButtonPressed(controlX, buttonY, halfButtonW, buttonH);
   bool bpmUpPressed = isButtonPressed(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH);
-  buttonY += buttonH + buttonSpacing;
+  buttonY += buttonH + SCALE_Y(30);  // Skip BPM value display
   
   bool randomPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
-  buttonY += buttonH + buttonSpacing;
 
   if (playPressed) {
     if (gridsIsRequested()) {
@@ -345,7 +372,9 @@ void handleGridsMode() {
     return;
   }
 
-  if (touch.y >= layout.sliderY && touch.y < layout.sliderY + layout.sliderH) {
+  // Update slider touch handling for new position
+  int sliderYPos = layout.sliderY - SCALE_Y(8);
+  if (touch.y >= sliderYPos && touch.y < sliderYPos + layout.sliderH) {
     for (int i = 0; i < 3; ++i) {
       int x = layout.sliderPositions[i];
       if (touch.x >= x && touch.x < x + layout.sliderW) {
