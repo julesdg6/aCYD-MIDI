@@ -1,16 +1,36 @@
 // main_headless.cpp - Headless USB MIDI master with ESP-NOW sync
-// Build with: [env:esp32-headless-midi-master]
+// Build with: [env:esp32-headless-midi-master] or [env:esp32s3-headless]
 
 #ifdef HEADLESS_BUILD
 
 #include <Arduino.h>
-#include <esp_now.h>
 #include <WiFi.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLESecurity.h>
 #include <BLE2902.h>
+
+// USB MIDI only available on ESP32-S3 with native USB support
+#if USB_MIDI_DEVICE && defined(ARDUINO_USB_MODE)
+#include <Adafruit_TinyUSB.h>
+#include <MIDI.h>
+
+// USB MIDI device
+Adafruit_USBD_MIDI usbMIDI;
+MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usbMIDI, MIDI_USB);
+#define USB_MIDI_ENABLED 1
+#else
+#define USB_MIDI_ENABLED 0
+#endif
+
+#if ESP_NOW_ENABLED
+#include <esp_now.h>
+#include <esp_now_midi.h>
+
+// ESP-NOW MIDI instance
+esp_now_midi espNowMIDI;
+#endif
 
 // BLE MIDI UUIDs (from common_definitions.h)
 #define SERVICE_UUID        "03b80e5a-ede8-4b33-a751-6ce34ec4c700"
@@ -33,6 +53,19 @@ void initHardwareMIDI() {
 void sendHardwareMIDISingle(uint8_t byte1) {
   if (!HARDWARE_MIDI_ENABLED) return;
   MIDISerial.write(byte1);
+}
+
+void sendHardwareMIDI2(uint8_t byte1, uint8_t byte2) {
+  if (!HARDWARE_MIDI_ENABLED) return;
+  MIDISerial.write(byte1);
+  MIDISerial.write(byte2);
+}
+
+void sendHardwareMIDI3(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
+  if (!HARDWARE_MIDI_ENABLED) return;
+  MIDISerial.write(byte1);
+  MIDISerial.write(byte2);
+  MIDISerial.write(byte3);
 }
 
 
@@ -92,9 +125,13 @@ void setupBLE() {
 
 unsigned long lastClock = 0;
 uint32_t clockTick = 0;
-// Track ESP-NOW initialization success to avoid calling esp_now_send when
-// ESP-NOW failed to initialize in setup(). Defaults to false.
-static bool espNowInitialized = false;
+
+#if ESP_NOW_ENABLED
+// ESP-NOW message handlers
+void onEspNowReceive(const uint8_t* mac, const uint8_t* data, int len) {
+  // ESP-NOW MIDI library handles this
+}
+#endif
 
 void setup() {
   Serial.begin(115200);
@@ -102,35 +139,156 @@ void setup() {
   Serial.println("aCYD-HEADLESS starting...");
   Serial.flush();
 
-  Serial.println("Step 1: WiFi.mode(WIFI_STA)");
+#if USB_MIDI_ENABLED
+  Serial.println("Step 1: Initializing USB MIDI");
+  MIDI_USB.begin(MIDI_CHANNEL_OMNI);
+  Serial.println("USB MIDI initialized");
+#endif
+
+  Serial.println("Step 2: WiFi.mode(WIFI_STA)");
   WiFi.mode(WIFI_STA);
-  Serial.println("Step 2: setupBLE()");
+  
+  Serial.println("Step 3: setupBLE()");
   setupBLE();
-  Serial.println("Step 3: initializing hardware MIDI");
+  
+  Serial.println("Step 4: initializing hardware MIDI");
   initHardwareMIDI();
-  Serial.println("Step 4: esp_now_init()");
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("ESP-NOW init failed");
-    espNowInitialized = false;
-  } else {
-    espNowInitialized = true;
-    Serial.println("Step 5: Add ESP-NOW peer");
-    esp_now_peer_info_t peerInfo = {};
-    memset(peerInfo.peer_addr, 0xFF, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-      Serial.println("ESP-NOW add peer failed");
+
+#if ESP_NOW_ENABLED
+  Serial.println("Step 5: Initializing ESP-NOW as master");
+  // Initialize ESP-NOW MIDI with auto-peer discovery enabled and low latency
+  espNowMIDI.begin(false, true);  // (encryption=false, low_latency=true)
+  
+  // Register ESP-NOW MIDI handlers for routing received messages
+  espNowMIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
+    Serial.printf("[ESP-NOW RX] Note On: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
+    // Route to BLE MIDI
+    if (deviceConnected) {
+      midiPacket[2] = 0x90 | channel;
+      midiPacket[3] = note;
+      midiPacket[4] = velocity;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
     }
-    Serial.println("Step 6: Setup complete");
-  }
+    // Route to Hardware MIDI
+    sendHardwareMIDI3(0x90 | channel, note, velocity);
+#if USB_MIDI_ENABLED
+    // Route to USB MIDI
+    MIDI_USB.sendNoteOn(note, velocity, channel + 1);
+#endif
+  });
+  
+  espNowMIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
+    Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
+    // Route to BLE MIDI
+    if (deviceConnected) {
+      midiPacket[2] = 0x80 | channel;
+      midiPacket[3] = note;
+      midiPacket[4] = velocity;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    // Route to Hardware MIDI
+    sendHardwareMIDI3(0x80 | channel, note, velocity);
+#if USB_MIDI_ENABLED
+    // Route to USB MIDI
+    MIDI_USB.sendNoteOff(note, velocity, channel + 1);
+#endif
+  });
+  
+  espNowMIDI.setHandleControlChange([](byte channel, byte control, byte value) {
+    Serial.printf("[ESP-NOW RX] CC: Ch=%d, CC=%d, Val=%d\n", channel, control, value);
+    // Route to BLE MIDI
+    if (deviceConnected) {
+      midiPacket[2] = 0xB0 | channel;
+      midiPacket[3] = control;
+      midiPacket[4] = value;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    // Route to Hardware MIDI
+    sendHardwareMIDI3(0xB0 | channel, control, value);
+#if USB_MIDI_ENABLED
+    // Route to USB MIDI
+    MIDI_USB.sendControlChange(control, value, channel + 1);
+#endif
+  });
+  
+  espNowMIDI.setHandleClock([]() {
+    // Route MIDI clock to all outputs
+    if (deviceConnected) {
+      midiPacket[2] = 0xF8;
+      midiPacket[3] = 0x00;
+      midiPacket[4] = 0x00;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    sendHardwareMIDISingle(0xF8);
+#if USB_MIDI_ENABLED
+    MIDI_USB.sendRealTime(midi::Clock);
+#endif
+  });
+  
+  espNowMIDI.setHandleStart([]() {
+    Serial.println("[ESP-NOW RX] Start");
+    if (deviceConnected) {
+      midiPacket[2] = 0xFA;
+      midiPacket[3] = 0x00;
+      midiPacket[4] = 0x00;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    sendHardwareMIDISingle(0xFA);
+#if USB_MIDI_ENABLED
+    MIDI_USB.sendRealTime(midi::Start);
+#endif
+  });
+  
+  espNowMIDI.setHandleStop([]() {
+    Serial.println("[ESP-NOW RX] Stop");
+    if (deviceConnected) {
+      midiPacket[2] = 0xFC;
+      midiPacket[3] = 0x00;
+      midiPacket[4] = 0x00;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    sendHardwareMIDISingle(0xFC);
+#if USB_MIDI_ENABLED
+    MIDI_USB.sendRealTime(midi::Stop);
+#endif
+  });
+  
+  espNowMIDI.setHandleContinue([]() {
+    Serial.println("[ESP-NOW RX] Continue");
+    if (deviceConnected) {
+      midiPacket[2] = 0xFB;
+      midiPacket[3] = 0x00;
+      midiPacket[4] = 0x00;
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+    sendHardwareMIDISingle(0xFB);
+#if USB_MIDI_ENABLED
+    MIDI_USB.sendRealTime(midi::Continue);
+#endif
+  });
+  
+  Serial.println("ESP-NOW MIDI master initialized");
+  Serial.print("ESP-NOW MAC Address: ");
+  Serial.println(WiFi.macAddress());
+#else
+  Serial.println("Step 5: ESP-NOW disabled in build");
+#endif
+  
+  Serial.println("Setup complete - Headless MIDI master ready");
 }
 
 
 
 
 
-// Unified MIDI clock/start/stop for BLE, hardware, and ESP-NOW
+// Unified MIDI clock/start/stop for BLE, hardware, USB, and ESP-NOW
 void sendMidiClock() {
   // BLE MIDI
   if (deviceConnected) {
@@ -142,14 +300,18 @@ void sendMidiClock() {
   }
   // Hardware MIDI
   sendHardwareMIDISingle(0xF8);
-  // ESP-NOW (only if initialized)
-  if (espNowInitialized) {
-    uint8_t wifiClock = 0xF8;
-    esp_now_send(NULL, &wifiClock, 1);
-  }
+#if USB_MIDI_ENABLED
+  // USB MIDI
+  MIDI_USB.sendRealTime(midi::Clock);
+#endif
+#if ESP_NOW_ENABLED
+  // ESP-NOW (send to all discovered peers)
+  espNowMIDI.sendClock();
+#endif
   // USB Serial debug
   Serial.println("MIDI Clock");
 }
+
 void sendMidiStart() {
   if (deviceConnected) {
     midiPacket[2] = 0xFA;
@@ -159,12 +321,15 @@ void sendMidiStart() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFA);
-  if (espNowInitialized) {
-    uint8_t wifiStart = 0xFA;
-    esp_now_send(NULL, &wifiStart, 1);
-  }
+#if USB_MIDI_ENABLED
+  MIDI_USB.sendRealTime(midi::Start);
+#endif
+#if ESP_NOW_ENABLED
+  espNowMIDI.sendStart();
+#endif
   Serial.println("MIDI Start");
 }
+
 void sendMidiStop() {
   if (deviceConnected) {
     midiPacket[2] = 0xFC;
@@ -174,23 +339,32 @@ void sendMidiStop() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFC);
-  if (espNowInitialized) {
-    uint8_t wifiStop = 0xFC;
-    esp_now_send(NULL, &wifiStop, 1);
-  }
+#if USB_MIDI_ENABLED
+  MIDI_USB.sendRealTime(midi::Stop);
+#endif
+#if ESP_NOW_ENABLED
+  espNowMIDI.sendStop();
+#endif
   Serial.println("MIDI Stop");
 }
 
 void loop() {
+#if USB_MIDI_ENABLED
+  // Process USB MIDI input
+  MIDI_USB.read();
+#endif
+
   unsigned long now = micros();
   if (now - lastClock >= MIDI_CLOCK_INTERVAL_US) {
     lastClock += MIDI_CLOCK_INTERVAL_US;
     sendMidiClock();
     clockTick++;
-    // Optionally: send Start/Stop at appropriate times
+    // Send start at beginning, send stop at appropriate times
+    if (clockTick == 1) {
+      sendMidiStart();
+    }
   }
   delay(1); // Yield to watchdog
-  // Optionally: handle USB MIDI input for BPM/transport
 }
 
 #endif // HEADLESS_BUILD
