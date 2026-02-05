@@ -183,13 +183,17 @@ void updateClockManager() {
   } else {
     // If master is external, ensure uClock is not left running (prevents
     // internal uClock and external clock both advancing tick counters).
+    bool needStop = false;
     lockClockManager();
     if (uClockRunning) {
-      uClock.stop();
       uClockRunning = false;
-      Serial.println("[ClockManager] uClock stopped because master is not INTERNAL");
+      needStop = true;
     }
     unlockClockManager();
+    if (needStop) {
+      uClock.stop();
+      Serial.println("[ClockManager] uClock stopped because master is not INTERNAL");
+    }
   }
   
   // Handle any pending ticks (deferred from ISR). Do this after start/stop logic

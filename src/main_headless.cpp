@@ -103,7 +103,7 @@ void setup() {
   WiFi.mode(WIFI_STA);
   Serial.println("Step 2: setupBLE()");
   setupBLE();
-  Serial.println("Step 3: (initHardwareMIDI() skipped)");
+  Serial.println("Step 3: initializing hardware MIDI");
   initHardwareMIDI();
   Serial.println("Step 4: esp_now_init()");
   if (esp_now_init() != ESP_OK) {

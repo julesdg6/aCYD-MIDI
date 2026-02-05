@@ -17,7 +17,6 @@ static const uint8_t sequencerRequestedTracks = 1;  // Track slots requested
 static volatile bool sequencerAssignedFlag = false;
 
 // ISR callback for uClock step sequencer extension
-// ISR callback for uClock step sequencer extension
 static void onSequencerStepISR(uint32_t step, uint8_t track) {
   (void)step;
   if (sequencerAssignedTrack == 0xFF) {

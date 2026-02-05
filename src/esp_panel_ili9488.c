@@ -11,6 +11,9 @@
 #include <freertos/task.h>
 #include <memory.h>
 
+// Delay after issuing software reset (LCD_CMD_SWRESET) in milliseconds
+#define SWRESET_DELAY_MS 120
+
 typedef struct
 {
     esp_lcd_panel_t base;
@@ -70,9 +73,18 @@ esp_err_t ili9488_reset(esp_lcd_panel_t *panel)
             log_e("Sending LCD_CMD_SWRESET failed");
             return res;
         }
+        /* When a software reset is issued to the panel we must wait longer
+         * for the controller to complete its internal reset sequence. Use a
+         * longer, named delay here rather than the short hardware-reset delay. */
+        vTaskDelay(pdMS_TO_TICKS(SWRESET_DELAY_MS));
     }
 
-    vTaskDelay(pdMS_TO_TICKS(5));
+    /* Short pause after hardware reset path was already handled above. Keep
+     * the existing short delay for hardware-reset timing. If a software reset
+     * was issued we already waited the longer interval above. */
+    if (ph->config.reset_gpio_num != GPIO_NUM_NC) {
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
 
     return ESP_OK;
 }

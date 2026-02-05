@@ -46,12 +46,12 @@ The ESP32's DRAM is shared among several consumers:
 In `include/lv_conf.h`:
 
 ```c
-#define LV_MEM_SIZE (40 * 1024U)                    // 40 KB - LVGL heap
-#define LV_DRAW_LAYER_SIMPLE_BUF_SIZE (16 * 1024)   // 16 KB - Layer buffer
-#define LV_DRAW_THREAD_STACK_SIZE (4 * 1024)        // 4 KB - Thread stack
+#define LV_MEM_SIZE (16 * 1024U)                    // 16 KB - LVGL heap (default in this header)
+#define LV_DRAW_LAYER_SIMPLE_BUF_SIZE (8 * 1024)    // 8 KB - Layer buffer
+#define LV_DRAW_THREAD_STACK_SIZE (2 * 1024)        // 2 KB - Thread stack
 ```
 
-**Total LVGL allocation**: ~60 KB
+**Total LVGL allocation**: ~26 KB
 
 ## Major Memory Consumers in aCYD-MIDI
 
@@ -72,11 +72,11 @@ These don't count against DRAM:
 
 ## How the Fix Works
 
-The recent build failure showed DRAM overflow by 1488 bytes. The fix:
+The recent build failure showed DRAM overflow by 1488 bytes. The remediation approach:
 
-1. **Reduced `LV_MEM_SIZE`** from 48 KB to 44 KB
-2. **Freed 4096 bytes** of DRAM (more than 2.7× the overflow)
-3. **Maintained functionality**: 44 KB is still sufficient for the UI
+1. **Header default `LV_MEM_SIZE`** set to 16 KB to be conservative for constrained CYD devices.
+2. **Project build flag override**: `platformio.ini` contains `-D LV_MEM_SIZE=24576` to optionally use 24 KB for specific builds.
+3. **Resulting totals**: ~26 KB total LVGL allocation with the header default, or ~34 KB when using the 24 KB build override. These settings preserve UI functionality while reducing DRAM pressure.
 
 ## Guidelines for Future Development
 

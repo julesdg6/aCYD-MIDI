@@ -147,7 +147,9 @@ void updateGridsPlayback() {
     return;
   }
 
-  for (uint32_t i = 0; i < readySteps; ++i) {
+  // Cap to prevent MIDI burst on timing backlog
+  uint32_t stepsToProcess = std::min(readySteps, 2u);
+  for (uint32_t i = 0; i < stepsToProcess; ++i) {
     bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
     bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
     bool hatTrigger = grids.hatPattern[grids.step] >= (255 - grids.hatDensity);

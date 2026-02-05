@@ -12,6 +12,9 @@ static volatile uint8_t randomAssignedTrack = 0xFF;
 static const uint8_t randomRequestedTracks = 1;
 static volatile bool randomAssignedFlag = false;
 
+// Accumulator for subdivision handling (counts incoming 16th-note ticks)
+static uint32_t subdivAccumulator = 0;
+
 // ISR callback for uClock step sequencer extension
 // ISR callback for uClock step sequencer extension
 static void onRandomStepISR(uint32_t step, uint8_t track) {
@@ -177,11 +180,15 @@ void handleRandomGeneratorMode() {
     if (isButtonPressed(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(35))) {
       if (randomModuleRunning()) {
         randomSync.stopPlayback();
+        // Reset subdivision accumulator to avoid stale ticks carrying over
+        subdivAccumulator = 0;
         if (randomGen.currentNote != -1) {
           sendMIDI(0x80, randomGen.currentNote, 0);
           randomGen.currentNote = -1;
         }
       } else {
+        // Reset accumulator when starting to ensure deterministic timing
+        subdivAccumulator = 0;
         randomSync.requestStart();
       }
       requestRedraw();
@@ -296,14 +303,14 @@ void updateRandomGenerator() {
   interrupts();
   
   // Apply subdivision: we get 16th notes from uClock, but may need to skip some
-  static uint32_t subdivAccumulator = 0;
   subdivAccumulator += readySteps;
-  
+
   uint32_t stepsToPlay = 0;
-  // subdivision: 4=quarter, 8=eighth, 16=sixteenth note intervals
-  uint32_t subdivFactor = randomGen.subdivision / 4;
+  // subdivision: randomGen.subdivision is one of {4,8,16}
+  // compute factor as 16 / subdivision so quarter->4, eighth->2, sixteenth->1
+  uint32_t subdivFactor = 16 / randomGen.subdivision;
   if (subdivFactor == 0) subdivFactor = 1;
-  
+
   stepsToPlay = subdivAccumulator / subdivFactor;
   subdivAccumulator %= subdivFactor;
   
