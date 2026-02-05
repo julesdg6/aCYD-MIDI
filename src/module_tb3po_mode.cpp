@@ -337,7 +337,6 @@ void initializeTB3POMode() {
   tb3po.lockSeed = false;
   tb3po.numSteps = TB3PO_MAX_STEPS;
   tb3po.bpm = 120.0f;
-  tb3po.useInternalClock = true;
   regenerateAll();
   // Step callback registration is done at startup via registerAllStepCallbacks().
   drawTB3POMode();
