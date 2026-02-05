@@ -1,5 +1,13 @@
-# raga_midi.py
+# raga.py
+"""Raga MIDI generator utilities (assets/raga/raga.py)
+
+This module generates simple improvisations for a set of predefined
+raga scales and writes them to MIDI files.
+"""
+
 from mido import Message, MidiFile, MidiTrack, bpm2tempo, MetaMessage
+import os
+import re
 import random
 
 TONIC = 60  # Sa = C4
@@ -71,8 +79,14 @@ def raga_to_midi(raga_name, bars=16, notes_per_bar=4, bpm=90,
         track.append(Message('note_off', note=note, velocity=0,
                              time=dur, channel=channel))
 
+    # Build a safe filename from the raga name to avoid path traversal
     if filename is None:
-        filename = f"{raga_name}_improv.mid"
+        base = os.path.basename(raga_name)
+        # Keep only alphanumerics, hyphen and underscore; replace others with '_'
+        safe = re.sub(r'[^A-Za-z0-9_-]', '_', base)
+        if not safe:
+            safe = 'raga'
+        filename = f"{safe}_improv.mid"
     mid.save(filename)
     print(f"Saved {filename}")
 

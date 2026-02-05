@@ -96,7 +96,7 @@ bleSerial.loop();                  // Main loop processing
 ```cpp
 #if ENABLE_BLE_SERIAL
   if (bleSerial.begin(server)) {
-    Serial.println("BLE Serial service started");
+    Serial.println("BLE Serial service started successfully");
   }
 #endif
 

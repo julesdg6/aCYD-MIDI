@@ -58,7 +58,7 @@ async def main():
             await client.start_notify(BLE_MIDI_CHAR, handler)
         except Exception as e:
             print('Failed to start notify:', e)
-
+            return
         print('Listening for notifications. Trigger notes now; press Ctrl-C to stop.')
         try:
             while True:

@@ -366,7 +366,7 @@ After successful testing:
 
 ## Additional Resources
 
-- [BLE Serial Usage Guide](../docs/BLE_SERIAL_USAGE.md)
-- [BLE Serial Implementation](../docs/BLE_SERIAL_IMPLEMENTATION.md)
+- [BLE Serial Usage Guide](BLE_SERIAL_USAGE.md)
+- [BLE Serial Implementation](BLE_SERIAL_IMPLEMENTATION.md)
 - [Python Test Client](../examples/test_ble_serial.py)
 - [nRF Connect Documentation](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-Mobile)

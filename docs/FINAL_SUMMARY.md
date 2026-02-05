@@ -211,8 +211,7 @@
 
 ### Code Quality
 - **Well-Documented:** 1,360+ lines of documentation
-- **Shared Timing API:** `SequencerSyncState::consumeReadySteps()` exposes the tick stream that all modes rely on (`include/clock_manager.h:27-123`)
- - **Shared Timing API:** `SequencerSyncState::consumeReadySteps()` exposes the tick stream that all modes rely on (`include/clock_manager.h:95-119`)
+- **Shared Timing API:** `SequencerSyncState::consumeReadySteps()` exposes the tick stream that all modes rely on (`include/clock_manager.h:95-119`)
 - **Maintainable:** Clean separation of concerns
 - **Extensible:** Easy to add MIDI IN, THRU, etc.
 - **Professional:** Follows MIDI 1.0 specification

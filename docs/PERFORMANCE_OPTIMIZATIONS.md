@@ -87,8 +87,8 @@ if (isButtonPressed(btn_x, btn_y, btn_w, btn_h)) {
 
 **Before:**
 ```cpp
+drawKey(key, true);        // Update visual (slow path)
 playNote(note, true);      // Send MIDI
-drawKey(key, true);        // Update visual
 ```
 
 **After:**
@@ -125,7 +125,7 @@ drawKey(key, true);
 **`include/ui_elements.h`**
 - No changes (uses extern from common_definitions.h)
 
-### Mode Files (14 files, 57 replacements)
+### Mode Files (16 files, 57 replacements)
 
 All mode handler functions updated to use `requestRedraw()` instead of calling full `draw*Mode()`:
 

@@ -87,9 +87,10 @@ void updateClockManager() {
   
   // Update tempo if changed
   uint16_t bpm = clampBpm(sharedBPM);
+  // Note: use floating-point absolute to avoid truncation (include <cmath>)
   float currentTempo = uClock.getTempo();
-  if (abs(currentTempo - (float)bpm) > 0.1f) {
-    uClock.setTempo((float)bpm);
+  if (std::abs(currentTempo - static_cast<float>(bpm)) > 0.1f) {
+    uClock.setTempo(static_cast<float>(bpm));
   }
   
   // Control clock state

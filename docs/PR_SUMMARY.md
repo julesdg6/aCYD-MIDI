@@ -33,7 +33,7 @@ The original implementation had:
 
 **By Category:**
 - Infrastructure: 3 files (common_definitions.h, ui_elements.h, main.cpp)
-- Mode handlers: 14 files, 57 draw call optimizations
+- Mode handlers: 16 files, 73 draw call optimizations
 - Documentation: 2 new comprehensive documents (457 lines)
 
 ## Technical Implementation
@@ -73,7 +73,7 @@ void loop() {
 
 ### 2. Deferred Button Updates
 
-**Pattern applied to 57 button handlers:**
+**Pattern applied to 73 button handlers:**
 
 ```cpp
 // Before: Immediate full screen redraw
@@ -121,7 +121,7 @@ drawKey(newNote, true);
 | `include/ui_elements.h` | +1 line | Update includes |
 | `src/main.cpp` | +13/-1 lines | Implement dirty flag system, remove unconditional redraw |
 
-### Mode Handlers (14 files, 57 optimizations)
+### Mode Handlers (16 files, 73 optimizations)
 
 | File | Draw Calls Optimized | Type |
 |------|---------------------|------|

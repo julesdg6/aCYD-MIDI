@@ -122,11 +122,12 @@ void uiTask(void *parameter) {
 ### Shared State Management
 
 ```cpp
-// Lock-free atomic state for critical data
+// Thread-safe state for critical data using atomics
+// Remember to `#include <atomic>` when applying this pattern in C++ code.
 struct MIDIState {
-  volatile int currentNote;
-  volatile int currentVelocity;
-  volatile bool noteActive;
+  std::atomic<int> currentNote;
+  std::atomic<int> currentVelocity;
+  std::atomic<bool> noteActive;
 };
 
 // UI state (protected by mutex if needed)

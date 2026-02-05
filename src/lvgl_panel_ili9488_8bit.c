@@ -42,7 +42,11 @@ lv_display_t *lvgl_lcd_init(void)
         .sram_trans_align = 64};
 
     esp_lcd_i80_bus_handle_t i80_bus;
-    ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&i80_bus_config, &i80_bus));
+    esp_err_t err = esp_lcd_new_i80_bus(&i80_bus_config, &i80_bus);
+    if (err != ESP_OK) {
+        log_e("Failed to create I80 bus: %s", esp_err_to_name(err));
+        return NULL;
+    }
 
     const esp_lcd_panel_io_i80_config_t io_i80_config = {
         .cs_gpio_num = GPIO_NUM_NC,

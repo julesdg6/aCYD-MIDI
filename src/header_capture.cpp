@@ -30,8 +30,9 @@ static uint32_t headerPressStartMs = 0;
 static bool headerCaptureTriggered = false;
 
 const char *describeAppMode(AppMode mode) {
-  if (mode >= MENU && static_cast<size_t>(mode) < (sizeof(kAppModeNames) / sizeof(kAppModeNames[0]))) {
-    return kAppModeNames[mode];
+  size_t index = static_cast<size_t>(mode) - static_cast<size_t>(MENU);
+  if (mode >= MENU && index < (sizeof(kAppModeNames) / sizeof(kAppModeNames[0]))) {
+    return kAppModeNames[index];
   }
   return "ACYD";
 }

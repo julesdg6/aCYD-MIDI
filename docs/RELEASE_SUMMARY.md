@@ -1,6 +1,9 @@
-# Release v0.0.1 - Preparation Summary
+# Release Preparation Template / Archive
 
-This document summarizes the release preparation work completed for aCYD-MIDI v0.0.1.
+This document was originally a preparation checklist for release v0.0.1. It is now
+maintained as an archived example and a reusable template for future releases. For the
+current release workflow and canonical checklist see `RELEASE.md` and
+`.github/RELEASE_CHECKLIST.md`.
 
 ## What Was Accomplished
 

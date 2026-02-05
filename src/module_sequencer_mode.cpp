@@ -233,7 +233,9 @@ void updateSequencer() {
     return;
   }
 
+#ifdef DEBUG_SEQUENCER
   Serial.printf("[SEQ] readySteps=%u currentStep=%u\n", readySteps, currentStep);
+#endif
 
   for (uint32_t i = 0; i < readySteps; ++i) {
     playSequencerStep();

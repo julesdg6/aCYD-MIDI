@@ -4,13 +4,13 @@
 
 ## Overview
 
-The BLE Serial service provides a UART-like serial interface over BLE for control, debug, and configuration purposes. It runs alongside the BLE MIDI service over a single BLE connection.
+The BLE Serial service provided a UART-like serial interface over BLE for control, debug, and configuration purposes. It ran alongside the BLE MIDI service over a single BLE connection.
 
 ## Enabling BLE Serial
 
 ### Compile-Time Configuration
 
-BLE Serial is disabled by default to save memory. To enable it:
+BLE Serial was disabled by default to save memory. To enable it:
 
 1. **Using a pre-configured environment:**
    ```bash
