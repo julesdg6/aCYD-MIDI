@@ -52,9 +52,12 @@ Each failure issue includes:
 
 ### Log Information
 - Comprehensive failure summary
+- **Full job logs from failed jobs** (fetched via GitHub API)
 - Build matrix information
 - Links to full workflow logs
 - Links to artifacts (if any)
+
+**Note:** The system attempts to fetch and include the complete logs from all failed jobs directly in the issue. If logs are too large (>30KB per job), they are truncated with a note to view the complete logs at the job URL.
 
 ### Debugging Guide
 - Step-by-step instructions to investigate the failure
@@ -71,7 +74,12 @@ CI Build Failure: <Workflow Name> (Run #<Run Number>)
 ### Body Structure
 - **🔴 Automated CI Build Failure Report** header
 - Workflow metadata (run ID, number, actor, etc.)
-- **📋 Full Failure Log Details** in code block
+- **📋 Failure Summary** with context information
+- **Failed Job Details** section with:
+  - Job name, status, and conclusion
+  - Job start/completion times
+  - Direct link to job
+  - **Full logs from the failed job** (up to 30KB per job)
 - **🔗 Useful Links** section with direct links
 - **🛠️ How to Debug** section with instructions
 

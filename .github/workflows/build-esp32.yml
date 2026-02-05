@@ -223,6 +223,9 @@ jobs:
           4. Re-run the workflow or push a new commit
           
           ====================================
+          
+          NOTE: Full job logs will be fetched via GitHub API in the next step.
+          ====================================
           EOF
           
           # Save log file content for later use
@@ -243,6 +246,68 @@ jobs:
             // Build comprehensive issue body with full log details
             const logContent = `${{ steps.get-logs.outputs.log-content }}`;
             
+            // Fetch all jobs for this workflow run to get full logs
+            let fullJobLogs = '';
+            try {
+              core.info('Fetching job details and logs...');
+              
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              
+              core.info(`Found ${jobs.data.jobs.length} jobs in this workflow run`);
+              
+              // Filter for failed jobs
+              const failedJobs = jobs.data.jobs.filter(job => 
+                job.conclusion === 'failure' || job.status === 'completed' && job.conclusion !== 'success'
+              );
+              
+              if (failedJobs.length > 0) {
+                fullJobLogs += '\n\n## Failed Job Details\n\n';
+                
+                for (const job of failedJobs) {
+                  fullJobLogs += `### Job: ${job.name}\n`;
+                  fullJobLogs += `- **Status:** ${job.status}\n`;
+                  fullJobLogs += `- **Conclusion:** ${job.conclusion}\n`;
+                  fullJobLogs += `- **Started:** ${job.started_at}\n`;
+                  fullJobLogs += `- **Completed:** ${job.completed_at || 'N/A'}\n`;
+                  fullJobLogs += `- **Job URL:** ${job.html_url}\n\n`;
+                  
+                  // Get logs for this specific job
+                  try {
+                    const logResponse = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      job_id: job.id,
+                    });
+                    
+                    // The response is a redirect URL, we need to fetch the actual logs
+                    if (logResponse.url) {
+                      const logsText = await fetch(logResponse.url).then(r => r.text());
+                      
+                      // Truncate if too long (GitHub issues have size limits)
+                      const maxLogLength = 30000; // Keep logs reasonable
+                      const truncatedLogs = logsText.length > maxLogLength 
+                        ? logsText.substring(0, maxLogLength) + '\n\n... (truncated, see full logs at job URL above)'
+                        : logsText;
+                      
+                      fullJobLogs += `#### Full Job Logs:\n\`\`\`\n${truncatedLogs}\n\`\`\`\n\n`;
+                    }
+                  } catch (logError) {
+                    core.warning(`Could not fetch logs for job ${job.id}: ${logError.message}`);
+                    fullJobLogs += `*Could not retrieve full logs for this job. Please view logs at the job URL above.*\n\n`;
+                  }
+                }
+              } else {
+                fullJobLogs += '\n\n*Note: No explicitly failed jobs found, but workflow reported failure. Check the workflow run URL for details.*\n\n';
+              }
+            } catch (error) {
+              core.warning(`Error fetching job logs: ${error.message}`);
+              fullJobLogs = '\n\n*Unable to fetch detailed job logs via API. Please view the workflow run URL for complete logs.*\n\n';
+            }
+            
             const body = `## 🔴 Automated CI Build Failure Report
             
             **Workflow:** ${context.workflow}  
@@ -255,11 +320,15 @@ jobs:
             
             ---
             
-            ### 📋 Full Failure Log Details
+            ### 📋 Failure Summary
             
             \`\`\`
             ${logContent}
             \`\`\`
+            
+            ---
+            
+            ${fullJobLogs}
             
             ---
             
@@ -273,9 +342,9 @@ jobs:
             
             ### 🛠️ How to Debug
             
-            1. Click the "View Full Workflow Run" link above
-            2. Expand the failed job(s) in the build matrix
-            3. Review the compilation/build output
+            1. Review the job logs above (if available)
+            2. Click the "View Full Workflow Run" link for complete logs
+            3. Expand the failed job(s) in the build matrix
             4. Look for error messages, missing dependencies, or test failures
             5. Fix the issues and re-run or push a new commit
             
