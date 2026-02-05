@@ -1,5 +1,8 @@
 #include "module_bouncing_ball_mode.h"
 
+// Fallback BPM to prevent division by zero
+static constexpr uint16_t MIN_SAFE_BPM = 1;
+
 static Ball *balls = nullptr;
 int numActiveBalls = 1;
 static Wall *walls = nullptr;
@@ -316,9 +319,6 @@ void drawWalls() {
 
 
 void checkWallCollisions() {
-  // Fallback BPM to prevent division by zero
-  static constexpr uint16_t MIN_SAFE_BPM = 1;
-  
   for (int b = 0; b < numActiveBalls; b++) {
     if (!balls[b].active) continue;
     
