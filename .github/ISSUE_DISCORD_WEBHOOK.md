@@ -6,7 +6,7 @@ The Discord webhook notification for releases is not functioning as expected. Wh
 ## Current Configuration
 - **Workflow File**: `.github/workflows/discord-release.yml`
 - **Trigger**: `on.release.types: [published]`
-- **Action Used**: `teneplaysofficial/releasify-action@v1`
+- **Action Used**: `teneplaysofficial/releasify-action@bfade1fe75a8a4e8faafbc31c257e44ebfbe8352` (pinned to v1)
 - **Required Secret**: `DISCORD_WEBHOOK`
 
 ## How It Should Work
@@ -33,7 +33,7 @@ The Discord webhook notification for releases is not functioning as expected. Wh
    - The previous permission issue preventing release creation would also prevent this workflow from ever triggering
 
 3. **Action Version or Configuration Issues**
-   - The action reference was recently fixed from `<commit-sha>` placeholder to `@v1`
+   - The action reference is pinned to commit `bfade1fe75a8a4e8faafbc31c257e44ebfbe8352` (v1 tag) for supply-chain security
    - May need to verify the action is compatible with the current GitHub Actions environment
 
 4. **Webhook Permission Issues**

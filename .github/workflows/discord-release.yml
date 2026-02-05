@@ -9,7 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify via Releasify
-        uses: teneplaysofficial/releasify-action@v1
+        # Pinned to v1 tag commit for supply-chain safety
+        uses: teneplaysofficial/releasify-action@bfade1fe75a8a4e8faafbc31c257e44ebfbe8352
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: "🚀 New Release!"
