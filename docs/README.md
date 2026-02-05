@@ -12,6 +12,10 @@ This folder groups the supporting docs that expand on the features summarized in
 - `IMPLEMENTATION_SUMMARY.md` – Engine-level notes for the current code layout and key trade-offs.
 - `REMOTE_DISPLAY.md` – Wi-Fi + remote WebSocket viewer instructions (references `config/wifi_config.local.h.template`).
 - `SLINK_IMPLEMENTATION.md` – Deep dive into the SLINK generative mode, including tabbed UI and MIDI routing.
+- **UI Update Documentation:**
+  - `UI_UPDATE_ANALYSIS.md` – Comprehensive analysis with detailed UI recommendations for all 18 modules.
+  - `UI_SUB_ISSUES.md` – Organized breakdown of UI updates into trackable sub-issues with checklists.
+  - `UI_PROGRESS_TRACKER.md` – Quick reference for tracking implementation progress and quality metrics.
 
 ## Keeping Docs Focused
 
