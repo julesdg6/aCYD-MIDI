@@ -34,7 +34,6 @@ static void drawSlot(int index, int x, int y, int w, int h) {
   
   // Slot label
   tft.setTextColor(THEME_BG, fill);
-  tft.setTextFont(2);
   tft.drawCentreString(String(index + 1), x + w / 2, y + h / 2 - 8, 2);
 }
 
@@ -115,7 +114,6 @@ void drawMorphMode() {
   // XY readouts - LARGER and higher contrast (below pad)
   int readoutY = layout.padY + layout.padH + SCALE_Y(8);
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.setTextFont(4);  // Larger font
   String xStr = "X: " + String(static_cast<int>(morphState.morphX * 100)) + "%";
   String yStr = "Y: " + String(static_cast<int>(morphState.morphY * 100)) + "%";
   tft.drawString(xStr, layout.padX, readoutY, 4);

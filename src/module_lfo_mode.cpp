@@ -40,9 +40,7 @@ void drawLFOControls() {
   
   // Row 2: Rate slider
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.setTextFont(2);
   tft.drawString("Rate", MARGIN_SMALL, y, 2);
-  tft.setTextFont(4);  // Larger for value
   tft.drawString(String(lfo.rate, 1) + " Hz", MARGIN_SMALL, y + SCALE_Y(16), 4);
   
   // Rate slider bar
@@ -61,9 +59,7 @@ void drawLFOControls() {
   y += lineSpacing;
   
   // Row 3: Amount slider
-  tft.setTextFont(2);
   tft.drawString("Amount", MARGIN_SMALL, y, 2);
-  tft.setTextFont(4);  // Larger for value  
   tft.drawString(String(lfo.amount), MARGIN_SMALL, y + SCALE_Y(16), 4);
   
   // Amount slider bar
@@ -77,7 +73,6 @@ void drawLFOControls() {
   y += lineSpacing;
   
   // Row 4: Target selection
-  tft.setTextFont(2);
   tft.drawString("Target", MARGIN_SMALL, y, 2);
   
   String targetText;
@@ -86,7 +81,6 @@ void drawLFOControls() {
   } else {
     targetText = "CC " + String(lfo.ccTarget);
   }
-  tft.setTextFont(4);
   tft.drawString(targetText, MARGIN_SMALL, y + SCALE_Y(16), 4);
   
   // CC increment/decrement buttons (small, right side)
@@ -105,10 +99,8 @@ void drawLFOControls() {
   y += lineSpacing + SCALE_Y(5);
   
   // Current value display (prominent)
-  tft.setTextFont(2);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   tft.drawString("Output:", MARGIN_SMALL, y, 2);
-  tft.setTextFont(4);
   tft.setTextColor(THEME_ACCENT, THEME_BG);
   tft.drawString(String(lfo.lastValue), MARGIN_SMALL + SCALE_X(60), y, 4);
   

@@ -75,11 +75,9 @@ void drawRandomGenControls() {
   
   // Row 2: Key and Octave Range (grouped together)
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.setTextFont(2);
   tft.drawString("Key", MARGIN_SMALL, y, 2);
   
   String rootName = getNoteNameFromMIDI(randomGen.rootNote);
-  tft.setTextFont(4);  // Larger
   tft.drawString(rootName, MARGIN_SMALL, y + SCALE_Y(16), 4);
   
   // Key +/- buttons (small)
@@ -90,20 +88,16 @@ void drawRandomGenControls() {
   
   // Octave range - using slider instead of MIN/MAX buttons
   int rangeX = DISPLAY_WIDTH / 2 + SCALE_X(10);
-  tft.setTextFont(2);
   tft.drawString("Octave", rangeX, y, 2);
-  tft.setTextFont(4);
   tft.drawString(String(randomGen.minOctave) + "-" + String(randomGen.maxOctave), 
                  rangeX, y + SCALE_Y(16), 4);
   
   y += spacing;
   
   // Row 3: Chance slider (with descriptive text)
-  tft.setTextFont(2);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
   tft.drawString("Note probability", MARGIN_SMALL, y, 2);
   
-  tft.setTextFont(4);
   tft.setTextColor(THEME_TEXT, THEME_BG);
   String chanceStr = String(randomGen.probability) + "%";
   tft.drawString(chanceStr, MARGIN_SMALL, y + SCALE_Y(16), 4);
@@ -122,10 +116,8 @@ void drawRandomGenControls() {
   y += spacing;
   
   // Row 4: Tempo and Beat division
-  tft.setTextFont(2);
   tft.setTextColor(THEME_TEXT, THEME_BG);
   tft.drawString("Tempo", MARGIN_SMALL, y, 2);
-  tft.setTextFont(4);
   tft.drawString(String(sharedBPM), MARGIN_SMALL, y + SCALE_Y(16), 4);
   
   // BPM +/- (small buttons)
@@ -141,9 +133,7 @@ void drawRandomGenControls() {
   else if (randomGen.subdivision == 8) subdivText = "1/8";
   else subdivText = "1/16";
   
-  tft.setTextFont(2);
   tft.drawString("Division", rangeX, y, 2);
-  tft.setTextFont(4);
   tft.drawString(subdivText, rangeX, y + SCALE_Y(16), 4);
   
   // Division button
@@ -158,12 +148,10 @@ void drawRandomGenControls() {
   tft.drawRoundRect(MARGIN_SMALL, boxY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, boxH, 4, THEME_TEXT_DIM);
   
   if (randomGen.currentNote != -1) {
-    tft.setTextFont(2);
     tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
     tft.drawString("Playing:", MARGIN_SMALL + SCALE_X(8), boxY + SCALE_Y(8), 2);
     
     String currentNoteName = getNoteNameFromMIDI(randomGen.currentNote);
-    tft.setTextFont(4);
     tft.setTextColor(THEME_ACCENT, THEME_BG);
     tft.drawString(currentNoteName, MARGIN_SMALL + SCALE_X(80), boxY + SCALE_Y(12), 4);
     
@@ -173,7 +161,6 @@ void drawRandomGenControls() {
                      SCALE_X(6), THEME_SUCCESS);
     }
   } else {
-    tft.setTextFont(2);
     tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
     tft.drawCentreString("No note playing", DISPLAY_WIDTH / 2, boxY + SCALE_Y(14), 2);
   }
