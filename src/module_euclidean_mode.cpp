@@ -93,10 +93,10 @@ void drawEuclideanMode() {
   tft.fillScreen(THEME_BG);
   drawHeader("EUCLID", "Euclidean Rhythm", 3);
 
-  // Draw circular visualization with sweeping line (like screenshot 16)
-  int centerX = DISPLAY_CENTER_X;
-  int centerY = HEADER_HEIGHT + SCALE_Y(70);
-  int radius = SCALE_Y(50);
+  // Draw circular visualization on the LEFT side
+  int centerX = MARGIN_SMALL + SCALE_X(65);  // Moved left
+  int centerY = HEADER_HEIGHT + SCALE_Y(75);
+  int radius = SCALE_Y(52);
   
   // Draw circle background
   tft.drawCircle(centerX, centerY, radius, THEME_TEXT_DIM);
@@ -143,30 +143,59 @@ void drawEuclideanMode() {
     tft.drawLine(centerX, centerY, lineEndX, lineEndY, THEME_PRIMARY);
   }
   
-  // Draw voice labels
-  int labelY = centerY + radius + SCALE_Y(20);
+  // Draw voice labels BELOW circle (more space)
+  int labelY = centerY + radius + SCALE_Y(14);
+  int labelSpacing = SCALE_X(32);
+  int labelStartX = centerX - (EUCLIDEAN_VOICE_COUNT * labelSpacing) / 2 + SCALE_X(8);
+  
   for (int i = 0; i < EUCLIDEAN_VOICE_COUNT; i++) {
-    int x = MARGIN_SMALL + i * (DISPLAY_WIDTH / EUCLIDEAN_VOICE_COUNT);
+    int x = labelStartX + i * labelSpacing;
     tft.setTextColor(euclideanState.voices[i].color, THEME_BG);
-    tft.drawString("V" + String(i+1), x, labelY, 1);
-    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+    tft.drawString("V" + String(i+1), x, labelY, 2);  // Larger font
+    tft.setTextColor(THEME_TEXT, THEME_BG);
     tft.drawString(String(euclideanState.voices[i].events) + "/" + 
-                  String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(10), 1);
+                  String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(14), 2);  // Larger font
   }
 
-  int controlY = DISPLAY_HEIGHT - CONTROL_Y_OFFSET;
+  // RIGHT SIDE: Controls with better grouping
+  int rightX = centerX + radius + SCALE_X(20);
+  int rightY = HEADER_HEIGHT + SCALE_Y(10);
+  int btnW = DISPLAY_WIDTH - rightX - MARGIN_SMALL;
+  int btnH = SCALE_Y(36);
+  int btnSpacing = SCALE_Y(10);
+  
+  // Time division indicator (LARGE)
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  String timeDivision = euclideanState.tripletMode ? "TRIPLET" : "2/4";
+  tft.drawString(timeDivision, rightX, rightY, 4);  // Font 4 for visibility
+  rightY += SCALE_Y(28);
+  
+  // Playback control
   bool playing = euclidSync.playing;
-  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32),
+  drawRoundButton(rightX, rightY, btnW, btnH,
                   playing ? "STOP" : "PLAY",
                   playing ? THEME_ERROR : THEME_SUCCESS, false, 2);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32), "BPM-", THEME_SECONDARY, false, 1);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32), "BPM+", THEME_SECONDARY, false, 1);
-  drawRoundButton(DISPLAY_WIDTH - SCALE_X(80), controlY, SCALE_X(70), SCALE_Y(32),
-                  euclideanState.tripletMode ? "TRIP" : "2/4",
-                  euclideanState.tripletMode ? THEME_ACCENT : THEME_SURFACE, false, 2);
-
+  rightY += btnH + btnSpacing;
+  
+  // BPM controls CONSOLIDATED in one row
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("BPM", rightX, rightY, 1);
+  rightY += SCALE_Y(12);
+  
+  int bpmBtnW = (btnW - SCALE_X(6)) / 2;
+  drawRoundButton(rightX, rightY, bpmBtnW, btnH, "-", THEME_SECONDARY, false, 4);
+  drawRoundButton(rightX + bpmBtnW + SCALE_X(6), rightY, bpmBtnW, btnH, "+", THEME_SECONDARY, false, 4);
+  rightY += btnH + SCALE_Y(4);
+  
+  // BPM value displayed
   tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("BPM " + String(sharedBPM), DISPLAY_WIDTH - SCALE_X(80), controlY - SCALE_Y(20), 2);
+  tft.drawCentreString(String(sharedBPM), rightX + btnW/2, rightY, 4);
+  rightY += SCALE_Y(28);
+  
+  // Time division toggle
+  drawRoundButton(rightX, rightY, btnW, btnH,
+                  euclideanState.tripletMode ? "TRIP" : "STRAIGHT",
+                  euclideanState.tripletMode ? THEME_ACCENT : THEME_SURFACE, false, 2);
 }
 
 void updateEuclideanSequencer() {
@@ -236,8 +265,20 @@ void handleEuclideanMode() {
     return;
   }
 
-  int controlY = DISPLAY_HEIGHT - CONTROL_Y_OFFSET;
-  if (isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(64), SCALE_Y(32))) {
+  // Calculate right-side control positions
+  int centerX = MARGIN_SMALL + SCALE_X(65);
+  int radius = SCALE_Y(52);
+  int rightX = centerX + radius + SCALE_X(20);
+  int rightY = HEADER_HEIGHT + SCALE_Y(10);
+  int btnW = DISPLAY_WIDTH - rightX - MARGIN_SMALL;
+  int btnH = SCALE_Y(36);
+  int btnSpacing = SCALE_Y(10);
+  
+  // Skip time division label
+  rightY += SCALE_Y(28);
+  
+  // PLAY/STOP button
+  if (isButtonPressed(rightX, rightY, btnW, btnH)) {
     if (euclidSync.playing || euclidSync.startPending) {
       euclidSync.stopPlayback();
       releaseEuclideanNotes();
@@ -248,18 +289,26 @@ void handleEuclideanMode() {
     requestRedraw();
     return;
   }
-
-  if (isButtonPressed(MARGIN_SMALL + SCALE_X(70), controlY, SCALE_X(45), SCALE_Y(32))) {
+  rightY += btnH + btnSpacing;
+  
+  // BPM controls
+  rightY += SCALE_Y(12);  // Skip "BPM" label
+  int bpmBtnW = (btnW - SCALE_X(6)) / 2;
+  
+  if (isButtonPressed(rightX, rightY, bpmBtnW, btnH)) {
     adjustEuclidTempo(-5);
     return;
   }
 
-  if (isButtonPressed(MARGIN_SMALL + SCALE_X(120), controlY, SCALE_X(45), SCALE_Y(32))) {
+  if (isButtonPressed(rightX + bpmBtnW + SCALE_X(6), rightY, bpmBtnW, btnH)) {
     adjustEuclidTempo(+5);
     return;
   }
-
-  if (isButtonPressed(DISPLAY_WIDTH - SCALE_X(80), controlY, SCALE_X(70), SCALE_Y(32))) {
+  
+  rightY += btnH + SCALE_Y(32);  // Skip BPM value display
+  
+  // Time division toggle
+  if (isButtonPressed(rightX, rightY, btnW, btnH)) {
     euclideanState.tripletMode = !euclideanState.tripletMode;
     requestRedraw();
     return;
