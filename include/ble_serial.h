@@ -139,6 +139,8 @@ private:
   
   // Friend class for callbacks
   friend class BLESerialCallbacks;
+  // Allow server connection/disconnection callbacks to update connection state
+  friend class BLESerialServerCallbacks;
   
   // Internal methods
   void onRxWrite(const uint8_t *data, size_t length);
