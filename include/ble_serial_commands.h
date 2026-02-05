@@ -6,6 +6,14 @@
 #if ENABLE_BLE_SERIAL
 #include "ble_serial.h"
 
+// Mode names for status reporting
+static const char* kModeNames[] = {
+  "Menu", "Settings", "Keyboard", "Sequencer", "Bouncing Ball",
+  "Physics Drop", "Random Generator", "XY Pad", "Arpeggiator",
+  "Grid Piano", "Auto Chord", "LFO", "SLINK", "TB3PO", "Grids",
+  "Raga", "Euclidean", "Morph"
+};
+
 /**
  * Process BLE Serial commands
  * Call this from the main loop to handle incoming BLE Serial commands
@@ -30,16 +38,9 @@ inline void processBLESerialCommands() {
   // Status command
   if (strcmp(command, "status") == 0) {
     char response[256];
-    const char* modeNames[] = {
-      "Menu", "Settings", "Keyboard", "Sequencer", "Bouncing Ball",
-      "Physics Drop", "Random Generator", "XY Pad", "Arpeggiator",
-      "Grid Piano", "Auto Chord", "LFO", "SLINK", "TB3PO", "Grids",
-      "Raga", "Euclidean", "Morph"
-    };
-    
     snprintf(response, sizeof(response),
              "Mode: %s\nBPM: %d\nBLE MIDI: %s\nVersion: %s",
-             modeNames[currentMode],
+             kModeNames[currentMode],
              sharedBPM,
              deviceConnected ? "Connected" : "Disconnected",
              ACYD_MIDI_VERSION);

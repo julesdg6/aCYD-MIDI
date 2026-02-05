@@ -193,6 +193,8 @@ void BLESerial::sendTxData() {
   }
   
   // Send data in chunks to respect BLE MTU
+  // Note: We send all pending data in one loop iteration to maintain
+  // responsiveness. The BLE stack handles internal buffering.
   while (!txBuffer.empty()) {
     size_t chunkSize = min((size_t)BLE_SERIAL_TX_MAX_CHUNK, txBuffer.size());
     
@@ -208,9 +210,6 @@ void BLESerial::sendTxData() {
     
     // Remove sent data from buffer
     txBuffer.erase(txBuffer.begin(), txBuffer.begin() + chunkSize);
-    
-    // Small delay between chunks to avoid overwhelming the BLE stack
-    delay(1);
   }
 }
 
