@@ -172,14 +172,9 @@ void registerAllStepCallbacks();
 // Implementations
 void registerAllStepCallbacks() {
   // Register step callbacks for modules that use uClock step extension.
-  // Declarations live in each module's header; calling these ensures
-  // the ISR callbacks are registered before the clock can start.
+  // Only TB-3PO currently uses ISR-based step counting.
+  // All other modules use consumeReadySteps() for direct clock manager queries.
   registerTB3POStepCallback();
-  registerArpStepCallback();
-  registerEuclidStepCallback();
-  registerRandomStepCallback();
-  registerRagaStepCallback();
-  registerSequencerStepCallback();
 }
 
 // Generate unique device name based on MAC address

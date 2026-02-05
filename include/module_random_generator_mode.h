@@ -25,6 +25,5 @@ void handleRandomGeneratorMode();
 void drawRandomGenControls();
 void updateRandomGenerator();
 void playRandomNote();
-void registerRandomStepCallback();
 
 #endif // MODULE_RANDOM_GENERATOR_MODE_H

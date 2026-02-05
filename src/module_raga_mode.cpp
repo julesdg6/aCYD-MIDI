@@ -1,6 +1,5 @@
 #include "module_raga_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 #include <Arduino.h>
 #include <algorithm>
@@ -112,28 +111,6 @@ static int g_talaBeatIndex = 0;
 static int g_lastTalaBeatIndex = -1;
 static SequencerSyncState ragaSync;
 
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t ragaStepCount = 0;
-// Assigned at runtime by uClock when the ISR is first invoked
-static volatile uint8_t ragaAssignedTrack = 0xFF;
-static const uint8_t ragaRequestedTracks = 1;
-static volatile bool ragaAssignedFlag = false;
-
-// ISR callback for uClock step sequencer extension
-static void onRagaStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  // If we don't yet know the assigned base track, capture it on first call
-  if (ragaAssignedTrack == 0xFF) {
-    ragaAssignedTrack = track;
-    ragaAssignedFlag = true; // main loop will print this once
-    ragaStepCount++;
-    return;
-  }
-  if (track >= ragaAssignedTrack && track < ragaAssignedTrack + ragaRequestedTracks) {
-    ragaStepCount++;
-  }
-}
-
 static bool updateRagaTempo();
 static void generateRagaPhrase();
 static void scheduleNextNote(unsigned long now);
@@ -158,15 +135,6 @@ void initializeRagaMode() {
   g_activeTempo = 0;
   ragaSync.reset();
   updateRagaTempo();
-  
-  // Step callback registration is done at startup via registerAllStepCallbacks().
-}
-
-void registerRagaStepCallback() {
-  // Request one track slot; registration order in registerAllStepCallbacks()
-  // determines the assigned track index (expected to be 4 for Raga).
-  uClock.setOnStep(onRagaStepISR, 1);
-  Serial.println("[RAGA] registerRagaStepCallback() called (requestedTracks=1)");
 }
 
 void drawRagaMode() {
@@ -408,21 +376,7 @@ static void updateRagaPlayback() {
     return;
   }
 
-  // Get steps from uClock step extension (ISR-safe) - only for tracking playback state
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = ragaStepCount;
-  ragaStepCount = 0;
-  interrupts();
-  
-  // Print assigned track once when observed
-  if (ragaAssignedFlag) {
-    Serial.printf("[RAGA] assignedTrack=%u requested=%u\n", (unsigned)ragaAssignedTrack, (unsigned)ragaRequestedTracks);
-    ragaAssignedFlag = false;
-  }
-  
-  // Raga uses time-based scheduling, not step-based, so we play notes based on time
-  // regardless of whether steps are available
+  // Raga uses time-based scheduling, not step-based
   unsigned long now = millis();
   
   // Check if it's time to play the next note

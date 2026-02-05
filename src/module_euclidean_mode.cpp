@@ -1,33 +1,11 @@
 #include "module_euclidean_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 #include <algorithm>
 #include <cstring>
 
 EuclideanState euclideanState;
 static SequencerSyncState euclidSync;
-
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t euclidStepCount = 0;
-// runtime-assigned base track
-static volatile uint8_t euclidAssignedTrack = 0xFF;
-static const uint8_t euclidRequestedTracks = 1;
-static volatile bool euclidAssignedFlag = false;
-
-// ISR callback for uClock step sequencer extension
-static void onEuclidStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (euclidAssignedTrack == 0xFF) {
-    euclidAssignedTrack = track;
-    euclidAssignedFlag = true;
-    euclidStepCount++;
-    return;
-  }
-  if (track >= euclidAssignedTrack && track < euclidAssignedTrack + euclidRequestedTracks) {
-    euclidStepCount++;
-  }
-}
 
 // Y offset from bottom of display where control buttons are drawn.
 static const int CONTROL_Y_OFFSET = SCALE_Y(50);
@@ -107,19 +85,7 @@ void initializeEuclideanMode() {
   euclideanState.tripletMode = false;
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
   
-  noInterrupts();
-  euclidStepCount = 0;
-  euclidAssignedTrack = 0xFF;
-  euclidAssignedFlag = false;
-  interrupts();
-  
-  // Step callback registration is done at startup via registerAllStepCallbacks().
-  
   drawEuclideanMode();
-}
-
-void registerEuclidStepCallback() {
-  uClock.setOnStep(onEuclidStepISR, 1);
 }
 
 void drawEuclideanMode() {

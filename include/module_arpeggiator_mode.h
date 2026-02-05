@@ -38,6 +38,5 @@ void updateArpeggiator();
 void playArpNote();
 int getArpNote();
 void calculateStepInterval();
-void registerArpStepCallback();
 
 #endif // MODULE_ARPEGGIATOR_MODE_H

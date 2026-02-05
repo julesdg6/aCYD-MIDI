@@ -1,6 +1,5 @@
 #include "module_sequencer_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 #include <cstring>
 
 bool sequencePattern[SEQ_TRACKS][SEQ_STEPS] = {};
@@ -8,27 +7,6 @@ int currentStep = 0;
 unsigned long noteOffTime[SEQ_TRACKS] = {0};
 static SequencerSyncState sequencerSync;
 static const uint8_t kDrumNotes[SEQ_TRACKS] = {36, 38, 42, 46};
-
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t sequencerStepCount = 0;
-// runtime-assigned base track
-static volatile uint8_t sequencerAssignedTrack = 0xFF;
-static const uint8_t sequencerRequestedTracks = 1;  // Track slots requested
-static volatile bool sequencerAssignedFlag = false;
-
-// ISR callback for uClock step sequencer extension
-static void onSequencerStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (sequencerAssignedTrack == 0xFF) {
-    sequencerAssignedTrack = track;
-    sequencerAssignedFlag = true;
-    sequencerStepCount++;
-    return;
-  }
-  if (track >= sequencerAssignedTrack && track < sequencerAssignedTrack + sequencerRequestedTracks) {
-    sequencerStepCount++;
-  }
-}
 
 static bool sequencerModuleRunning() {
   return sequencerSync.playing || sequencerSync.startPending;
@@ -61,13 +39,6 @@ void initializeSequencerMode() {
       sequencePattern[t][s] = false;
     }
   }
-  
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  // Step callback registration is done at startup via registerAllStepCallbacks().
-}
-
-void registerSequencerStepCallback() {
-  uClock.setOnStep(onSequencerStepISR, 1);
 }
 
 void drawSequencerMode() {

@@ -1,34 +1,11 @@
 #include "module_random_generator_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 RandomGen randomGen;
 static SequencerSyncState randomSync;
 
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t randomStepCount = 0;
-// runtime-assigned base track
-static volatile uint8_t randomAssignedTrack = 0xFF;
-static const uint8_t randomRequestedTracks = 1;
-static volatile bool randomAssignedFlag = false;
-
 // Accumulator for subdivision handling (counts incoming 16th-note ticks)
 static uint32_t subdivAccumulator = 0;
-
-// ISR callback for uClock step sequencer extension
-// ISR callback for uClock step sequencer extension
-static void onRandomStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (randomAssignedTrack == 0xFF) {
-    randomAssignedTrack = track;
-    randomAssignedFlag = true;
-    randomStepCount++;
-    return;
-  }
-  if (track >= randomAssignedTrack && track < randomAssignedTrack + randomRequestedTracks) {
-    randomStepCount++;
-  }
-}
 
 static bool randomModuleRunning() {
   return randomSync.playing || randomSync.startPending;
@@ -72,12 +49,6 @@ void initializeRandomGeneratorMode() {
   randomGen.subdivision = 4;
   randomGen.currentNote = -1;
   randomSync.reset();
-  
-  // Step callback registration is done at startup via registerAllStepCallbacks().
-}
-
-void registerRandomStepCallback() {
-  uClock.setOnStep(onRandomStepISR, 1);
 }
 
 void drawRandomGeneratorMode() {

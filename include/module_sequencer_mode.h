@@ -15,7 +15,6 @@ extern unsigned long noteOffTime[SEQ_TRACKS];
 // Function declarations
 void initializeSequencerMode();
 void drawSequencerMode();
-void registerSequencerStepCallback();
 void handleSequencerMode();
 void drawSequencerGrid();
 void toggleSequencerStep(int track, int step);
