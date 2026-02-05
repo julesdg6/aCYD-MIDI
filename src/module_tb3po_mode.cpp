@@ -158,6 +158,12 @@ void updateTB3POPlayback() {
                   tb3po.step, elapsedMs);
     tb3po.step = 0;
     tb3po.currentNote = -1;
+    // Clear any accumulated steps to prevent catch-up notes
+    if (tb3po.useInternalClock) {
+      noInterrupts();
+      tb3poStepCount = 0;
+      interrupts();
+    }
   }
   if (!tb3poSync.playing) {
     return;

@@ -391,8 +391,18 @@ static void updateRagaPlayback() {
   updateRagaTempo();
   updateDroneNote();
 
+  bool wasPlaying = ragaSync.playing;
   ragaSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = ragaSync.playing && !wasPlaying;
   raga.playing = ragaSync.playing;
+
+  // Use time-based note scheduling instead of step-based
+  static unsigned long lastNoteTime = 0;
+  
+  if (justStarted) {
+    lastNoteTime = 0;  // Reset timer on start
+    resetPhraseState();
+  }
 
   if (!raga.playing) {
     return;
@@ -416,12 +426,10 @@ static void updateRagaPlayback() {
   }
   Serial.printf("[RAGA] readySteps=%u g_noteActive=%d g_phraseIndex=%d\n", readySteps, (int)g_noteActive, g_phraseIndex);
 
-  // Use time-based note scheduling instead of step-based
-  static unsigned long lastNoteTime = 0;
   unsigned long now = millis();
   
   // Check if it's time to play the next note
-  if (now - lastNoteTime >= g_noteIntervalMs) {
+  if (lastNoteTime == 0 || now - lastNoteTime >= g_noteIntervalMs) {
     if (g_noteActive && now >= g_noteOffTime) {
       stopCurrentNote();
     }

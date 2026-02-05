@@ -203,7 +203,18 @@ void drawEuclideanMode() {
 }
 
 void updateEuclideanSequencer() {
+  bool wasPlaying = euclidSync.playing;
   euclidSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = euclidSync.playing && !wasPlaying;
+  
+  if (justStarted) {
+    euclideanState.currentStep = 0;
+    // Clear accumulated steps
+    noInterrupts();
+    euclidStepCount = 0;
+    interrupts();
+  }
+  
   if (!euclidSync.playing) {
     return;
   }
@@ -225,6 +236,9 @@ void updateEuclideanSequencer() {
     // In triplet mode, we get more steps per 16th note
     // So we might need to accumulate more before advancing
     static uint32_t tripletAccumulator = 0;
+    if (justStarted) {
+      tripletAccumulator = 0;
+    }
     tripletAccumulator += readySteps;
     // Advance every 1.5 steps (6 ticks per 16th in triplet vs 4 in straight)
     // This is approximate; actual timing handled by step interval
@@ -236,6 +250,8 @@ void updateEuclideanSequencer() {
   if (readySteps == 0) {
     return;
   }
+
+  Serial.printf("[EUCLID] readySteps=%u currentStep=%u\n", readySteps, euclideanState.currentStep);
 
   for (uint32_t i = 0; i < readySteps; ++i) {
     releaseEuclideanNotes();

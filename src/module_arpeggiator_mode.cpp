@@ -301,11 +301,16 @@ void handleArpeggiatorMode() {
 }
 
 void updateArpeggiator() {
-  bool justStarted = arpSync.tryStartIfReady(!instantStartMode);
+  bool wasPlaying = arpSync.playing;
+  bool justStarted = arpSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
   if (justStarted) {
     arp.currentStep = 0;
     arp.tickAccumulator = 0.0f;
     arp.currentNote = -1;
+    // Clear accumulated steps
+    noInterrupts();
+    arpStepCount = 0;
+    interrupts();
   }
   if (!arpSync.playing) {
     return;

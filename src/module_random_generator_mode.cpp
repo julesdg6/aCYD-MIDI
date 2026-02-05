@@ -286,7 +286,14 @@ void handleRandomGeneratorMode() {
 }
 
 void updateRandomGenerator() {
+  bool wasPlaying = randomSync.playing;
   randomSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = randomSync.playing && !wasPlaying;
+  
+  if (justStarted) {
+    subdivAccumulator = 0;  // Reset accumulator on start
+  }
+  
   if (!randomSync.playing) {
     return;
   }
