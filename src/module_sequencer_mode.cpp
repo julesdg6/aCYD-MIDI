@@ -250,10 +250,7 @@ void updateSequencer() {
   bool justStarted = sequencerSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
   if (justStarted) {
     currentStep = 0;
-    // Clear accumulated steps to prevent immediate advance
-    noInterrupts();
-    sequencerStepCount = 0;
-    interrupts();
+    // Don't clear stepCount - let it process accumulated steps naturally
   }
   if (!sequencerSync.playing) {
     return;

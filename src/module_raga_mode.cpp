@@ -408,24 +408,21 @@ static void updateRagaPlayback() {
     return;
   }
 
-  // Get steps from uClock step extension (ISR-safe)
+  // Get steps from uClock step extension (ISR-safe) - only for tracking playback state
   uint32_t readySteps = 0;
   noInterrupts();
   readySteps = ragaStepCount;
   ragaStepCount = 0;
   interrupts();
   
-  if (readySteps == 0) {
-    return;
-  }
-
   // Print assigned track once when observed
   if (ragaAssignedFlag) {
     Serial.printf("[RAGA] assignedTrack=%u requested=%u\n", (unsigned)ragaAssignedTrack, (unsigned)ragaRequestedTracks);
     ragaAssignedFlag = false;
   }
-  Serial.printf("[RAGA] readySteps=%u g_noteActive=%d g_phraseIndex=%d\n", readySteps, (int)g_noteActive, g_phraseIndex);
-
+  
+  // Raga uses time-based scheduling, not step-based, so we play notes based on time
+  // regardless of whether steps are available
   unsigned long now = millis();
   
   // Check if it's time to play the next note
@@ -435,6 +432,7 @@ static void updateRagaPlayback() {
     }
     scheduleNextNote(now);
     lastNoteTime = now;
+    Serial.printf("[RAGA] played note, interval=%ums\n", g_noteIntervalMs);
   } else if (g_noteActive && now >= g_noteOffTime) {
     // Still turn off notes even if not scheduling new ones
     stopCurrentNote();

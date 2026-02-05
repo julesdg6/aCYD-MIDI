@@ -209,10 +209,7 @@ void updateEuclideanSequencer() {
   
   if (justStarted) {
     euclideanState.currentStep = 0;
-    // Clear accumulated steps
-    noInterrupts();
-    euclidStepCount = 0;
-    interrupts();
+    // Don't clear euclidStepCount - let it process accumulated steps naturally
   }
   
   if (!euclidSync.playing) {

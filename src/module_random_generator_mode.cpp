@@ -290,9 +290,8 @@ void updateRandomGenerator() {
   randomSync.tryStartIfReady(!instantStartMode);
   bool justStarted = randomSync.playing && !wasPlaying;
   
-  if (justStarted) {
-    subdivAccumulator = 0;  // Reset accumulator on start
-  }
+  // Don't reset subdivAccumulator - let it accumulate naturally
+  // This allows immediate playback if enough steps have accumulated
   
   if (!randomSync.playing) {
     return;
@@ -324,6 +323,8 @@ void updateRandomGenerator() {
   if (stepsToPlay == 0) {
     return;
   }
+  
+  Serial.printf("[RNG] stepsToPlay=%u subdivision=%u\n", stepsToPlay, randomGen.subdivision);
   
   for (uint32_t i = 0; i < stepsToPlay; ++i) {
     playRandomNote();

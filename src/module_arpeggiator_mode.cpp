@@ -307,10 +307,7 @@ void updateArpeggiator() {
     arp.currentStep = 0;
     arp.tickAccumulator = 0.0f;
     arp.currentNote = -1;
-    // Clear accumulated steps
-    noInterrupts();
-    arpStepCount = 0;
-    interrupts();
+    // Don't clear arpStepCount - let it process accumulated steps naturally
   }
   if (!arpSync.playing) {
     return;
