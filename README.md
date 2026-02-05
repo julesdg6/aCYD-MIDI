@@ -226,6 +226,7 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 - Implementation notes live in `docs/IMPLEMENTATION_SUMMARY.md`, `docs/SLINK_IMPLEMENTATION.md`, `docs/PERFORMANCE_OPTIMIZATIONS.md`, `docs/RTOS_IMPLEMENTATION_PLAN.md`, and the `docs/` concept files for hardware, MIDI clock, and memory guidance.
 - `docs/BUILD_VERIFICATION.md` lists the verification steps when building for release or testing hardware revisions.
 - `docs/DRAM_FIX_EXPLANATION.md` explains the longstanding SPIRAM workaround that keeps LVGL stable.
+- `docs/CI_FAILURE_REPORTING.md` documents the automated CI failure issue creation system that tracks build failures.
 
 ## Releases
 
