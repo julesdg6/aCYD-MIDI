@@ -1,5 +1,8 @@
 #include "module_bouncing_ball_mode.h"
 
+// Fallback BPM to prevent division by zero
+static constexpr uint16_t MIN_SAFE_BPM = 1;
+
 static Ball *balls = nullptr;
 int numActiveBalls = 1;
 static Wall *walls = nullptr;
@@ -368,20 +371,41 @@ void checkWallCollisions() {
       
       if (collision) {
         if (deviceConnected) {
+          // Guard against division by zero
+          uint16_t safeBPM = (sharedBPM == 0) ? MIN_SAFE_BPM : sharedBPM;
           // Calculate 16th note duration in ms (60000 ms/min / BPM / 4 beats/bar)
-          unsigned long sixteenthNoteDuration = (60000 / sharedBPM) / 4;
+          unsigned long sixteenthNoteDuration = (60000 / safeBPM) / 4;
           
           sendMIDI(0x90, walls[w].note, random(70, 110));
           
           // Schedule note-off for a 16th note later
+          int slotIndex = -1;
+          // First try to find an inactive slot
           for (int i = 0; i < 8; i++) {
             if (!scheduledNotes[i].active) {
-              scheduledNotes[i].note = walls[w].note;
-              scheduledNotes[i].offTime = millis() + sixteenthNoteDuration;
-              scheduledNotes[i].active = true;
+              slotIndex = i;
               break;
             }
           }
+          
+          // If all slots are active, find the oldest one (earliest offTime)
+          if (slotIndex == -1) {
+            unsigned long earliestTime = ULONG_MAX;
+            slotIndex = 0;
+            for (int i = 0; i < 8; i++) {
+              if (scheduledNotes[i].offTime < earliestTime) {
+                earliestTime = scheduledNotes[i].offTime;
+                slotIndex = i;
+              }
+            }
+            // Send immediate Note Off for the note being replaced
+            sendMIDI(0x80, scheduledNotes[slotIndex].note, 0);
+          }
+          
+          // Schedule the new note-off
+          scheduledNotes[slotIndex].note = walls[w].note;
+          scheduledNotes[slotIndex].offTime = millis() + sixteenthNoteDuration;
+          scheduledNotes[slotIndex].active = true;
         }
         
         walls[w].active = true;
