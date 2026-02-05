@@ -21,7 +21,7 @@ void initializeArpeggiatorMode() {
   arp.pattern = 0;
   arp.octaves = 2;
   arp.speed = 8;
-  arp.bpm = 120;
+  // arp.bpm removed - uses global sharedBPM
   arp.currentStep = 0;
   arp.currentNote = -1;
   arp.triggeredKey = -1;
@@ -41,76 +41,100 @@ void drawArpeggiatorMode() {
 }
 
 void drawArpControls() {
-  int y = 55;
-  int spacing = 25;
+  int y = HEADER_HEIGHT + SCALE_Y(5);
+  int lineSpacing = SCALE_Y(32);
   
-  // Pattern and chord type
-  tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("Pattern:", 10, y + 6, 1);
-  drawRoundButton(65, y, 60, 25, patternNames[arp.pattern], THEME_WARNING);
-  drawRoundButton(130, y, 25, 25, "<", THEME_SECONDARY);
-  drawRoundButton(160, y, 25, 25, ">", THEME_SECONDARY);
+  // Row 1: PATTERN Group (Pattern type + navigation)
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("PATTERN", MARGIN_SMALL, y, 2);
   
-  // Chord type
-  tft.drawString("Type:", SCALE_X(200), y + 6, 1);
-  drawRoundButton(240, y, 50, 25, chordTypeNames[arp.chordType], THEME_ACCENT);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(70), y, SCALE_X(80), SCALE_Y(28), 
+                  patternNames[arp.pattern], THEME_WARNING, false, 2);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(155), y, SCALE_X(30), SCALE_Y(28), 
+                  "<", THEME_SECONDARY, false, 2);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(190), y, SCALE_X(30), SCALE_Y(28), 
+                  ">", THEME_SECONDARY, false, 2);
   
-  y += spacing;
+  // Chord Type (on same row, right side)
+  tft.drawString("TYPE", DISPLAY_WIDTH / 2 + SCALE_X(10), y, 2);
+  drawRoundButton(DISPLAY_WIDTH / 2 + SCALE_X(55), y, SCALE_X(70), SCALE_Y(28), 
+                  chordTypeNames[arp.chordType], THEME_ACCENT, false, 2);
   
-  // Octaves and Speed
-  tft.drawString("Octaves:", 10, y + 6, 1);
-  tft.drawString(String(arp.octaves), 70, y + 6, 1);
-  drawRoundButton(90, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(120, y, 25, 25, "+", THEME_SECONDARY);
+  y += lineSpacing;
   
-  // Speed
-  tft.drawString("Speed:", 160, y + 6, 1);
+  // Row 2: TIMING Group (Speed + Octave range)
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("SPEED", MARGIN_SMALL, y, 2);
+  
   String speedText;
-  if (arp.speed == 4) speedText = "4th";
-  else if (arp.speed == 8) speedText = "8th";
-  else if (arp.speed == 16) speedText = "16th";
-  else if (arp.speed == 32) speedText = "32nd";
-  tft.drawString(speedText, 210, y + 6, 1);
-  drawRoundButton(240, y, 25, 25, "+", THEME_SECONDARY);
-  drawRoundButton(270, y, 25, 25, "-", THEME_SECONDARY);
+  if (arp.speed == 4) speedText = "1/4";
+  else if (arp.speed == 8) speedText = "1/8";
+  else if (arp.speed == 16) speedText = "1/16";
+  else speedText = "1/32";
   
-  y += spacing;
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString(speedText, MARGIN_SMALL + SCALE_X(60), y + SCALE_Y(4), 4);
   
-  // BPM Control
-  tft.drawString("BPM:", 10, y + 6, 1);
-  tft.drawString(String(arp.bpm), 50, y + 6, 1);
-  drawRoundButton(80, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(110, y, 25, 25, "+", THEME_SECONDARY);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(115), y, SCALE_X(30), SCALE_Y(28), 
+                  "+", THEME_SECONDARY, false, 2);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(150), y, SCALE_X(30), SCALE_Y(28), 
+                  "-", THEME_SECONDARY, false, 2);
   
-  y += spacing;
+  // Octave range (right side)
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("OCTAVES", DISPLAY_WIDTH / 2 + SCALE_X(10), y, 2);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString(String(arp.octaves), DISPLAY_WIDTH / 2 + SCALE_X(90), y + SCALE_Y(4), 4);
   
-  // Piano octave controls
-  tft.drawString("Piano Oct:", 10, y + 6, 1);
-  tft.drawString(String(pianoOctave), 80, y + 6, 1);
-  drawRoundButton(100, y, 25, 25, "-", THEME_SECONDARY);
-  drawRoundButton(130, y, 25, 25, "+", THEME_SECONDARY);
+  drawRoundButton(DISPLAY_WIDTH / 2 + SCALE_X(115), y, SCALE_X(30), SCALE_Y(28), 
+                  "-", THEME_SECONDARY, false, 2);
+  drawRoundButton(DISPLAY_WIDTH / 2 + SCALE_X(150), y, SCALE_X(30), SCALE_Y(28), 
+                  "+", THEME_SECONDARY, false, 2);
   
-  // Current status
+  y += lineSpacing;
+  
+  // Row 3: Piano Octave + Step Indicator
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("KEYBOARD", MARGIN_SMALL, y, 2);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString("Oct " + String(pianoOctave), MARGIN_SMALL + SCALE_X(85), y + SCALE_Y(4), 4);
+  
+  drawRoundButton(MARGIN_SMALL + SCALE_X(145), y, SCALE_X(30), SCALE_Y(28), 
+                  "-", THEME_SECONDARY, false, 2);
+  drawRoundButton(MARGIN_SMALL + SCALE_X(180), y, SCALE_X(30), SCALE_Y(28), 
+                  "+", THEME_SECONDARY, false, 2);
+  
+  // Step indicator / Current status (right side)
   if (arpSync.playing && arp.triggeredKey != -1) {
-    tft.setTextColor(THEME_PRIMARY, THEME_BG);
     String keyName = getNoteNameFromMIDI(arp.triggeredKey);
-    tft.drawString("Arping: " + keyName + " " + chordTypeNames[arp.chordType], 170, y + 6, 1);
-  }
-  
-  y += spacing;
-  
-  // Current note display
-  if (arp.currentNote != -1) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+    tft.drawString("Playing:", DISPLAY_WIDTH / 2, y, 2);
     tft.setTextColor(THEME_ACCENT, THEME_BG);
-    String currentNoteName = getNoteNameFromMIDI(arp.currentNote);
-    tft.drawString("♪ " + currentNoteName, 10, y + 6, 2);
+    tft.drawString(keyName + " " + chordTypeNames[arp.chordType], 
+                   DISPLAY_WIDTH / 2, y + SCALE_Y(14), 2);
+    
+    // Visual step indicator (dots showing current step)
+    int dotY = y + SCALE_Y(3);
+    int chordLength = (arp.chordType == 2) ? 4 : 3;
+    int totalSteps = chordLength * arp.octaves;
+    int dotsToShow = min(totalSteps, 8);  // Max 8 dots to fit
+    int dotSpacing = SCALE_X(12);
+    int dotStartX = DISPLAY_WIDTH - MARGIN_SMALL - (dotsToShow * dotSpacing);
+    
+    for (int i = 0; i < dotsToShow; i++) {
+      bool isActive = (i == (arp.currentStep % totalSteps));
+      uint16_t dotColor = isActive ? THEME_ACCENT : THEME_TEXT_DIM;
+      int dotSize = isActive ? SCALE_X(4) : SCALE_X(3);
+      tft.fillCircle(dotStartX + (i * dotSpacing), dotY, dotSize, dotColor);
+    }
   }
 }
 
 void drawPianoKeys() {
-  int keyY = 160;
-  int keyWidth = 320 / NUM_PIANO_KEYS;
-  int keyHeight = 45;
+  // Larger keyboard - starts lower on screen, taller keys
+  int keyY = SCALE_Y(140);
+  int keyWidth = DISPLAY_WIDTH / NUM_PIANO_KEYS;
+  int keyHeight = SCALE_Y(60);  // Increased from 45
   
   for (int i = 0; i < NUM_PIANO_KEYS; i++) {
     int x = i * keyWidth;
@@ -118,20 +142,42 @@ void drawPianoKeys() {
     String noteName = getNoteNameFromMIDI(note);
     
     bool isPressed = (arp.triggeredKey == note) && arpActive();
-    uint16_t bgColor = isPressed ? THEME_PRIMARY : THEME_SURFACE;
-    uint16_t textColor = isPressed ? THEME_BG : THEME_TEXT;
+    bool isSharp = (noteName.indexOf('#') != -1);
     
-    // Black key styling for sharps
-    if (noteName.indexOf('#') != -1) {
-      bgColor = isPressed ? THEME_ACCENT : THEME_TEXT;
-      textColor = isPressed ? THEME_BG : THEME_SURFACE;
+    // Improved contrast - different colors for active/inactive, white/black keys
+    uint16_t bgColor, textColor, borderColor;
+    
+    if (isSharp) {
+      // Black keys
+      if (isPressed) {
+        bgColor = THEME_ACCENT;      // Bright cyan when active
+        textColor = THEME_BG;
+        borderColor = THEME_ACCENT;
+      } else {
+        bgColor = THEME_TEXT;         // Dark gray when inactive
+        textColor = THEME_SURFACE;
+        borderColor = THEME_TEXT_DIM;
+      }
+    } else {
+      // White keys
+      if (isPressed) {
+        bgColor = THEME_PRIMARY;      // Cyan when active
+        textColor = THEME_BG;
+        borderColor = THEME_PRIMARY;
+      } else {
+        bgColor = THEME_SURFACE;      // Light gray when inactive
+        textColor = THEME_TEXT;
+        borderColor = THEME_TEXT_DIM;
+      }
     }
     
+    // Draw key with border
     tft.fillRect(x + 1, keyY + 1, keyWidth - 2, keyHeight - 2, bgColor);
-    tft.drawRect(x, keyY, keyWidth, keyHeight, THEME_PRIMARY);
+    tft.drawRect(x, keyY, keyWidth, keyHeight, borderColor);
     
+    // Larger font for note names
     tft.setTextColor(textColor, bgColor);
-    tft.drawCentreString(noteName, x + keyWidth/2, keyY + keyHeight/2 - 6, 1);
+    tft.drawCentreString(noteName, x + keyWidth/2, keyY + keyHeight/2 - SCALE_Y(8), 2);
   }
 }
 
@@ -143,98 +189,82 @@ void handleArpeggiatorMode() {
   }
   
   if (touch.justPressed) {
-    int y = 55;
-    int spacing = 25;
+    int y = HEADER_HEIGHT + SCALE_Y(5);
+    int lineSpacing = SCALE_Y(32);
     
-    // Pattern controls (first line)
-    if (isButtonPressed(130, y, 25, 25)) {
+    // Row 1: Pattern navigation
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(155), y, SCALE_X(30), SCALE_Y(28))) {
       arp.pattern = (arp.pattern - 1 + 5) % 5;
-      drawArpControls();
+      requestRedraw();
       return;
     }
-    if (isButtonPressed(160, y, 25, 25)) {
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(190), y, SCALE_X(30), SCALE_Y(28))) {
       arp.pattern = (arp.pattern + 1) % 5;
-      drawArpControls();
+      requestRedraw();
       return;
     }
     
-    // Chord type control (first line)
-    if (isButtonPressed(240, y, 50, 25)) {
+    // Chord type
+    if (isButtonPressed(DISPLAY_WIDTH / 2 + SCALE_X(55), y, SCALE_X(70), SCALE_Y(28))) {
       arp.chordType = (arp.chordType + 1) % 3;
-      drawArpControls();
+      requestRedraw();
       return;
     }
     
-    y += spacing;
+    y += lineSpacing;
     
-    // Octave controls
-    if (isButtonPressed(90, y, 25, 25)) {
-      arp.octaves = max(1, arp.octaves - 1);
-      drawArpControls();
-      return;
-    }
-    if (isButtonPressed(120, y, 25, 25)) {
-      arp.octaves = min(4, arp.octaves + 1);
-      drawArpControls();
-      return;
-    }
-    
-    // Speed controls (+ = faster, - = slower)
-    if (isButtonPressed(240, y, 25, 25)) {
+    // Row 2: Speed controls
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(115), y, SCALE_X(30), SCALE_Y(28))) {
       // Faster (+ button)
       if (arp.speed == 32) arp.speed = 16;
       else if (arp.speed == 16) arp.speed = 8;
       else if (arp.speed == 8) arp.speed = 4;
       calculateStepInterval();
-      drawArpControls();
+      requestRedraw();
       return;
     }
-    if (isButtonPressed(270, y, 25, 25)) {
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(150), y, SCALE_X(30), SCALE_Y(28))) {
       // Slower (- button)
       if (arp.speed == 4) arp.speed = 8;
       else if (arp.speed == 8) arp.speed = 16;
       else if (arp.speed == 16) arp.speed = 32;
       calculateStepInterval();
-      drawArpControls();
+      requestRedraw();
       return;
     }
     
-    y += spacing;
-    
-    // BPM controls
-    if (isButtonPressed(80, y, 25, 25)) {
-      arp.bpm = max(60, arp.bpm - 5);
-      calculateStepInterval();
-      drawArpControls();
+    // Octave range controls
+    if (isButtonPressed(DISPLAY_WIDTH / 2 + SCALE_X(115), y, SCALE_X(30), SCALE_Y(28))) {
+      arp.octaves = max(1, arp.octaves - 1);
+      requestRedraw();
       return;
     }
-    if (isButtonPressed(110, y, 25, 25)) {
-      arp.bpm = min(200, arp.bpm + 5);
-      calculateStepInterval();
-      drawArpControls();
+    if (isButtonPressed(DISPLAY_WIDTH / 2 + SCALE_X(150), y, SCALE_X(30), SCALE_Y(28))) {
+      arp.octaves = min(4, arp.octaves + 1);
+      requestRedraw();
       return;
     }
     
-    y += spacing;
+    y += lineSpacing;
     
-    // Piano octave controls
-    if (isButtonPressed(100, y, 25, 25)) {
+    // Row 3: Piano octave controls
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(145), y, SCALE_X(30), SCALE_Y(28))) {
       pianoOctave = max(1, pianoOctave - 1);
       drawPianoKeys();
-      drawArpControls();
+      requestRedraw();
       return;
     }
-    if (isButtonPressed(130, y, 25, 25)) {
+    if (isButtonPressed(MARGIN_SMALL + SCALE_X(180), y, SCALE_X(30), SCALE_Y(28))) {
       pianoOctave = min(7, pianoOctave + 1);
       drawPianoKeys();
-      drawArpControls();
+      requestRedraw();
       return;
     }
     
     // Piano key handling
-    int keyY = 160;
-    int keyWidth = 320 / NUM_PIANO_KEYS;
-    int keyHeight = 45;
+    int keyY = SCALE_Y(140);
+    int keyWidth = DISPLAY_WIDTH / NUM_PIANO_KEYS;
+    int keyHeight = SCALE_Y(60);
     
     for (int i = 0; i < NUM_PIANO_KEYS; i++) {
       int x = i * keyWidth;
