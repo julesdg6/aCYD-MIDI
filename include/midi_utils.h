@@ -14,8 +14,11 @@ inline void sendMIDI(byte cmd, byte note, byte vel) {
   // Send via BLE MIDI
   if (deviceConnected) {
     uint8_t localPacket[5] = {midiPacket[0], midiPacket[1], cmd, note, vel};
+    Serial.printf("[MIDI] BLE send attempt cmd=0x%02X note=%u vel=%u deviceConnected=%d pCharacteristic=%p\n", cmd, note, vel, deviceConnected, pCharacteristic);
     pCharacteristic->setValue(localPacket, 5);
     pCharacteristic->notify();
+  } else {
+    Serial.printf("[MIDI] BLE skipped (not connected) cmd=0x%02X note=%u vel=%u\n", cmd, note, vel);
   }
   
   // Send via Hardware MIDI (DIN-5 connector)

@@ -7,12 +7,22 @@ static SequencerSyncState randomSync;
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t randomStepCount = 0;
-static const uint8_t randomTrackIndex = 3;
+// runtime-assigned base track
+static volatile uint8_t randomAssignedTrack = 0xFF;
+static const uint8_t randomRequestedTracks = 1;
+static volatile bool randomAssignedFlag = false;
 
+// ISR callback for uClock step sequencer extension
 // ISR callback for uClock step sequencer extension
 static void onRandomStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == randomTrackIndex) {
+  if (randomAssignedTrack == 0xFF) {
+    randomAssignedTrack = track;
+    randomAssignedFlag = true;
+    randomStepCount++;
+    return;
+  }
+  if (track >= randomAssignedTrack && track < randomAssignedTrack + randomRequestedTracks) {
     randomStepCount++;
   }
 }
@@ -60,7 +70,10 @@ void initializeRandomGeneratorMode() {
   randomGen.currentNote = -1;
   randomSync.reset();
   
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  // Step callback registration is done at startup via registerAllStepCallbacks().
+}
+
+void registerRandomStepCallback() {
   uClock.setOnStep(onRandomStepISR, 1);
 }
 
@@ -271,6 +284,10 @@ void updateRandomGenerator() {
     return;
   }
   
+  if (randomAssignedFlag) {
+    Serial.printf("[RNG] assignedTrack=%u requested=%u\n", (unsigned)randomAssignedTrack, (unsigned)randomRequestedTracks);
+    randomAssignedFlag = false;
+  }
   // Get steps from uClock step extension (ISR-safe)
   uint32_t readySteps = 0;
   noInterrupts();

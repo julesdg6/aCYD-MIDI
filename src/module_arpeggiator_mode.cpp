@@ -8,13 +8,23 @@ Arpeggiator arp;
 static SequencerSyncState arpSync;
 
 // ISR-safe step counter from uClock step extension
+// runtime-assigned base track
 static volatile uint32_t arpStepCount = 0;
-static const uint8_t arpTrackIndex = 1;
+static volatile uint8_t arpAssignedTrack = 0xFF;
+static const uint8_t arpRequestedTracks = 1;
+static volatile bool arpAssignedFlag = false;
 
+// ISR callback for uClock step sequencer extension
 // ISR callback for uClock step sequencer extension
 static void onArpStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == arpTrackIndex) {
+  if (arpAssignedTrack == 0xFF) {
+    arpAssignedTrack = track;
+    arpAssignedFlag = true;
+    arpStepCount++;
+    return;
+  }
+  if (track >= arpAssignedTrack && track < arpAssignedTrack + arpRequestedTracks) {
     arpStepCount++;
   }
 }
@@ -43,8 +53,10 @@ void initializeArpeggiatorMode() {
   calculateStepInterval();
   arp.tickAccumulator = 0.0f;
   arpSync.reset();
-  
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  // Step callback registration is done at startup via registerAllStepCallbacks().
+}
+
+void registerArpStepCallback() {
   uClock.setOnStep(onArpStepISR, 1);
 }
 
@@ -299,6 +311,10 @@ void updateArpeggiator() {
     return;
   }
   
+  if (arpAssignedFlag) {
+    Serial.printf("[ARP] assignedTrack=%u requested=%u\n", (unsigned)arpAssignedTrack, (unsigned)arpRequestedTracks);
+    arpAssignedFlag = false;
+  }
   // Get steps from uClock step extension (ISR-safe)
   uint32_t readySteps = 0;
   noInterrupts();

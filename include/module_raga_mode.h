@@ -42,5 +42,6 @@ void initializeRagaMode();
 void drawRagaMode();
 void handleRagaMode();
 void toggleRagaPlayback();
+void registerRagaStepCallback();
 
 #endif // MODULE_RAGA_MODE_H

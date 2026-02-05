@@ -11,12 +11,22 @@ static const uint8_t kDrumNotes[SEQ_TRACKS] = {36, 38, 42, 46};
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t sequencerStepCount = 0;
-static const uint8_t sequencerTrackIndex = 5;  // Track 5 to avoid conflict with TB3PO (track 0)
+// runtime-assigned base track
+static volatile uint8_t sequencerAssignedTrack = 0xFF;
+static const uint8_t sequencerRequestedTracks = 1;  // Track slots requested
+static volatile bool sequencerAssignedFlag = false;
 
+// ISR callback for uClock step sequencer extension
 // ISR callback for uClock step sequencer extension
 static void onSequencerStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == sequencerTrackIndex) {
+  if (sequencerAssignedTrack == 0xFF) {
+    sequencerAssignedTrack = track;
+    sequencerAssignedFlag = true;
+    sequencerStepCount++;
+    return;
+  }
+  if (track >= sequencerAssignedTrack && track < sequencerAssignedTrack + sequencerRequestedTracks) {
     sequencerStepCount++;
   }
 }
@@ -54,6 +64,10 @@ void initializeSequencerMode() {
   }
   
   // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  // Step callback registration is done at startup via registerAllStepCallbacks().
+}
+
+void registerSequencerStepCallback() {
   uClock.setOnStep(onSequencerStepISR, 1);
 }
 
@@ -65,8 +79,21 @@ void drawSequencerMode() {
   
   // Transport controls - positioned to avoid overlap
   int ctrlY = SCALE_Y(200);
-  drawRoundButton(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, sequencerModuleRunning() ? "STOP" : "PLAY", 
-                 sequencerModuleRunning() ? THEME_ERROR : THEME_SUCCESS);
+  // Play button: show STOP when playing, PENDING (orange) when start is pending,
+  // otherwise show PLAY (green).
+  const char *seqPlayLabel;
+  uint16_t seqPlayColor;
+  if (sequencerSync.playing) {
+    seqPlayLabel = "STOP";
+    seqPlayColor = THEME_ERROR;
+  } else if (sequencerSync.startPending) {
+    seqPlayLabel = "PENDING";
+    seqPlayColor = THEME_SECONDARY;
+  } else {
+    seqPlayLabel = "PLAY";
+    seqPlayColor = THEME_SUCCESS;
+  }
+  drawRoundButton(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, seqPlayLabel, seqPlayColor);
   drawRoundButton(SCALE_X(70), ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, "CLEAR", THEME_WARNING);
   drawRoundButton(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM-", THEME_SECONDARY);
   drawRoundButton(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM+", THEME_SECONDARY);
@@ -220,7 +247,8 @@ void updateSequencer() {
     return;
   }
 
-  bool justStarted = sequencerSync.tryStartIfReady(!instantStartMode) && !sequencerSync.playing;
+  bool wasPlaying = sequencerSync.playing;
+  bool justStarted = sequencerSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
   if (justStarted) {
     currentStep = 0;
   }
@@ -228,6 +256,10 @@ void updateSequencer() {
     return;
   }
 
+  if (sequencerAssignedFlag) {
+    Serial.printf("[SEQ] assignedTrack=%u requested=%u\n", (unsigned)sequencerAssignedTrack, (unsigned)sequencerRequestedTracks);
+    sequencerAssignedFlag = false;
+  }
   // Get steps from uClock step extension (ISR-safe)
   uint32_t readySteps = 0;
   noInterrupts();

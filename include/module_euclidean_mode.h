@@ -31,5 +31,6 @@ void initializeEuclideanMode();
 void drawEuclideanMode();
 void handleEuclideanMode();
 void updateEuclideanSequencer();
+void registerEuclidStepCallback();
 
 #endif // MODULE_EUCLIDEAN_MODE_H

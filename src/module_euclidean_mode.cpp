@@ -10,12 +10,22 @@ static SequencerSyncState euclidSync;
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t euclidStepCount = 0;
-static const uint8_t euclidTrackIndex = 2;
+// runtime-assigned base track
+static volatile uint8_t euclidAssignedTrack = 0xFF;
+static const uint8_t euclidRequestedTracks = 1;
+static volatile bool euclidAssignedFlag = false;
 
+// ISR callback for uClock step sequencer extension
 // ISR callback for uClock step sequencer extension
 static void onEuclidStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == euclidTrackIndex) {
+  if (euclidAssignedTrack == 0xFF) {
+    euclidAssignedTrack = track;
+    euclidAssignedFlag = true;
+    euclidStepCount++;
+    return;
+  }
+  if (track >= euclidAssignedTrack && track < euclidAssignedTrack + euclidRequestedTracks) {
     euclidStepCount++;
   }
 }
@@ -98,10 +108,13 @@ void initializeEuclideanMode() {
   euclideanState.tripletMode = false;
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
   
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  uClock.setOnStep(onEuclidStepISR, 1);
+  // Step callback registration is done at startup via registerAllStepCallbacks().
   
   drawEuclideanMode();
+}
+
+void registerEuclidStepCallback() {
+  uClock.setOnStep(onEuclidStepISR, 1);
 }
 
 void drawEuclideanMode() {
@@ -190,6 +203,10 @@ void updateEuclideanSequencer() {
     return;
   }
   
+  if (euclidAssignedFlag) {
+    Serial.printf("[EUCLID] assignedTrack=%u requested=%u\n", (unsigned)euclidAssignedTrack, (unsigned)euclidRequestedTracks);
+    euclidAssignedFlag = false;
+  }
   // Get steps from uClock step extension (ISR-safe)
   // For triplet mode, we need to handle differently based on division
   uint32_t readySteps = 0;

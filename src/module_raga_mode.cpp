@@ -114,12 +114,22 @@ static SequencerSyncState ragaSync;
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t ragaStepCount = 0;
-static const uint8_t ragaTrackIndex = 4;
+// Assigned at runtime by uClock when the ISR is first invoked
+static volatile uint8_t ragaAssignedTrack = 0xFF;
+static const uint8_t ragaRequestedTracks = 1;
+static volatile bool ragaAssignedFlag = false;
 
 // ISR callback for uClock step sequencer extension
 static void onRagaStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == ragaTrackIndex) {
+  // If we don't yet know the assigned base track, capture it on first call
+  if (ragaAssignedTrack == 0xFF) {
+    ragaAssignedTrack = track;
+    ragaAssignedFlag = true; // main loop will print this once
+    ragaStepCount++;
+    return;
+  }
+  if (track >= ragaAssignedTrack && track < ragaAssignedTrack + ragaRequestedTracks) {
     ragaStepCount++;
   }
 }
@@ -149,8 +159,14 @@ void initializeRagaMode() {
   ragaSync.reset();
   updateRagaTempo();
   
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
+  // Step callback registration is done at startup via registerAllStepCallbacks().
+}
+
+void registerRagaStepCallback() {
+  // Request one track slot; registration order in registerAllStepCallbacks()
+  // determines the assigned track index (expected to be 4 for Raga).
   uClock.setOnStep(onRagaStepISR, 1);
+  Serial.println("[RAGA] registerRagaStepCallback() called (requestedTracks=1)");
 }
 
 void drawRagaMode() {
@@ -186,9 +202,21 @@ void drawRagaMode() {
   drawRoundButton(talaLayout.plusX, talaLayout.y, talaLayout.plusW, talaLayout.height, "+", THEME_SUCCESS, false, 5);
 
   const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
-  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35),
-                  raga.playing ? "STOP" : "PLAY",
-                  raga.playing ? THEME_ERROR : THEME_SUCCESS);
+  // Play button: show STOP when playing, PENDING (orange) when start is pending,
+  // otherwise show PLAY (green).
+  const char *playLabel;
+  uint16_t playColor;
+  if (ragaSync.playing) {
+    playLabel = "STOP";
+    playColor = THEME_ERROR;
+  } else if (ragaSync.startPending) {
+    playLabel = "PENDING";
+    playColor = THEME_SECONDARY;
+  } else {
+    playLabel = "PLAY";
+    playColor = THEME_SUCCESS;
+  }
+  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35), playLabel, playColor);
   drawRoundButton(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35),
                   raga.droneEnabled ? "DRONE ON" : "DRONE OFF",
                   raga.droneEnabled ? THEME_SUCCESS : THEME_SECONDARY);
@@ -314,6 +342,7 @@ static void scheduleNextNote(unsigned long now) {
   uint8_t accent = pattern.accents[beat];
   uint8_t velocity = std::min<uint8_t>(127, static_cast<uint8_t>(100 + accent * 8));
   sendMIDI(0x90, note, velocity);
+  Serial.printf("[RAGA] NoteOn note=%u vel=%u beat=%d\n", note, velocity, beat);
   g_currentNote = note;
   g_noteActive = true;
   g_noteOffTime = now + g_noteDurationMs;
@@ -324,6 +353,7 @@ static void scheduleNextNote(unsigned long now) {
 static void stopCurrentNote() {
   if (g_noteActive) {
     sendMIDI(0x80, g_currentNote, 0);
+    Serial.printf("[RAGA] NoteOff note=%u\n", g_currentNote);
     g_noteActive = false;
   }
 }
@@ -333,13 +363,16 @@ static void updateDroneNote() {
     if (!g_droneActive || g_droneNote != raga.rootNote) {
       if (g_droneActive) {
         sendMIDI(0x80, g_droneNote, 0);
+        Serial.printf("[RAGA] DroneOff note=%u\n", g_droneNote);
       }
       g_droneNote = raga.rootNote;
       sendMIDI(0x90, g_droneNote, 80);
+      Serial.printf("[RAGA] DroneOn note=%u vel=%u\n", g_droneNote, 80);
       g_droneActive = true;
     }
   } else if (g_droneActive) {
     sendMIDI(0x80, g_droneNote, 0);
+    Serial.printf("[RAGA] DroneOff note=%u\n", g_droneNote);
     g_droneActive = false;
   }
 }
@@ -375,6 +408,13 @@ static void updateRagaPlayback() {
   if (readySteps == 0) {
     return;
   }
+
+  // Print assigned track once when observed
+  if (ragaAssignedFlag) {
+    Serial.printf("[RAGA] assignedTrack=%u requested=%u\n", (unsigned)ragaAssignedTrack, (unsigned)ragaRequestedTracks);
+    ragaAssignedFlag = false;
+  }
+  Serial.printf("[RAGA] readySteps=%u g_noteActive=%d g_phraseIndex=%d\n", readySteps, (int)g_noteActive, g_phraseIndex);
 
   // Use time-based note scheduling instead of step-based
   static unsigned long lastNoteTime = 0;
