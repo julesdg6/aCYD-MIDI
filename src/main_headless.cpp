@@ -11,13 +11,17 @@
 #include <BLESecurity.h>
 #include <BLE2902.h>
 
-#if USB_MIDI_DEVICE
+// USB MIDI only available on ESP32-S3 with native USB support
+#if USB_MIDI_DEVICE && defined(ARDUINO_USB_MODE)
 #include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
 
 // USB MIDI device
 Adafruit_USBD_MIDI usbMIDI;
 MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usbMIDI, MIDI_USB);
+#define USB_MIDI_ENABLED 1
+#else
+#define USB_MIDI_ENABLED 0
 #endif
 
 #if ESP_NOW_ENABLED
@@ -135,7 +139,7 @@ void setup() {
   Serial.println("aCYD-HEADLESS starting...");
   Serial.flush();
 
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
   Serial.println("Step 1: Initializing USB MIDI");
   MIDI_USB.begin(MIDI_CHANNEL_OMNI);
   Serial.println("USB MIDI initialized");
@@ -168,7 +172,7 @@ void setup() {
     }
     // Route to Hardware MIDI
     sendHardwareMIDI3(0x90 | channel, note, velocity);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     // Route to USB MIDI
     MIDI_USB.sendNoteOn(note, velocity, channel + 1);
 #endif
@@ -186,7 +190,7 @@ void setup() {
     }
     // Route to Hardware MIDI
     sendHardwareMIDI3(0x80 | channel, note, velocity);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     // Route to USB MIDI
     MIDI_USB.sendNoteOff(note, velocity, channel + 1);
 #endif
@@ -204,7 +208,7 @@ void setup() {
     }
     // Route to Hardware MIDI
     sendHardwareMIDI3(0xB0 | channel, control, value);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     // Route to USB MIDI
     MIDI_USB.sendControlChange(control, value, channel + 1);
 #endif
@@ -220,7 +224,7 @@ void setup() {
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xF8);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     MIDI_USB.sendRealTime(midi::Clock);
 #endif
   });
@@ -235,7 +239,7 @@ void setup() {
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFA);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     MIDI_USB.sendRealTime(midi::Start);
 #endif
   });
@@ -250,7 +254,7 @@ void setup() {
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFC);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     MIDI_USB.sendRealTime(midi::Stop);
 #endif
   });
@@ -265,7 +269,7 @@ void setup() {
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFB);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
     MIDI_USB.sendRealTime(midi::Continue);
 #endif
   });
@@ -296,7 +300,7 @@ void sendMidiClock() {
   }
   // Hardware MIDI
   sendHardwareMIDISingle(0xF8);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
   // USB MIDI
   MIDI_USB.sendRealTime(midi::Clock);
 #endif
@@ -317,7 +321,7 @@ void sendMidiStart() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFA);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
   MIDI_USB.sendRealTime(midi::Start);
 #endif
 #if ESP_NOW_ENABLED
@@ -335,7 +339,7 @@ void sendMidiStop() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFC);
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
   MIDI_USB.sendRealTime(midi::Stop);
 #endif
 #if ESP_NOW_ENABLED
@@ -345,7 +349,7 @@ void sendMidiStop() {
 }
 
 void loop() {
-#if USB_MIDI_DEVICE
+#if USB_MIDI_ENABLED
   // Process USB MIDI input
   MIDI_USB.read();
 #endif

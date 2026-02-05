@@ -91,7 +91,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
      - `firmware-esp32-4832S040R-uart2` - Explicit UART2 configuration
      
      **Headless USB MIDI:**
-     - `firmware-esp32-headless-midi-master` - ESP32 headless USB MIDI (BLE + Hardware MIDI + ESP-NOW master)
+     - `firmware-esp32-headless-midi-master` - ESP32 headless (BLE + Hardware MIDI + ESP-NOW master, **no USB MIDI**)
      - `firmware-esp32s3-headless` - ESP32-S3 headless USB MIDI dongle (native USB MIDI + BLE + Hardware MIDI + ESP-NOW master)
 
 2. **Flash using ESP32 Flash Tool** or **esptool.py**:

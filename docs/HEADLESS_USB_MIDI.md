@@ -40,10 +40,10 @@ If you want traditional DIN-5 MIDI output:
 **Best for:** ESP32-S3 USB dongles with native USB support
 
 **Features:**
-- Native USB MIDI device (TinyUSB)
-- BLE MIDI
-- Hardware MIDI (UART2, GPIO16/17)
-- ESP-NOW MIDI master
+- ✅ Native USB MIDI device (TinyUSB)
+- ✅ BLE MIDI
+- ✅ Hardware MIDI (UART2, GPIO16/17)
+- ✅ ESP-NOW MIDI master
 
 **Build command:**
 ```bash
@@ -51,18 +51,20 @@ pio run -e esp32s3-headless -t upload
 ```
 
 ### `esp32-headless-midi-master`
-**Best for:** Standard ESP32 boards (no native USB, USB-to-Serial only)
+**Best for:** Standard ESP32 boards (no native USB support)
 
 **Features:**
-- BLE MIDI
-- Hardware MIDI (UART2, GPIO16/17)
-- ESP-NOW MIDI master
-- ⚠️ No native USB MIDI (requires USB-to-Serial adapter)
+- ❌ No USB MIDI (requires ESP32-S3)
+- ✅ BLE MIDI
+- ✅ Hardware MIDI (UART2, GPIO16/17)
+- ✅ ESP-NOW MIDI master
 
 **Build command:**
 ```bash
 pio run -e esp32-headless-midi-master -t upload
 ```
+
+**Note:** Standard ESP32 does not have native USB support. USB MIDI requires ESP32-S3 or newer chips with built-in USB-OTG peripheral.
 
 ## Usage
 
