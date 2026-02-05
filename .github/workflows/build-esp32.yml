@@ -7,6 +7,16 @@ on:
     tags:
       - "v*"
   pull_request:
+  workflow_dispatch:
+    inputs:
+      parent_issue:
+        description: 'Parent issue number (for failure reporting)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
 
 jobs:
   build:
@@ -82,8 +92,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -138,3 +146,249 @@ jobs:
           body: ${{ steps.changelog.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  report_failure:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Download build logs
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          path: build-logs
+
+      - name: Get job logs
+        id: get-logs
+        continue-on-error: true
+        run: |
+          # Create a comprehensive log summary
+          echo "Collecting failure information..."
+          
+          # Get workflow run details
+          WORKFLOW_NAME="${{ github.workflow }}"
+          RUN_ID="${{ github.run_id }}"
+          RUN_NUMBER="${{ github.run_number }}"
+          ACTOR="${{ github.actor }}"
+          EVENT="${{ github.event_name }}"
+          REF="${{ github.ref }}"
+          SHA="${{ github.sha }}"
+          
+          # Create log summary file
+          LOG_FILE="failure-summary.txt"
+          
+          cat > "$LOG_FILE" << 'EOF'
+          ====================================
+          CI BUILD FAILURE REPORT
+          ====================================
+          
+          Workflow: ${{ github.workflow }}
+          Run ID: ${{ github.run_id }}
+          Run Number: ${{ github.run_number }}
+          Triggered by: ${{ github.actor }}
+          Event: ${{ github.event_name }}
+          Ref: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+          Repository: ${{ github.repository }}
+          
+          ====================================
+          FAILURE CONTEXT
+          ====================================
+          
+          The build job failed during execution.
+          
+          Build Matrix Information:
+          - Multiple environments were being built
+          - Check the logs URL below for specific environment failures
+          
+          ====================================
+          LOGS AND ARTIFACTS
+          ====================================
+          
+          Full workflow logs available at:
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          To view detailed logs:
+          1. Visit the workflow run URL above
+          2. Click on the failed job(s) in the matrix
+          3. Review the build output for specific error messages
+          
+          ====================================
+          NEXT STEPS
+          ====================================
+          
+          1. Review the workflow logs at the URL above
+          2. Check for compilation errors, dependency issues, or test failures
+          3. Fix the identified issues
+          4. Re-run the workflow or push a new commit
+          
+          ====================================
+          
+          NOTE: Full job logs will be fetched via GitHub API in the next step.
+          ====================================
+          EOF
+          
+          # Save log file content for later use
+          echo "log-content<<EOF" >> "$GITHUB_OUTPUT"
+          cat "$LOG_FILE" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          
+          echo "Log summary created successfully"
+
+      - name: Create failure issue and link to parent
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const logsUrl = `${runUrl}#artifacts`;
+            const title = `CI Build Failure: ${context.workflow} (Run #${process.env.GITHUB_RUN_NUMBER})`;
+            
+            // Build comprehensive issue body with full log details
+            const logContent = `${{ steps.get-logs.outputs.log-content }}`;
+            
+            // Fetch all jobs for this workflow run to get full logs
+            let fullJobLogs = '';
+            try {
+              core.info('Fetching job details and logs...');
+              
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+              });
+              
+              core.info(`Found ${jobs.data.jobs.length} jobs in this workflow run`);
+              
+              // Filter for failed jobs
+              const failedJobs = jobs.data.jobs.filter(job => 
+                job.status === 'completed' && job.conclusion === 'failure'
+              );
+              
+              if (failedJobs.length > 0) {
+                fullJobLogs += '\n\n## Failed Job Details\n\n';
+                
+                for (const job of failedJobs) {
+                  fullJobLogs += `### Job: ${job.name}\n`;
+                  fullJobLogs += `- **Status:** ${job.status}\n`;
+                  fullJobLogs += `- **Conclusion:** ${job.conclusion}\n`;
+                  fullJobLogs += `- **Started:** ${job.started_at}\n`;
+                  fullJobLogs += `- **Completed:** ${job.completed_at || 'N/A'}\n`;
+                  fullJobLogs += `- **Job URL:** ${job.html_url}\n\n`;
+                  
+                  // Get logs for this specific job
+                  try {
+                    const logResponse = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      job_id: job.id,
+                    });
+                    
+                    // The response is a redirect URL, we need to fetch the actual logs
+                    if (logResponse.url) {
+                      const logsText = await fetch(logResponse.url).then(r => r.text());
+                      
+                      // Truncate if too long (GitHub issues have size limits)
+                      const maxLogLength = 30000; // Keep logs reasonable
+                      const truncatedLogs = logsText.length > maxLogLength 
+                        ? logsText.substring(0, maxLogLength) + '\n\n... (truncated, see full logs at job URL above)'
+                        : logsText;
+                      
+                      fullJobLogs += `#### Full Job Logs:\n\`\`\`\n${truncatedLogs}\n\`\`\`\n\n`;
+                    }
+                  } catch (logError) {
+                    core.warning(`Could not fetch logs for job ${job.id}: ${logError.message}`);
+                    fullJobLogs += `*Could not retrieve full logs for this job. Please view logs at the job URL above.*\n\n`;
+                  }
+                }
+              } else {
+                fullJobLogs += '\n\n*Note: No explicitly failed jobs found, but workflow reported failure. Check the workflow run URL for details.*\n\n';
+              }
+            } catch (error) {
+              core.warning(`Error fetching job logs: ${error.message}`);
+              fullJobLogs = '\n\n*Unable to fetch detailed job logs via API. Please view the workflow run URL for complete logs.*\n\n';
+            }
+            
+            const body = `## 🔴 Automated CI Build Failure Report
+            
+            **Workflow:** ${context.workflow}  
+            **Run ID:** [#${process.env.GITHUB_RUN_ID}](${runUrl})  
+            **Run Number:** #${process.env.GITHUB_RUN_NUMBER}  
+            **Triggered by:** @${context.actor}  
+            **Event:** ${context.eventName}  
+            **Branch/Ref:** \`${context.ref}\`  
+            **Commit:** \`${context.sha.substring(0, 7)}\`  
+            
+            ---
+            
+            ### 📋 Failure Summary
+            
+            \`\`\`
+            ${logContent}
+            \`\`\`
+            
+            ---
+            
+            ${fullJobLogs}
+            
+            ---
+            
+            ### 🔗 Useful Links
+            
+            - **[View Full Workflow Run](${runUrl})** - Complete logs and details
+            - **[View Artifacts](${logsUrl})** - Build artifacts (if any)
+            - **[Repository](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo})**
+            
+            ---
+            
+            ### 🛠️ How to Debug
+            
+            1. Review the job logs above (if available)
+            2. Click the "View Full Workflow Run" link for complete logs
+            3. Expand the failed job(s) in the build matrix
+            4. Look for error messages, missing dependencies, or test failures
+            5. Fix the issues and re-run or push a new commit
+            
+            ---
+            
+            *This issue was automatically created by the CI failure reporting system.*`;
+            
+            // Create the issue
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['ci-failure', 'automated']
+            });
+            
+            core.info(`✅ Created failure issue #${issue.data.number}: ${issue.data.html_url}`);
+            
+            // Link to parent issue if provided
+            const parent = process.env.PARENT_ISSUE || '';
+            if (parent) {
+              try {
+                const comment = `## 🔗 Automated CI Failure Sub-Issue Created
+            
+            A build failure was detected during workflow execution.
+            
+            **Failure Issue:** #${issue.data.number}  
+            **Workflow Run:** [#${process.env.GITHUB_RUN_NUMBER}](${runUrl})
+            
+            Please review the [failure issue](${issue.data.html_url}) for complete logs and debugging information.`;
+            
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(parent, 10),
+                  body: comment
+                });
+                
+                core.info(`✅ Posted comment linking to parent issue #${parent}`);
+              } catch (error) {
+                core.warning(`⚠️ Could not link to parent issue #${parent}: ${error.message}`);
+              }
+            } else {
+              core.info('ℹ️ No parent issue provided; skipping link creation.');
+            }
+        env:
+          PARENT_ISSUE: ${{ github.event.inputs.parent_issue }}
