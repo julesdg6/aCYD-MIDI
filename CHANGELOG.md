@@ -36,6 +36,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.1] - 2026-01-19
 
+## [0.0.5] - 2026-02-05
+
+### Added
+- Support and fixes for ESP32-4832S040R and 4" CYD builds
+
+### Changed
+- Multiple UI and concurrency fixes across SLINK, ESP-NOW, BLE and transport layers
+
+### Fixed
+- Resource leaks in `remote_display` when WiFi is unavailable
+- Races involving shared `midiPacket` replaced with local packet buffers
+- MIDI transport flags/timestamps made atomic to avoid cross-core races
+- Fixed display redraws in several modes so visuals update per PPQN tick
+- Many mode-specific fixes (Euclid triplet timing, grids layout, physics spawn logic, morph labels)
+
+[0.0.5]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.0.3...v0.0.5
+
 ### Added
 - Initial public release
 - Multi-mode touchscreen UI (keyboard, sequencer, arpeggiator, XY pad, generative music)
