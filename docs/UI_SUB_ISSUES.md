@@ -1,405 +1,447 @@
-# UI Update Sub-Issues
+# UI Update Sub-Issues for aCYD-MIDI
 
-This document breaks down the UI updates into individual sub-issues that can be tracked and implemented independently. Each sub-issue corresponds to one module/screen.
+This document breaks down the UI update initiative into trackable sub-issues for each module. Each sub-issue can be implemented and tested independently as part of the comprehensive UI update.
 
-> **Note:** See `UI_UPDATE_ANALYSIS.md` for detailed recommendations for each module.
-
----
-
-## Sub-Issue #1: Main Menu UI Update
-**Screenshot:** ![Screenshot 1](https://github.com/user-attachments/assets/e28c46cf-c3d5-484a-940f-584092b5d501)  
-**File:** `src/main.cpp`  
-**Priority:** HIGH
-
-**Key Updates Needed:**
-- [ ] Standardize tile sizes and spacing in 4x4 grid
-- [ ] Improve icon design for better differentiation
-- [ ] Apply consistent theme colors to tiles
-- [ ] Add subtle shadows/borders for depth
-- [ ] Implement touch feedback
-- [ ] Ensure label readability
+**Based on User's detailed UI/UX review feedback**
 
 ---
 
-## Sub-Issue #2: Keyboard Mode UI Update
-**Screenshot:** ![Screenshot 2](https://github.com/user-attachments/assets/7e4941bc-f68d-4327-b782-1883b57b26f0)  
-**File:** `include/module_keyboard_mode.h`  
-**Priority:** HIGH
+## Implementation Timeline
 
-**Key Updates Needed:**
-- [ ] Optimize key sizing for touch (minimum SCALE_X(30))
-- [ ] Add clear pressed state for keys
-- [ ] Improve black key styling and positioning
-- [ ] Organize control panel (octave, settings)
-- [ ] Add optional note labels
-- [ ] Consider scale highlighting feature
+### Phase 1: HIGH Priority Modules (Weeks 1-2)
+Critical usability improvements for most problematic interfaces
+- Sub-Issue #2: MORPH – Gesture Morphing
+- Sub-Issue #5: LFO MOD – CC Modulation
+- Sub-Issue #7: RNG JAMS – Random Music
+- Sub-Issue #9: ARPEGGIATOR – Piano Chord Arp
 
----
+### Phase 2: MEDIUM Priority Modules (Weeks 3-4)
+Improve remaining dense interfaces
+- Sub-Issue #1: SLINK – Wave Engine
+- Sub-Issue #3: RAGA – Indian Classical Scale
+- Sub-Issue #4: EUCLID – Euclidean Rhythm
+- Sub-Issue #6: GRIDS – XY Rhythm Generator
+- Sub-Issue #8: TB-3PO – Pattern Generator
 
-## Sub-Issue #3: Sequencer Mode (BEATS) UI Update
-**Screenshot:** ![Screenshot 3](https://github.com/user-attachments/assets/f9439e22-d7b2-4512-b351-fc23d8e03ca9)  
-**File:** `include/module_sequencer_mode.h`  
-**Priority:** HIGH
+### Phase 3: Global Polish (Week 5)
+Apply global improvements to all modules
+- Header standardization
+- Color theme enforcement
+- Scaling verification
+- Touch feedback consistency
 
-**Key Updates Needed:**
-- [ ] Increase step button size for easier touch
-- [ ] Use bright color (THEME_ACCENT) for active step
-- [ ] Clear distinction between enabled/disabled steps
-- [ ] Prominent transport controls (play/pause/stop)
-- [ ] Display current BPM prominently
-- [ ] Add pattern management UI
-- [ ] Ensure even step spacing and alignment
-
----
-
-## Sub-Issue #4: Bouncing Ball Mode (ZEN) UI Update
-**Screenshot:** ![Screenshot 4](https://github.com/user-attachments/assets/e1f2e9f5-10e7-439e-a44d-c05bdc9613d5)  
-**File:** `include/module_bouncing_ball_mode.h`  
-**Priority:** MEDIUM
-
-**Key Updates Needed:**
-- [ ] Use gradient/glow effect for ball visibility
-- [ ] Add motion trail to show ball path
-- [ ] Visual feedback for boundary collisions
-- [ ] Display physics parameters
-- [ ] Clear visual cues for interaction zones
-- [ ] Use color changes to indicate pitch/velocity
-- [ ] Add prominent reset button
+### Phase 4: Testing & Refinement (Week 6)
+- Comprehensive integration testing
+- Bug fixes and performance optimization
+- Final polish
 
 ---
 
-## Sub-Issue #5: Physics Drop Mode UI Update
-**Screenshot:** ![Screenshot 5](https://github.com/user-attachments/assets/30fc69ef-d91f-4d47-a259-06f4c25bbb44)  
-**File:** `include/module_physics_drop_mode.h`  
-**Priority:** MEDIUM
+## Sub-Issue #1: SLINK – Wave Engine
 
-**Key Updates Needed:**
-- [ ] Make dropped objects larger and more visible
-- [ ] Clearly mark collision/trigger zones
-- [ ] Flash/pulse effect on trigger hits
-- [ ] Add gravity direction indicator
-- [ ] Brief trail effect for motion
-- [ ] Add clear all objects button
-- [ ] UI for physics parameter adjustments
-
----
-
-## Sub-Issue #6: Random Generator Mode (RNG) UI Update
-**Screenshot:** ![Screenshot 6](https://github.com/user-attachments/assets/02493ecf-4ba1-4265-8677-226bae10a0e4)  
-**File:** `include/module_random_generator_mode.h`  
-**Priority:** MEDIUM
-
-**Key Updates Needed:**
-- [ ] Clear labels for all parameters
-- [ ] Visual sliders for ranges (note, velocity, timing)
-- [ ] Large trigger button
-- [ ] Display generated pattern/sequence
-- [ ] Show random seed if applicable
-- [ ] Add parameter lock checkboxes
-- [ ] Probability visualization
-- [ ] Preset save/load buttons
-
----
-
-## Sub-Issue #7: XY Pad Mode UI Update
-**Screenshot:** ![Screenshot 7](https://github.com/user-attachments/assets/3a2cf3bf-1d1e-4729-9635-b4df0f463524)  
-**File:** `include/module_xy_pad_mode.h`  
-**Priority:** HIGH
-
-**Key Updates Needed:**
-- [ ] Maximize pad area (use full screen)
-- [ ] Large, clear cursor for touch position
-- [ ] Label X/Y axes with CC numbers
-- [ ] Optional subtle grid overlay
-- [ ] Display current X/Y values numerically
-- [ ] Clear CC mapping display
-- [ ] Optional snap-to-grid feature
-- [ ] Touch trail for recent movement
-- [ ] Mark center point clearly
-
----
-
-## Sub-Issue #8: Arpeggiator Mode UI Update
-**Screenshot:** ![Screenshot 8](https://github.com/user-attachments/assets/32a96455-a019-4cdd-8471-3e0962c8cd83)  
-**File:** `include/module_arpeggiator_mode.h`  
-**Priority:** HIGH
-
-**Key Updates Needed:**
-- [ ] Clear note input area
-- [ ] Visual pattern selector (up, down, up/down, random)
-- [ ] Display active notes in arpeggio
-- [ ] Playback position indicator
-- [ ] Rate/speed control slider
-- [ ] Octave range control
-- [ ] Gate length control
-- [ ] Graphical pattern visualization
-- [ ] Latch mode toggle
-
----
-
-## Sub-Issue #9: Grid Piano Mode UI Update
-**Screenshot:** ![Screenshot 9](https://github.com/user-attachments/assets/1a79cd3b-e90b-4c01-93cf-e7d4240bc870)  
-**File:** `include/module_grid_piano_mode.h`  
-**Priority:** MEDIUM
-
-**Key Updates Needed:**
-- [ ] Optimize cell size (minimum SCALE_X(25) x SCALE_Y(25))
-- [ ] Add optional note labels in cells
-- [ ] Highlight scale notes in different color
-- [ ] Clear root note marking
-- [ ] Visual octave separation
-- [ ] Clear pressed state for cells
-- [ ] Scale/key selector UI
-- [ ] Layout options toggle
-- [ ] Color-coded intervals
-
----
-
-## Sub-Issue #10: Auto Chord Mode UI Update
-**Screenshot:** ![Screenshot 10](https://github.com/user-attachments/assets/8267c91e-28f1-47e9-a995-61306a5cd8f6)  
-**File:** `include/module_auto_chord_mode.h`  
-**Priority:** MEDIUM
-
-**Key Updates Needed:**
-- [ ] Large chord buttons with names (C, Dm, G7)
-- [ ] Key selector dropdown/buttons
-- [ ] Scale selector UI
-- [ ] Visual chord quality indication
-- [ ] Voicing/inversion controls
-- [ ] Chord progression builder UI
-- [ ] Active chord highlight
-- [ ] Strum/arpeggio toggle
-- [ ] Optional theory helper display
-
----
-
-## Sub-Issue #11: LFO Mode UI Update
-**Screenshot:** ![Screenshot 11](https://github.com/user-attachments/assets/d8419650-4fbf-449e-9743-62636e798015)  
-**File:** `include/module_lfo_mode.h`  
-**Priority:** MEDIUM
-
-**Key Updates Needed:**
-- [ ] Large waveform display
-- [ ] Animated current position indicator
-- [ ] Clear waveform type selector
-- [ ] Large rate/frequency control
-- [ ] Depth control slider
-- [ ] Phase control
-- [ ] CC assignment display
-- [ ] Tempo sync toggle
-- [ ] Min/Max range controls
-- [ ] Multiple LFO management (if supported)
-
----
-
-## Sub-Issue #12: TB3PO Mode UI Update
-**File:** `include/module_tb3po_mode.h`  
 **Priority:** MEDIUM  
-**Note:** No screenshot provided
+**File:** `include/module_slink_mode.h`, `src/module_slink_mode.cpp`  
+**Estimated Effort:** 3-4 hours
 
-**Key Updates Needed:**
-- [ ] Ensure consistent UI with other modes
-- [ ] Clear parameter labeling
-- [ ] Visual feedback for active elements
-- [ ] Consistent theme color application
+### Problems to Fix
+- Wave A / Wave B visualization is crammed vertically, Wave B barely visible
+- Menu buttons (MAIN / TRIG / PITCH / CLOCK / SCAL / MOD / SETP) visually identical and not on one line
+- Navigation unclear
+
+### Implementation Checklist
+- [ ] Split Wave A and Wave B into separate pages or toggle views
+- [ ] Group tabs by function (Sound / Modulation / Timing / Settings)
+- [ ] Consolidate navigation buttons into single horizontal row
+- [ ] Add visual indicator for current active page/tab
+- [ ] Increase waveform visualization area
+- [ ] Use consistent button styling for tab navigation
+- [ ] Consider icon-based navigation to save space
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - All pages render correctly, waveforms clearly visible, tabs organized
+3. **Interaction** - Tab navigation smooth, adequate touch targets, current page obvious
+4. **Functional** - All parameters work, waveform updates correctly
+5. **Performance** - No lag during waveform updates
 
 ---
 
-## Sub-Issue #13: Grids Mode UI Update
-**File:** `include/module_grids_mode.h`  
+## Sub-Issue #2: MORPH – Gesture Morphing
+
+**Priority:** HIGH  
+**File:** `include/module_morph_mode.h`, `src/module_morph_mode.cpp`  
+**Estimated Effort:** 4-5 hours
+
+### Problems to Fix
+- Large empty space with minimal information
+- Slot controls cramped and confusing (unclear states, scattered layout)
+- PLAY and RECORD buttons spatially disconnected
+- X/Y readouts tiny and low contrast
+- No visual indication of recorded gesture or playback state
+
+### Implementation Checklist
+- [ ] Add visual trails or envelopes to show recorded morph data
+- [ ] Move Slot controls to bottom row, left side as single panel
+- [ ] Standardize color meaning (armed = yellow, active = green, recording = red)
+- [ ] Move PLAY / RECORD buttons together on right side
+- [ ] Add timeline or loop-length indicator
+- [ ] Increase size and contrast of X/Y value readouts
+- [ ] Show recording status visually (indicator, timer)
+- [ ] Add visual feedback during playback (path overlay)
+- [ ] Label slot states clearly (Empty / Armed / Recorded / Playing)
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Controls properly positioned, XY readouts readable, slot states clear
+3. **Interaction** - Recording workflow intuitive, playback obvious, slot selection easy
+4. **Functional** - Gesture capture and playback work correctly, all slots function
+5. **Performance** - Visual trails don't impact responsiveness
+
+---
+
+## Sub-Issue #3: RAGA – Indian Classical Scale
+
 **Priority:** MEDIUM  
-**Note:** No screenshot provided
+**File:** `include/module_raga_mode.h`, `src/module_raga_mode.cpp`  
+**Estimated Effort:** 3-4 hours
 
-**Key Updates Needed:**
-- [ ] Clear grid visualization
-- [ ] Pattern selection UI
-- [ ] Density/fill controls
-- [ ] Euclidean rhythm parameter display
+### Problems to Fix
+- Information density too high
+- Raga and Tala selectors crammed vertically, minus buttons tiny
+- Scale name redundantly displayed
+- Drone control visually disconnected
+
+### Implementation Checklist
+- [ ] Separate Scale Selection and Playback Control into distinct sections
+- [ ] Replace +/- buttons with scrollable lists or rotary-style selectors
+- [ ] Increase spacing between Raga and Tala rows
+- [ ] Make Drone control part of "Sound Output" group
+- [ ] Remove duplicate scale name displays
+- [ ] Add visual grouping (boxes/panels) for related controls
+- [ ] Increase touch target size for all buttons
+- [ ] Consider multi-page layout if space insufficient
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Clear visual hierarchy, adequate spacing, grouped controls
+3. **Interaction** - Easy Raga/Tala selection, drone control clear, buttons accessible
+4. **Functional** - Correct scale playback, drone functions properly
+5. **Performance** - Responsive interaction with all controls
 
 ---
 
-## Sub-Issue #14: Raga Mode UI Update
-**File:** `include/module_raga_mode.h`  
+## Sub-Issue #4: EUCLID – Euclidean Rhythm
+
 **Priority:** MEDIUM  
-**Note:** No screenshot provided
+**File:** `include/module_euclidean_mode.h`, `src/module_euclidean_mode.cpp`  
+**Estimated Effort:** 4-5 hours
 
-**Key Updates Needed:**
-- [ ] Raga selection interface
-- [ ] Note visualization for selected raga
-- [ ] Drone controls
-- [ ] Tanpura simulation UI (if applicable)
+### Problems to Fix
+- Central circular visual visually dense and hard to decode
+- V1 / V2 / V3 controls cramped and inconsistent
+- BPM controls duplicated unnecessarily
+- Play button competes visually with BPM buttons
+- Rhythm division (e.g. 2/4) small and visually weak
+
+### Implementation Checklist
+- [ ] Move circular visualization to left to create space
+- [ ] Allow solo/mute per ring instead of tiny labels
+- [ ] Consolidate BPM control into single area (or remove if global)
+- [ ] Increase size and contrast of time division indicator
+- [ ] Allow zoom or focus mode per rhythm layer
+- [ ] Add clear labels for each ring (V1, V2, V3)
+- [ ] Increase spacing between parameter controls
+- [ ] Make Play/Stop button more prominent
+- [ ] Add visual feedback when rhythm is playing (animated ring highlight)
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Rings clearly distinguishable, controls well-organized, division visible
+3. **Interaction** - Easy parameter adjustment, clear feedback, solo/mute works
+4. **Functional** - Correct euclidean rhythm generation, sync works
+5. **Performance** - Smooth animation during playback
 
 ---
 
-## Sub-Issue #15: Euclidean Mode UI Update
-**File:** `include/module_euclidean_mode.h`  
+## Sub-Issue #5: LFO MOD – CC Modulation
+
+**Priority:** HIGH  
+**File:** `include/module_lfo_mode.h`, `src/module_lfo_mode.cpp`  
+**Estimated Effort:** 4-5 hours
+
+### Problems to Fix
+- Control cluster dense and intimidating
+- +/- buttons everywhere create visual noise
+- Waveform preview too small
+- Numeric values lack units and context
+
+### Implementation Checklist
+- [ ] Replace +/- buttons with sliders or rotary controls
+- [ ] Group controls into: Rate / Shape / Amount / Target
+- [ ] Enlarge waveform preview and make it interactive (drag to shape)
+- [ ] Visually highlight the currently modulated parameter
+- [ ] Add units to all numeric displays (Hz, %, ms, etc.)
+- [ ] Use progressive disclosure for advanced parameters
+- [ ] Add preset waveform selection (Sine, Triangle, Square, Saw, Random)
+- [ ] Show real-time modulation output value
+- [ ] Add visual feedback for modulation intensity
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Waveform preview prominent, controls organized, units shown
+3. **Interaction** - Easy parameter adjustment, interactive waveform works
+4. **Functional** - Correct LFO generation, MIDI output accurate
+5. **Performance** - Real-time waveform display doesn't lag
+
+---
+
+## Sub-Issue #6: GRIDS – XY Rhythm Generator
+
 **Priority:** MEDIUM  
-**Note:** No screenshot provided
+**File:** `include/module_grids_mode.h`, `src/module_grids_mode.cpp`  
+**Estimated Effort:** 3-4 hours
 
-**Key Updates Needed:**
-- [ ] Steps and pulses controls
-- [ ] Visual euclidean pattern representation
-- [ ] Rotation control
-- [ ] Multiple rhythm tracks (if supported)
+### Problems to Fix
+- XY pad visually dominant but semantically unclear
+- K / S / H sliders difficult to use and badly spaced
+- BPM controls repeated again
+- Bottom bar cramped and partially obscured
+
+### Implementation Checklist
+- [ ] Add labels/legends to XY pad (what X and Y control)
+- [ ] Show visual crosshair or cursor on XY pad
+- [ ] Increase size of K / S / H sliders
+- [ ] Add full text labels for K / S / H (Kick / Snare / Hihat or similar)
+- [ ] Make RNDM a submenu with selectable targets
+- [ ] Increase padding around bottom controls
+- [ ] Remove local BPM and use global transport
+- [ ] Add visual rhythm pattern preview
+- [ ] Show current parameter values numerically
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - XY pad clear, sliders usable, labels visible, controls accessible
+3. **Interaction** - Precise XY control, easy slider adjustment, clear feedback
+4. **Functional** - Rhythm generation works, randomization functions
+5. **Performance** - Responsive to XY pad movements
 
 ---
 
-## Sub-Issue #16: Morph Mode UI Update
-**File:** `include/module_morph_mode.h`  
+## Sub-Issue #7: RNG JAMS – Random Music
+
+**Priority:** HIGH  
+**File:** `include/module_random_generator_mode.h`, `src/module_random_generator_mode.cpp`  
+**Estimated Effort:** 4-5 hours
+
+### Problems to Fix
+- Too many buttons for too few pixels
+- Key, scale, octave, chance, and range compete visually
+- MIN/MAX buttons ambiguous (range of what?)
+- Chance slider visually detached from its meaning
+- No preview or explanation of generated output
+
+### Implementation Checklist
+- [ ] Collapse parameters into expandable sections (Scale / Range / Probability / Timing)
+- [ ] Replace MIN/MAX buttons with bounded sliders
+- [ ] Visually group randomness controls together
+- [ ] Add short descriptive text ("Chance affects note probability")
+- [ ] Provide small preview or activity indicator
+- [ ] Use progressive disclosure (show basic, hide advanced)
+- [ ] Add visual representation of note range (piano keyboard highlighting)
+- [ ] Show last generated pattern or note sequence
+- [ ] Make "Generate" button visually prominent
+- [ ] Label all controls clearly with full words
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Clear hierarchy, grouped controls, readable labels, preview visible
+3. **Interaction** - Intuitive parameter adjustment, clear workflow, easy generation
+4. **Functional** - Random generation works, parameters affect output correctly
+5. **Performance** - Real-time generation doesn't lag
+
+---
+
+## Sub-Issue #8: TB-3PO – Pattern Generator
+
 **Priority:** MEDIUM  
-**Note:** No screenshot provided
+**File:** `include/module_tb3po_mode.h`, `src/module_tb3po_mode.cpp`  
+**Estimated Effort:** 3-4 hours
 
-**Key Updates Needed:**
-- [ ] Preset A and B selectors
-- [ ] Morph position slider/indicator
-- [ ] Visual parameter morphing display
-- [ ] Save/load preset UI
+### Problems to Fix
+- Note names, steps, accents, and gates overlap visually
+- Color meaning not self-evident
+- Density controls visually disconnected from grid
 
----
+### Implementation Checklist
+- [ ] Group SEED and REGEN controls together
+- [ ] Add clear visual separation between note grid and controls
+- [ ] Provide color legend (what each color represents)
+- [ ] Increase spacing between grid elements
+- [ ] Make accent and gate states more distinguishable
+- [ ] Add clear labels for all parameters
+- [ ] Consider step sequencer-style vertical layout
+- [ ] Add pattern preview/playback indicator
+- [ ] Group density controls near pattern display
+- [ ] Add visual feedback during pattern playback (highlight current step)
 
-## Sub-Issue #17: Slink Mode UI Update
-**File:** `include/module_slink_mode.h`  
-**Priority:** MEDIUM  
-**Note:** No screenshot provided
-
-**Key Updates Needed:**
-- [ ] Clear parameter labeling
-- [ ] Visual feedback for active state
-- [ ] Consistent theme application
-- [ ] Intuitive control layout
-
----
-
-## Sub-Issue #18: Settings Mode UI Update
-**File:** `include/module_settings_mode.h`  
-**Priority:** MEDIUM  
-**Note:** No screenshot provided
-
-**Key Updates Needed:**
-- [ ] Organized settings categories
-- [ ] Clear labels and descriptions
-- [ ] Toggle switches for boolean options
-- [ ] Slider controls for numeric values
-- [ ] Color inversion preview
-- [ ] Display rotation control
-- [ ] BLE connection status
-- [ ] MIDI channel selection
-- [ ] Version information display
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Grid elements distinguishable, controls organized, legend present
+3. **Interaction** - Easy pattern editing, clear feedback, controls accessible
+4. **Functional** - Pattern generation/playback correct, all parameters work
+5. **Performance** - Smooth playback animation
 
 ---
 
-## Global UI Improvements (Apply to All Sub-Issues)
+## Sub-Issue #9: ARPEGGIATOR – Piano Chord Arp
 
-These improvements should be applied across all modules:
+**Priority:** HIGH  
+**File:** `include/module_arpeggiator_mode.h`, `src/module_arpeggiator_mode.cpp`  
+**Estimated Effort:** 4-5 hours
+
+### Problems to Fix
+- Control cluster scattered (Pattern, speed, octave, BPM, type not grouped)
+- Piano keyboard small and hard to interact with
+- Active notes hard to distinguish
+- BPM repeated despite being global elsewhere
+- No visual feedback for arpeggio playback
+
+### Special Question
+- **Does it use scale functions at all?** If not, integrate scale system for diatonic arpeggios
+
+### Implementation Checklist
+- [ ] Group controls into: Timing / Pattern / Range
+- [ ] Enlarge keyboard and improve contrast for active notes
+- [ ] Allow chord selection as blocks rather than individual keys (e.g. "C Major", "D Minor")
+- [ ] Remove local BPM and rely on global transport
+- [ ] Add visual step indicator for arpeggio playback (highlight current note)
+- [ ] Show arpeggio pattern visually (up, down, up-down, random, etc.)
+- [ ] Increase spacing between controls
+- [ ] Add preset chord selection
+- [ ] Investigate scale function integration for diatonic arpeggios
+- [ ] Show chord name when notes are selected
+
+### Testing Protocol
+1. **Build** - Code compiles without errors
+2. **Visual** - Keyboard usable, controls organized, playback clear, pattern visible
+3. **Interaction** - Easy chord input, pattern selection intuitive, clear feedback
+4. **Functional** - Arpeggiation works correctly, MIDI output accurate, timing solid
+5. **Performance** - Smooth playback, no timing issues
+
+---
+
+## Global Improvements (Apply During Implementation)
 
 ### Header Consistency
-- [ ] Use `drawHeader()` from `ui_elements.h` consistently
-- [ ] Standard back button placement
-- [ ] Clear mode name display
-- [ ] Connection status indicators
+- [ ] Use `drawHeader()` consistently across all modules
+- [ ] Standard back button placement (always top-left)
+- [ ] Connection status indicators (BLE/MIDI)
+- [ ] Consistent title font and size
 
-### Color Theme
-- [ ] Use THEME_BG for backgrounds
-- [ ] Use THEME_PRIMARY for primary actions
-- [ ] Use THEME_SECONDARY for secondary actions
-- [ ] Use THEME_SUCCESS/ERROR for feedback
-- [ ] Use THEME_TEXT with good contrast
+### Color Theme Standardization
+- [ ] Strict adherence to `THEME_*` colors from `common_definitions.h`
+- [ ] Semantic color use (green=good, red=warning, blue=info)
+- [ ] High contrast for readability
+- [ ] Consistent color meaning across modules
 
 ### Touch Feedback
-- [ ] Visual feedback for all interactive elements
-- [ ] Pressed state using darker shade or THEME_ACCENT
-- [ ] Proper use of `touch.justPressed`/`justReleased`
+- [ ] Visual feedback on all interactive elements
+- [ ] Use `touch.justPressed` / `touch.justReleased` patterns
+- [ ] Minimum touch targets (30x30 scaled)
+- [ ] Consistent button pressed/active states
 
 ### Scaling
-- [ ] All coordinates use SCALE_X()/SCALE_Y()
-- [ ] All dimensions use SCALE_W()/SCALE_H()
-- [ ] Minimum touch target: SCALE_X(30) x SCALE_Y(30)
-- [ ] Use scaled spacing constants
+- [ ] All coordinates use `SCALE_X()` / `SCALE_Y()`
+- [ ] All dimensions use `SCALE_W()` / `SCALE_H()`
+- [ ] Test on multiple display sizes
 
 ### Typography & Layout
 - [ ] Consistent font sizes
-- [ ] High contrast text
-- [ ] Proper text alignment
-- [ ] Consistent margins and spacing
-- [ ] Grid-based alignment
+- [ ] Proper alignment (left for labels, center for values)
+- [ ] Grid-based layouts
+- [ ] Adequate spacing (breathing room)
+- [ ] Clear visual grouping
 
 ---
 
-## Implementation Phases
+## Testing Protocol Template
 
-### Phase 1: Core Modes (Weeks 1-2)
-- Sub-Issue #1: Main Menu
-- Sub-Issue #2: Keyboard Mode
-- Sub-Issue #3: Sequencer Mode
-- Sub-Issue #7: XY Pad Mode
-- Sub-Issue #8: Arpeggiator Mode
+Use this 5-step protocol for each module:
 
-### Phase 2: Interactive Modes (Weeks 3-4)
-- Sub-Issue #4: Bouncing Ball Mode
-- Sub-Issue #5: Physics Drop Mode
-- Sub-Issue #6: Random Generator Mode
-- Sub-Issue #9: Grid Piano Mode
-- Sub-Issue #10: Auto Chord Mode
-- Sub-Issue #11: LFO Mode
+### 1. Build Test
+- [ ] Compile without errors/warnings
+- [ ] No memory issues
+- [ ] Upload succeeds
 
-### Phase 3: Specialized Modes (Week 5)
-- Sub-Issue #12: TB3PO Mode
-- Sub-Issue #13: Grids Mode
-- Sub-Issue #14: Raga Mode
-- Sub-Issue #15: Euclidean Mode
-- Sub-Issue #16: Morph Mode
-- Sub-Issue #17: Slink Mode
+### 2. Visual Test
+- [ ] Elements within screen bounds
+- [ ] No text clipping
+- [ ] Colors match theme
+- [ ] Proper scaling
+- [ ] Balanced layout
 
-### Phase 4: System UI (Week 6)
-- Sub-Issue #18: Settings Mode
-- Global improvements polish
-- Integration testing
+### 3. Interaction Test
+- [ ] Touch targets responsive
+- [ ] Immediate feedback
+- [ ] No accidental touches
+- [ ] Logical navigation
+- [ ] Back button works
 
----
+### 4. Functional Test
+- [ ] Module functions correctly
+- [ ] MIDI output accurate
+- [ ] Parameters work as expected
+- [ ] State maintained
+- [ ] No crashes
 
-## Testing Protocol for Each Sub-Issue
-
-Before marking a sub-issue complete:
-
-1. **Build Test**
-   - [ ] Code compiles without errors
-   - [ ] No new warnings introduced
-
-2. **Visual Test**
-   - [ ] UI renders correctly
-   - [ ] All elements visible within screen bounds
-   - [ ] Colors match theme
-   - [ ] Text is readable
-
-3. **Interaction Test**
-   - [ ] All buttons/controls respond to touch
-   - [ ] Visual feedback works correctly
-   - [ ] Touch targets are adequate size
-   - [ ] No unintended touches
-
-4. **Functional Test**
-   - [ ] Mode functionality unchanged
-   - [ ] MIDI output still works
-   - [ ] Back button returns to menu
-   - [ ] No crashes or freezes
-
-5. **Performance Test**
-   - [ ] UI remains responsive
-   - [ ] No noticeable lag
-   - [ ] Frame rate acceptable
+### 5. Performance Test
+- [ ] UI responsive
+- [ ] No lag/stuttering
+- [ ] Accurate MIDI timing
+- [ ] Acceptable frame rate
+- [ ] Stable memory usage
 
 ---
 
-## Notes
+## Notes for Implementation
 
-- Each sub-issue can be implemented independently
-- User should review and edit recommendations before implementation
-- All changes should follow the "minimal changes" principle
-- Test thoroughly after each module update
-- Document any deviations from recommendations
+### Design Principles
+1. **Reduce visual density** - Less is more, use progressive disclosure
+2. **Enforce hierarchy** - Make important things obvious
+3. **Group related controls** - Spatial organization aids understanding
+4. **Label clearly** - No abbreviations unless space-critical
+5. **Provide feedback** - All interactions need immediate visual response
+6. **Be consistent** - Reuse patterns across modules
+
+### Common Patterns to Apply
+- **Progressive Disclosure:** Hide advanced parameters in sub-menus
+- **Visual Grouping:** Use boxes, panels, or spacing to group related controls
+- **Touch Targets:** Minimum 30x30 scaled pixels for all buttons
+- **Feedback:** Color change, highlight, or animation on touch
+- **Labels:** Full words preferred over abbreviations
+- **Spacing:** Adequate breathing room between elements
+
+### Tools Available
+- `ui_elements.h` - Reusable UI components (`drawHeader`, `drawRoundButton`, etc.)
+- `common_definitions.h` - Theme colors (`THEME_*` constants)
+- Scaling macros - `SCALE_X/Y/W/H` for responsive layouts
+- Touch utilities - `touch.justPressed`, `touch.justReleased`
 
 ---
 
+## Progress Tracking
+
+Use `UI_PROGRESS_TRACKER.md` to track implementation status:
+- Mark sub-issues as Started / In Progress / Testing / Complete
+- Log any issues or deviations from plan
+- Track quality metrics
+- Note any user feedback or changes
+
+---
+
+**Status:** Sub-Issues Defined - Ready for Implementation  
 **Created:** 2026-02-05  
-**Based on Issue:** "All of these screens require UI updates"  
-**Status:** Awaiting user review and approval
+**Based On:** User's detailed UI/UX review feedback  
+**Total Sub-Issues:** 9 modules + global improvements  
+**Estimated Total Effort:** 30-40 hours  
+**Implementation Approach:** As single comprehensive fix (per user request)
