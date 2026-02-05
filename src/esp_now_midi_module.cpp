@@ -211,10 +211,8 @@ void onEspNowNoteOn(byte channel, byte note, byte velocity) {
   
   // Route to BLE MIDI
   if (deviceConnected && pCharacteristic) {
-    midiPacket[2] = status;
-    midiPacket[3] = note;
-    midiPacket[4] = velocity;
-    pCharacteristic->setValue(midiPacket, 5);
+    uint8_t packet[5] = {0x80, 0x80, status, note, velocity};
+    pCharacteristic->setValue(packet, 5);
     pCharacteristic->notify();
   }
   
@@ -231,20 +229,13 @@ void onEspNowNoteOff(byte channel, byte note, byte velocity) {
   
   // Route to BLE MIDI
   if (deviceConnected && pCharacteristic) {
-    midiPacket[2] = status;
-    midiPacket[3] = note;
-    midiPacket[4] = velocity;
-    pCharacteristic->setValue(midiPacket, 5);
+    uint8_t packet[5] = {0x80, 0x80, status, note, velocity};
+    pCharacteristic->setValue(packet, 5);
     pCharacteristic->notify();
   }
   
   // Route to Hardware MIDI
-  // Route to Hardware MIDI
   sendHardwareMIDI(status, note, velocity);
-  
-  Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
-}
-  
   Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
 }
 

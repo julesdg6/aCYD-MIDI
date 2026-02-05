@@ -8,6 +8,7 @@ int dropScale = 0;
 int dropKey = 0;
 int dropOctave = 4;
 bool platformMode = false; // false = drop mode, true = platform edit mode
+static unsigned long lastAutoSpawn = 0;
 
 // Implementations
 void initializePhysicsDropMode() {
@@ -37,6 +38,7 @@ void initializePhysicsDropMode() {
   platforms[1] = {(float)SCALE_X(180), (float)SCALE_Y(140), (float)SCALE_X(50), (float)SCALE_Y(8), -0.3, THEME_SECONDARY, false, 64, "E4", 0};
   platforms[2] = {(float)SCALE_X(120), (float)SCALE_Y(120), (float)SCALE_X(40), (float)SCALE_Y(8), 0.1, THEME_ACCENT, false, 67, "G4", 0};
   numPlatforms = 3;
+  lastAutoSpawn = millis();
 }
 
 void drawPhysicsDropMode() {
@@ -235,9 +237,8 @@ void updatePhysics() {
   if (!dropBalls || !platforms) {
     return;
   }
-  static unsigned long lastUpdate = 0;
-  static unsigned long lastAutoSpawn = 0;
-  static bool wasInPlatformMode = true; // Track mode changes
+    static unsigned long lastUpdate = 0;
+    static bool wasInPlatformMode = platformMode; // Track mode changes
 
   if (millis() - lastUpdate < 50) return; // 20 FPS to reduce flicker
 

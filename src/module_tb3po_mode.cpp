@@ -373,6 +373,10 @@ void handleTB3POMode() {
     int playBtnW = SCALE_X(60);
     if (isButtonPressed(MARGIN_SMALL, btnY, playBtnW, btnH)) {
       if (tb3poSync.playing || tb3poSync.startPending) {
+        if (tb3po.currentNote >= 0) {
+          sendMIDI(0x80, tb3po.currentNote, 0);
+          tb3po.currentNote = -1;
+        }
         tb3poSync.stopPlayback();
       } else {
         tb3poSync.requestStart();

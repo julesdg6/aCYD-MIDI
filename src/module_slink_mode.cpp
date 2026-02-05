@@ -133,6 +133,7 @@ void initializeSlinkMode() {
     // Initialize timing
     slink_state.last_engine_tick = millis();
     slink_state.current_time_ms = millis();
+    slink_state.last_visual_tick_ms = millis();
 }
 
 // ============================================================
@@ -506,24 +507,39 @@ void quantizeToPitch(uint8_t* note, ScaleEngine* engine) {
     // Get scale intervals
     Scale* scale = &scales[engine->scale_index];
     
-    // Apply root note offset
-    int relative_semitone = (semitone - engine->root_note + 12) % 12;
-    
-    // Find nearest scale degree
-    int nearest_interval = 0;
-    int min_distance = 12;
-    
-    for (int i = 0; i < scale->numNotes; i++) {
+    // Apply root note offset and SLINK "Color" weighting
+    // color: 0.0 -> only root, 1.0 -> equal weight across scale degrees
+    float color = engine->color; // 0..1
+
+    // Build per-degree weights. We assume scale->intervals[0] == 0 (root).
+    int n = scale->numNotes;
+    if (n <= 0) return;
+
+    // Sum weights
+    float weights[12];
+    float total = 0.0f;
+    for (int i = 0; i < n; i++) {
         int interval = scale->intervals[i];
-        int distance = abs(relative_semitone - interval);
-        if (distance < min_distance) {
-            min_distance = distance;
-            nearest_interval = interval;
-        }
+        // root degree gets boosted when color < 1.0
+        bool isRootDegree = (interval % 12) == 0;
+        float w = isRootDegree ? ((1.0f - color) + color) : (color);
+        weights[i] = w;
+        total += w;
     }
-    
-    // Calculate quantized note
-    int quantized_semitone = (engine->root_note + nearest_interval) % 12;
+
+    // Normalize cumulative widths and pick degree based on fractional position
+    float position = (semitone % 12) / 12.0f; // 0..1 within octave
+    // Map position into cumulative distribution
+    float target = position * total;
+    float acc = 0.0f;
+    int chosen = 0;
+    for (int i = 0; i < n; i++) {
+        acc += weights[i];
+        if (target <= acc) { chosen = i; break; }
+    }
+
+    int chosen_interval = scale->intervals[chosen] % 12;
+    int quantized_semitone = (engine->root_note + chosen_interval) % 12;
     *note = octave * 12 + quantized_semitone;
 }
 
@@ -619,8 +635,8 @@ float getSyncInterval(float sync_value, bool triplet, bool dotted, float bpm) {
     } else if (dotted && !triplet) {
         interval *= 1.5f;
     } else if (triplet && dotted) {
-        // Golden ratio-ish behavior
-        interval *= 0.618f;
+        // When both triplet and dotted are active, Slink multiplies by ~1.618
+        interval *= 1.618f;
     }
     
     return interval;
@@ -879,7 +895,7 @@ int hitSlinkTab(int px, int py) {
     for (int i = 0; i < kSlinkTabCount; i++) {
         int x, y, w, h;
         getSlinkTabRect(i, x, y, w, h);
-        if (px >= x && px <= x + w && py >= y && py <= y + h) {
+        if (px >= x && px < x + w && py >= y && py < y + h) {
             return i;
         }
     }
@@ -946,29 +962,22 @@ void drawMainTab() {
 
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
     
-    // Wave toggle buttons at top
-    int toggleW = SCALE_X(70);
-    int toggleH = SCALE_Y(32);
-    int toggleY = contentY;
-    drawRoundButton(MARGIN_SMALL, toggleY, toggleW, toggleH, "WAVE A",
-                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A ? THEME_WARNING : THEME_SURFACE, 
-                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A, 2);
-    drawRoundButton(MARGIN_SMALL + toggleW + SCALE_X(6), toggleY, toggleW, toggleH, "WAVE B",
-                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_B ? THEME_ACCENT : THEME_SURFACE,
-                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_B, 2);
-    
-    // Draw selected wave visualization - LARGER since we only show one
-    int waveY = toggleY + toggleH + SCALE_Y(10);
-    int waveHeight = SCALE_Y(110);  // Much larger - was 70px
-    
-    if (slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A) {
-        drawWaveVisualization(waveY, waveHeight, &slink_state.wave_trigger, THEME_WARNING, "WAVE A (Trigger)");
-    } else {
-        drawWaveVisualization(waveY, waveHeight, &slink_state.wave_pitch, THEME_ACCENT, "WAVE B (Pitch)");
-    }
+    // Draw both Wave A and Wave B stacked, equal height, without toggle buttons
+    int bandToggleTotalH = getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing());
+    int reservedBelow = bandToggleTotalH + SCALE_Y(10) + SCALE_Y(42) /*helper*/ + SCALE_Y(42) /*status*/ + SCALE_Y(8);
+    int availableH = DISPLAY_HEIGHT - contentY - reservedBelow;
+    if (availableH < SCALE_Y(80)) availableH = SCALE_Y(80); // minimum
+
+    int spacing = SCALE_Y(8);
+    int waveHeight = (availableH - spacing) / 2;
+    int waveAY = contentY;
+    int waveBY = waveAY + waveHeight + spacing;
+
+    drawWaveVisualization(waveAY, waveHeight, &slink_state.wave_trigger, THEME_WARNING, "WAVE A (Trigger)");
+    drawWaveVisualization(waveBY, waveHeight, &slink_state.wave_pitch, THEME_ACCENT, "WAVE B (Pitch)");
 
     // Band toggles below wave
-    int bandY = waveY + waveHeight + SCALE_Y(12);
+    int bandY = waveBY + waveHeight + SCALE_Y(12);
     drawBandToggles(bandY);
 
     // Helper buttons at bottom - all on one row
@@ -1177,6 +1186,8 @@ void drawSetupTab() {
 
 void drawWaveVisualization(int y_start, int height, SlinkWave* wave, 
                           uint16_t color, const char* label) {
+    // Ensure node values are up-to-date for immediate beat redraws
+    computeWaveNodes(wave);
     // Draw label
     tft.setTextColor(color, THEME_BG);
     tft.drawString(label, MARGIN_SMALL, y_start - SCALE_Y(10), 1);
@@ -1299,26 +1310,42 @@ int countActiveVoices() {
 void handleMainTab() {
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
     
-    // Handle wave toggle buttons
-    int toggleW = SCALE_X(70);
-    int toggleH = SCALE_Y(32);
-    int toggleY = contentY;
-    
-    if (isButtonPressed(MARGIN_SMALL, toggleY, toggleW, toggleH)) {
-        slink_state.main_subpage = SLINK_SUBPAGE_WAVE_A;
-        requestRedraw();
-        return;
+    // Calculate positions for two stacked wave visualizations
+    int bandToggleTotalH = getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing());
+    int reservedBelow = bandToggleTotalH + SCALE_Y(10) + SCALE_Y(42) + SCALE_Y(42) + SCALE_Y(8);
+    int availableH = DISPLAY_HEIGHT - contentY - reservedBelow;
+    if (availableH < SCALE_Y(80)) availableH = SCALE_Y(80);
+    int spacing = SCALE_Y(8);
+    int waveHeight = (availableH - spacing) / 2;
+    int waveY = contentY; // wave A Y
+    int waveBY = waveY + waveHeight + spacing; // wave B Y
+    int bandY = waveBY + waveHeight + SCALE_Y(12);
+
+    // Touching a wave area focuses the corresponding detailed tab for editing
+    if (touch.justPressed) {
+        if (isButtonPressed(0, waveY, DISPLAY_WIDTH, waveHeight)) {
+            slink_state.current_tab = SLINK_TAB_TRIGGER;
+            requestRedraw();
+            return;
+        }
+        if (isButtonPressed(0, waveBY, DISPLAY_WIDTH, waveHeight)) {
+            slink_state.current_tab = SLINK_TAB_PITCH;
+            requestRedraw();
+            return;
+        }
     }
-    if (isButtonPressed(MARGIN_SMALL + toggleW + SCALE_X(6), toggleY, toggleW, toggleH)) {
-        slink_state.main_subpage = SLINK_SUBPAGE_WAVE_B;
-        requestRedraw();
-        return;
+
+    // Ensure visuals update once per PPQN step: compute PPQN interval in ms
+    uint32_t now = millis();
+    uint32_t bpm = sharedBPM ? sharedBPM : 120;
+    uint32_t ppqn_ms = (uint32_t)(60000UL / (bpm * 24UL));
+    if ((uint32_t)(now - slink_state.last_visual_tick_ms) >= ppqn_ms) {
+        slink_state.last_visual_tick_ms = now;
+        updateSlinkEngine();
+        if (currentMode == SLINK) {
+            drawMainTab();
+        }
     }
-    
-    // Calculate positions based on new layout
-    int waveY = toggleY + toggleH + SCALE_Y(10);
-    int waveHeight = SCALE_Y(110);
-    int bandY = waveY + waveHeight + SCALE_Y(12);
 
     for (int i = 0; i < SLINK_BANDS; i++) {
         int x, y, w, h;

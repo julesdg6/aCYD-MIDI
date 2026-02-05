@@ -179,6 +179,7 @@ struct SlinkState {
     // Timing
     uint32_t last_engine_tick;
     uint32_t current_time_ms;
+    uint32_t last_visual_tick_ms;
 };
 
 // Global instance (heap-allocated)

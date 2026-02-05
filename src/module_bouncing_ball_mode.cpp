@@ -224,9 +224,12 @@ void updateBouncingBall() {
   // Check for scheduled note-offs
   unsigned long now = millis();
   for (int i = 0; i < 8; i++) {
-    if (scheduledNotes[i].active && now >= scheduledNotes[i].offTime) {
-      sendMIDI(0x80, scheduledNotes[i].note, 0);
-      scheduledNotes[i].active = false;
+    if (scheduledNotes[i].active) {
+      // Rollover-safe expiration check
+      if (static_cast<long>(now - scheduledNotes[i].offTime) >= 0) {
+        sendMIDI(0x80, scheduledNotes[i].note, 0);
+        scheduledNotes[i].active = false;
+      }
     }
   }
   

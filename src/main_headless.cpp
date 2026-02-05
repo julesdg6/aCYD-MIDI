@@ -75,6 +75,8 @@ void sendHardwareMIDI3(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
 BLECharacteristic *pCharacteristic = nullptr;
 volatile bool deviceConnected = false;
 uint8_t midiPacket[5] = {0x80, 0x80, 0, 0, 0};
+// Transport running state for reliable Start/Stop transitions
+static bool transportRunning = false;
 
 class MIDICallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *server) override { deviceConnected = true; }
@@ -153,74 +155,55 @@ void setup() {
   
   Serial.println("Step 4: initializing hardware MIDI");
   initHardwareMIDI();
-
 #if ESP_NOW_ENABLED
   Serial.println("Step 5: Initializing ESP-NOW as master");
   // Initialize ESP-NOW MIDI with auto-peer discovery enabled and low latency
   espNowMIDI.begin(false, true);  // (encryption=false, low_latency=true)
-  
+
   // Register ESP-NOW MIDI handlers for routing received messages
   espNowMIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
     Serial.printf("[ESP-NOW RX] Note On: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
-    // Route to BLE MIDI
-    if (deviceConnected) {
-      midiPacket[2] = 0x90 | channel;
-      midiPacket[3] = note;
-      midiPacket[4] = velocity;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, static_cast<uint8_t>(0x90 | channel), note, velocity};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
-    // Route to Hardware MIDI
     sendHardwareMIDI3(0x90 | channel, note, velocity);
 #if USB_MIDI_ENABLED
-    // Route to USB MIDI
     MIDI_USB.sendNoteOn(note, velocity, channel + 1);
 #endif
   });
-  
+
   espNowMIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
     Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
-    // Route to BLE MIDI
-    if (deviceConnected) {
-      midiPacket[2] = 0x80 | channel;
-      midiPacket[3] = note;
-      midiPacket[4] = velocity;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, static_cast<uint8_t>(0x80 | channel), note, velocity};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
-    // Route to Hardware MIDI
     sendHardwareMIDI3(0x80 | channel, note, velocity);
 #if USB_MIDI_ENABLED
-    // Route to USB MIDI
     MIDI_USB.sendNoteOff(note, velocity, channel + 1);
 #endif
   });
-  
+
   espNowMIDI.setHandleControlChange([](byte channel, byte control, byte value) {
     Serial.printf("[ESP-NOW RX] CC: Ch=%d, CC=%d, Val=%d\n", channel, control, value);
-    // Route to BLE MIDI
-    if (deviceConnected) {
-      midiPacket[2] = 0xB0 | channel;
-      midiPacket[3] = control;
-      midiPacket[4] = value;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, static_cast<uint8_t>(0xB0 | channel), control, value};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
-    // Route to Hardware MIDI
     sendHardwareMIDI3(0xB0 | channel, control, value);
 #if USB_MIDI_ENABLED
-    // Route to USB MIDI
     MIDI_USB.sendControlChange(control, value, channel + 1);
 #endif
   });
-  
+
   espNowMIDI.setHandleClock([]() {
-    // Route MIDI clock to all outputs
-    if (deviceConnected) {
-      midiPacket[2] = 0xF8;
-      midiPacket[3] = 0x00;
-      midiPacket[4] = 0x00;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, 0xF8, 0x00, 0x00};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xF8);
@@ -228,14 +211,12 @@ void setup() {
     MIDI_USB.sendRealTime(midi::Clock);
 #endif
   });
-  
+
   espNowMIDI.setHandleStart([]() {
     Serial.println("[ESP-NOW RX] Start");
-    if (deviceConnected) {
-      midiPacket[2] = 0xFA;
-      midiPacket[3] = 0x00;
-      midiPacket[4] = 0x00;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, 0xFA, 0x00, 0x00};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFA);
@@ -243,14 +224,12 @@ void setup() {
     MIDI_USB.sendRealTime(midi::Start);
 #endif
   });
-  
+
   espNowMIDI.setHandleStop([]() {
     Serial.println("[ESP-NOW RX] Stop");
-    if (deviceConnected) {
-      midiPacket[2] = 0xFC;
-      midiPacket[3] = 0x00;
-      midiPacket[4] = 0x00;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, 0xFC, 0x00, 0x00};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFC);
@@ -258,14 +237,12 @@ void setup() {
     MIDI_USB.sendRealTime(midi::Stop);
 #endif
   });
-  
+
   espNowMIDI.setHandleContinue([]() {
     Serial.println("[ESP-NOW RX] Continue");
-    if (deviceConnected) {
-      midiPacket[2] = 0xFB;
-      midiPacket[3] = 0x00;
-      midiPacket[4] = 0x00;
-      pCharacteristic->setValue(midiPacket, 5);
+    if (deviceConnected && pCharacteristic) {
+      uint8_t packet[5] = {0x80, 0x80, 0xFB, 0x00, 0x00};
+      pCharacteristic->setValue(packet, 5);
       pCharacteristic->notify();
     }
     sendHardwareMIDISingle(0xFB);
@@ -273,7 +250,7 @@ void setup() {
     MIDI_USB.sendRealTime(midi::Continue);
 #endif
   });
-  
+
   Serial.println("ESP-NOW MIDI master initialized");
   Serial.print("ESP-NOW MAC Address: ");
   Serial.println(WiFi.macAddress());
@@ -291,12 +268,9 @@ void setup() {
 // Unified MIDI clock/start/stop for BLE, hardware, USB, and ESP-NOW
 void sendMidiClock() {
   // BLE MIDI
-  if (deviceConnected) {
-    midiPacket[2] = 0xF8;
-    midiPacket[3] = 0x00;
-    midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
-    pCharacteristic->notify();
+  if (deviceConnected && pCharacteristic) {
+    uint8_t packet[5] = {0x80, 0x80, 0xF8, 0x00, 0x00};
+    pCharacteristic->setValue(packet, 5);
   }
   // Hardware MIDI
   sendHardwareMIDISingle(0xF8);
@@ -308,16 +282,15 @@ void sendMidiClock() {
   // ESP-NOW (send to all discovered peers)
   espNowMIDI.sendClock();
 #endif
-  // USB Serial debug
-  Serial.println("MIDI Clock");
+  // USB Serial debug (only when enabled for debugging to avoid jitter)
+#ifdef DEBUG_MIDI_CLOCK
+#endif
 }
 
 void sendMidiStart() {
-  if (deviceConnected) {
-    midiPacket[2] = 0xFA;
-    midiPacket[3] = 0x00;
-    midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
+  if (deviceConnected && pCharacteristic) {
+    uint8_t packet[5] = {0x80, 0x80, 0xFA, 0x00, 0x00};
+    pCharacteristic->setValue(packet, 5);
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFA);
@@ -331,11 +304,9 @@ void sendMidiStart() {
 }
 
 void sendMidiStop() {
-  if (deviceConnected) {
-    midiPacket[2] = 0xFC;
-    midiPacket[3] = 0x00;
-    midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
+  if (deviceConnected && pCharacteristic) {
+    uint8_t packet[5] = {0x80, 0x80, 0xFC, 0x00, 0x00};
+    pCharacteristic->setValue(packet, 5);
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFC);
@@ -359,9 +330,10 @@ void loop() {
     lastClock += MIDI_CLOCK_INTERVAL_US;
     sendMidiClock();
     clockTick++;
-    // Send start at beginning, send stop at appropriate times
-    if (clockTick == 1) {
+    // Transport start/stop handling: send Start on transition to running
+    if (clockTick == 1 && !transportRunning) {
       sendMidiStart();
+      transportRunning = true;
     }
   }
   delay(1); // Yield to watchdog

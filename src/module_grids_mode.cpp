@@ -45,7 +45,7 @@ static GridsLayout calculateGridsLayout() {
       DISPLAY_HEIGHT - layout.padY - sliderPadGap - layout.sliderH - sliderBottomMargin;
   padVerticalLimit = std::max(padVerticalLimit, 0);
   int padSizeLimit = std::min(layout.padSize, padVerticalLimit);
-  if (padVerticalLimit >= SCALE_X(110)) {
+  if (padVerticalLimit >= SCALE_Y(110)) {
     layout.padSize = std::max(padSizeLimit, SCALE_X(110));
   } else {
     layout.padSize = padSizeLimit;
@@ -205,8 +205,15 @@ void drawGridsMode() {
     int stepIndicatorY = sliderY - SCALE_Y(38);  // Adjusted for new slider position
     int stepW = SCALE_X(18);
     int stepSpacing = SCALE_X(1);
-    int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
-    
+    int totalWidth = GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing;
+    if (totalWidth > padSize) {
+      // Shrink stepW to fit, keep spacing at least 1px
+      stepSpacing = 1;
+      stepW = std::max(1, (padSize + stepSpacing) / GRIDS_STEPS - stepSpacing);
+      totalWidth = GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing;
+    }
+    int stepStartX = padX + std::max(0, (padSize - totalWidth) / 2);
+
     for (int i = 0; i < GRIDS_STEPS; i++) {
       int x = stepStartX + i * (stepW + stepSpacing);
       bool isCurrent = (i == grids.step);

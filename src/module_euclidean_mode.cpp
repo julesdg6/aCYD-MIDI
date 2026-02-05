@@ -7,8 +7,7 @@
 EuclideanState euclideanState;
 static SequencerSyncState euclidSync;
 
-// Y offset from bottom of display where control buttons are drawn.
-static const int CONTROL_Y_OFFSET = SCALE_Y(50);
+// CONTROL_Y_OFFSET removed — unused; layout uses explicit SCALE_* calls
 
 static uint32_t getEuclideanStepIntervalTicks() {
   if (euclideanState.tripletMode) {
@@ -28,7 +27,7 @@ static void adjustEuclidTempo(int delta) {
   if (target == sharedBPM) {
     return;
   }
-  euclideanState.bpm = target;
+  // Use sharedBPM as single source of truth
   setSharedBPM(target);
   requestRedraw();
 }
@@ -216,17 +215,8 @@ void updateEuclideanSequencer() {
   uint32_t stepInterval = getEuclideanStepIntervalTicks();
   uint32_t readySteps = euclidSync.consumeReadySteps(stepInterval);
   
-  // Adjust for triplet mode if needed
-  if (euclideanState.tripletMode) {
-    // In triplet mode, we get more steps per 16th note
-    // So we might need to accumulate more before advancing
-    euclideanState.tripletAccumulator += readySteps;
-    // Advance every 1.5 steps (6 ticks per 16th in triplet vs 4 in straight)
-    // This is approximate; actual timing handled by step interval
-    uint32_t tripletDivisor = 3;  // Process every 3rd step in triplet mode
-    readySteps = euclideanState.tripletAccumulator / tripletDivisor;
-    euclideanState.tripletAccumulator %= tripletDivisor;
-  }
+  // Triplet timing is handled by getEuclideanStepIntervalTicks();
+  // Remove additional triplet accumulator/divisor adjustments to avoid double-adjusting timing.
   
   if (readySteps == 0) {
     return;

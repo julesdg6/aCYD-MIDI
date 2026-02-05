@@ -135,7 +135,7 @@ void drawMorphMode() {
   
   // RECORD button (visual state indicator)
   uint16_t recordColor = morphState.recording ? THEME_ERROR : THEME_SECONDARY;
-  String recordText = morphState.recording ? "REC" : "REC";
+  String recordText = morphState.recording ? "STOP" : "REC";
   drawRoundButton(layout.controlX + playBtnW + SCALE_X(6), layout.controlY, 
                   recordBtnW, layout.controlH,
                   recordText, recordColor, morphState.recording, 2);

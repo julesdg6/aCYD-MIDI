@@ -6,6 +6,7 @@
 #include "wifi_manager.h"
 
 #include <Arduino.h>
+#include <atomic>
 #if WIFI_ENABLED
 #include <WiFiUdp.h>
 #endif
@@ -21,52 +22,55 @@ static const IPAddress kWifiMidiRemoteIP = IPAddress(255, 255, 255, 255);
 
 static constexpr uint32_t kStartStopDebounceMs = 100;
 static constexpr uint32_t kClockLogIntervalMs = 500;
-static uint32_t lastStartMs = 0;
-static uint32_t lastStopMs = 0;
-static uint32_t lastClockLogMs = 0;
-static bool pendingExternalStart = false;
-static bool externalRunning = false;
-static bool clockPulseState = false;
+static std::atomic<uint32_t> lastStartMs{0};
+static std::atomic<uint32_t> lastStopMs{0};
+static std::atomic<uint32_t> lastClockLogMs{0};
+static std::atomic<bool> pendingExternalStart{false};
+static std::atomic<bool> externalRunning{false};
+static std::atomic<bool> clockPulseState{false};
 
 static void processTransportByte(uint8_t byte) {
   switch (byte) {
     case 0xFA: {
       uint32_t now = millis();
-      if (now - lastStartMs >= kStartStopDebounceMs) {
-        pendingExternalStart = true;
-        lastStartMs = now;
+      uint32_t last = lastStartMs.load();
+      if (now - last >= kStartStopDebounceMs) {
+        pendingExternalStart.store(true);
+        lastStartMs.store(now);
         Serial.println("[MidiTransport] Received MIDI Start (0xFA)");
       }
       break;
     }
     case 0xFC: {
       uint32_t now = millis();
-      if (now - lastStopMs >= kStartStopDebounceMs) {
-        lastStopMs = now;
+      uint32_t last = lastStopMs.load();
+      if (now - last >= kStartStopDebounceMs) {
+        lastStopMs.store(now);
         Serial.println("[MidiTransport] Received MIDI Stop (0xFC)");
-        pendingExternalStart = false;
-        if (externalRunning) {
+        pendingExternalStart.store(false);
+        if (externalRunning.load()) {
           clockManagerExternalStop();
-          externalRunning = false;
+          externalRunning.store(false);
         }
       }
       break;
     }
     case 0xF8: {
       uint32_t now = millis();
-      if (!externalRunning && pendingExternalStart) {
-        externalRunning = true;
-        pendingExternalStart = false;
+      if (!externalRunning.load() && pendingExternalStart.load()) {
+        externalRunning.store(true);
+        pendingExternalStart.store(false);
         Serial.println("[MidiTransport] Validated External Start – sending to ClockManager");
         clockManagerExternalStart();
       }
-      if (externalRunning) {
-        if (now - lastClockLogMs >= kClockLogIntervalMs) {
+      if (externalRunning.load()) {
+        uint32_t lastLog = lastClockLogMs.load();
+        if (now - lastLog >= kClockLogIntervalMs) {
           Serial.println("[MidiTransport] Received MIDI Clock (0xF8)");
-          lastClockLogMs = now;
+          lastClockLogMs.store(now);
         }
         clockManagerExternalClock();
-        clockPulseState = !clockPulseState;
+        clockPulseState.store(!clockPulseState.load());
       }
       break;
     }
