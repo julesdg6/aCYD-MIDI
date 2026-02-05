@@ -46,7 +46,6 @@ static SettingsLayout computeSettingsLayout() {
   SettingsLayout layout;
   layout.viewTop = HEADER_HEIGHT + viewTopPadding();
   layout.viewLeft = viewMargin();
-  layout.viewWidth = DISPLAY_WIDTH - 2 * viewMargin();
   layout.scrollbarTouchX = DISPLAY_WIDTH - viewMargin() - scrollBarTouchWidth();
   layout.scrollbarTrackX =
       layout.scrollbarTouchX + (scrollBarTouchWidth() - scrollBarThumbWidth()) / 2;
@@ -121,15 +120,17 @@ void drawSettingsMode() {
   const int buttonSpacing = SCALE_X(6);
   const int bpmRowY = layout.bpmRowY - settingsScrollOffset;
   if (bpmRowY >= layout.viewTop && bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) {
+  // Check if any part of the row (including label above) is visible
+  int labelY = bpmRowY - SCALE_Y(18);
+  if (bpmRowY + bpmRowHeight() > layout.viewTop && labelY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = bpmRowY - SCALE_Y(18);
     tft.drawString("Shared Tempo", rowInnerLeft, labelY, 2);
-    int buttonY = bpmRowY + (bpmRowHeight() - buttonHeight) / 2;
     tft.fillRoundRect(rowBgX, bpmRowY, rowBgW, bpmRowHeight(), 12, THEME_BG);
     int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
     int remainingWidth = rowInnerW - narrowBtnW * 2 - buttonSpacing;
     int labelWidth = max(remainingWidth, SCALE_X(48));
     int labelX = rowInnerLeft + narrowBtnW + buttonSpacing;
+    int buttonY = bpmRowY + (bpmRowHeight() - buttonHeight) / 2;
     drawRoundButton(rowInnerLeft, buttonY, narrowBtnW, buttonHeight, "-", THEME_ERROR, false, 5);
     drawRoundButton(labelX, buttonY, labelWidth, buttonHeight, String(sharedBPM), THEME_PRIMARY, false, 4);
     drawRoundButton(labelX + labelWidth + buttonSpacing, buttonY, narrowBtnW, buttonHeight, "+", THEME_SUCCESS, false, 5);
@@ -241,6 +242,8 @@ void drawSettingsMode() {
         trackTop + (settingsScrollOffset > 0 ? (settingsScrollOffset * availableTrack) / maxScroll : 0);
     tft.fillRoundRect(layout.scrollbarTrackX, barY, thumbWidth, barHeight, radius, THEME_TEXT);
   }
+  }
+  
 }
 
 void handleSettingsMode() {

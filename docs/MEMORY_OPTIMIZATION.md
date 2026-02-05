@@ -159,5 +159,5 @@ If DRAM becomes critically constrained in the future:
 ## Reference
 
 - ESP32 Technical Reference: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-- LVGL Memory Management: https://docs.lvgl.io/master/overview/layer.html
+- LVGL Memory Management: https://docs.lvgl.io/master/overview/memory.html
 - PlatformIO ESP32: https://docs.platformio.org/en/latest/platforms/espressif32.html

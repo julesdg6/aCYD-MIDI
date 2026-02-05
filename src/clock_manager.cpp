@@ -198,15 +198,14 @@ void updateClockManager() {
   
   // Handle any pending ticks (deferred from ISR). Do this after start/stop logic
   // so heavy work runs in task context and won't trigger the interrupt WDT.
+  static uint32_t lastProcessedTick = 0;
   while (true) {
-    bool pending = false;
+    uint32_t currentTick;
     lockClockManager();
-    if (tickPending) {
-      tickPending = false;
-      pending = true;
-    }
+    currentTick = tickCount;
     unlockClockManager();
-    if (!pending) break;
+    if (currentTick == lastProcessedTick) break;
+    lastProcessedTick++;
     sendMIDIClock();
     requestRedraw();
   }

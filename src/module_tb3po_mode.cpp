@@ -25,6 +25,11 @@ static void onTb3poStepISR(uint32_t step, uint8_t track) {
   }
 }
 
+void registerTB3POStepCallback() {
+  // Register ISR callback with uClock so TB3PO can track steps in ISR context.
+  uClock.setOnStep(onTb3poStepISR, 1);
+}
+
 static bool randBit(int probability) {
   return (random(100) < probability);
 }
@@ -149,6 +154,14 @@ static bool stepIsAccent(int stepNum) {
 void updateTB3POPlayback() {
   bool wasPlaying = tb3poSync.playing;
   bool justStarted = tb3poSync.tryStartIfReady(!instantStartMode) && !wasPlaying;
+  
+  // Send note-off if playback just stopped
+  if (wasPlaying && !tb3poSync.playing && tb3po.currentNote >= 0) {
+    sendMIDI(0x80, tb3po.currentNote, 0);
+    tb3po.currentNote = -1;
+    requestRedraw();
+  }
+  
   if (justStarted) {
     uint32_t tick = clockManagerGetTickCount();
     uint32_t elapsedMs = (tb3poSync.startRequestMs == UINT32_MAX)
@@ -339,12 +352,10 @@ void initializeTB3POMode() {
   tb3po.bpm = 120.0f;
   tb3po.useInternalClock = true;
   regenerateAll();
-  // Step callback registration is done at startup via registerAllStepCallbacks().
-  drawTB3POMode();
-}
-
-void registerTB3POStepCallback() {
+  tb3po.useInternalClock = true;
+  regenerateAll();
   uClock.setOnStep(onTb3poStepISR, 1);
+
 }
 
 void handleTB3POMode() {

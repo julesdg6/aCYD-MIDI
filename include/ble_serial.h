@@ -6,6 +6,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <mutex>
 #include <vector>
 
 // BLE Serial Service UUID (custom service)
@@ -129,9 +130,11 @@ private:
   
   // RX buffer (data received from BLE client)
   std::vector<uint8_t> rxBuffer;
+  std::mutex rxMutex;
   
   // TX buffer (data to send to BLE client)
   std::vector<uint8_t> txBuffer;
+  std::mutex txMutex;
   
   // Rate limiting
   unsigned long lastFlushTime;

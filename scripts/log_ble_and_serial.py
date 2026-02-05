@@ -26,6 +26,7 @@ import subprocess
 import signal
 import time
 from pathlib import Path
+# (shutil already imported at top)
 
 try:
     from bleak import BleakScanner, BleakClient
@@ -36,23 +37,27 @@ except Exception as e:
 BLE_MIDI_SERVICE = "03b80e5a-ede8-4b33-a751-6ce34ec4c700"
 BLE_MIDI_CHAR = "7772e5db-3868-4112-a1a9-f2669d106bf3"
 
-async def find_midi_device(timeout=5.0):
-    print(f"Scanning for BLE MIDI devices (service={BLE_MIDI_SERVICE}) for {timeout}s...")
+# BLE Serial (UART-over-BLE) service/char UUIDs (used for testing/debug)
+BLE_SERIAL_SERVICE = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+BLE_SERIAL_TX = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+
+async def find_device_for_service(service_uuid, timeout=5.0):
+    print(f"Scanning for BLE devices (service={service_uuid}) for {timeout}s...")
     devices = await BleakScanner.discover(timeout=timeout)
     for d in devices:
+        # metadata might contain uuids on some backends
         uuids = getattr(d, "metadata", {}).get("uuids") or []
-        # On some backends, uuids may be under d.details or not present; do a simple name check fallback
-        if uuids and any(u.lower() == BLE_MIDI_SERVICE for u in uuids):
-            print(f"Found device {d.name} [{d.address}] advertising MIDI service")
+        if uuids and any(u.lower() == service_uuid.lower() for u in uuids):
+            print(f"Found device {d.name} [{d.address}] advertising service {service_uuid}")
             return d
-    # fallback: return first device with 'MIDI' in name
+    # fallback: try name hints (MIDI or Serial)
     for d in devices:
-        if d.name and "midi" in d.name.lower():
+        if d.name and ("midi" in d.name.lower() or "serial" in d.name.lower()):
             print(f"Found device by name {d.name} [{d.address}]")
             return d
     return None
 
-async def run_ble_logger(out_path, device_addr=None, scan_time=5.0):
+async def run_ble_logger(out_path, service_uuid, char_uuid, device_addr=None, scan_time=5.0, pair=False):
     async def handle_notification(sender, data: bytearray):
         ts = datetime.datetime.now().isoformat()
         hexdata = data.hex()
@@ -60,15 +65,15 @@ async def run_ble_logger(out_path, device_addr=None, scan_time=5.0):
         try:
             with out_path.open("a", encoding="utf-8") as f:
                 f.write(line)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Failed to write BLE log to {out_path}: {e}", file=sys.stderr)
         print(line, end='')
 
     # Try to find device if address not provided
     if device_addr is None:
-        dev = await find_midi_device(timeout=scan_time)
+        dev = await find_device_for_service(service_uuid, timeout=scan_time)
         if dev is None:
-            print("No BLE MIDI device found.")
+            print(f"No device found advertising {service_uuid}.")
             return
         device_addr = dev.address
 
@@ -80,13 +85,67 @@ async def run_ble_logger(out_path, device_addr=None, scan_time=5.0):
             async with BleakClient(device_addr) as client:
                 try:
                     svcs = await client.get_services()
-                    has_char = any(c.uuid.lower() == BLE_MIDI_CHAR for s in svcs for c in s.characteristics)
+                    # Look for the requested characteristic
+                    has_char = any(c.uuid.lower() == char_uuid.lower() for s in svcs for c in s.characteristics)
                 except Exception:
+                    svcs = None
                     has_char = False
+
+                # Print connection state
+                try:
+                    connected = False
+                    try:
+                        is_connected_callable = callable(getattr(client, "is_connected", None))
+                    except Exception:
+                        is_connected_callable = False
+                    if is_connected_callable:
+                        connected = await client.is_connected()
+                    else:
+                        connected = client.is_connected
+                    print(f"BLE client connected={connected}")
+                except Exception:
+                    print("BLE client connection state unknown")
+
+                # Optionally attempt pairing/bonding if requested
+                if pair:
+                    try:
+                        if hasattr(client, 'pair'):
+                            print("Attempting to pair with device...")
+                            paired = await client.pair()
+                            print(f"Pair result: {paired}")
+                        else:
+                            print("Pairing not supported by this Bleak backend/client")
+                    except Exception as e:
+                        print(f"Pairing attempt failed: {e}")
+
+                # Dump discovered services/characteristics for debugging (if available)
+                if svcs is not None:
+                    try:
+                        svc_dump_lines = []
+                        for s in svcs:
+                            svc_dump_lines.append(f"Service {s.uuid}")
+                            for c in s.characteristics:
+                                props = getattr(c, 'properties', None)
+                                svc_dump_lines.append(f"  Char {c.uuid} props={props}")
+                        # append to BLE log for later inspection
+                        try:
+                            with out_path.open("a", encoding="utf-8") as f:
+                                f.write(f"{datetime.datetime.now().isoformat()} SERVICES_DUMP\n")
+                                for L in svc_dump_lines:
+                                    f.write(L + "\n")
+                        except Exception:
+                            pass
+                        # print to stdout for immediate visibility
+                        if svc_dump_lines:
+                            print("Discovered services/characteristics:")
+                            for L in svc_dump_lines:
+                                print(L)
+                    except Exception as e:
+                        print(f"Failed to dump services: {e}")
                 if not has_char:
-                    print("Warning: device did not advertise MIDI char UUID. Continuing and attempting to subscribe...")
-                print(f"Subscribing to characteristic {BLE_MIDI_CHAR}...")
-                await client.start_notify(BLE_MIDI_CHAR, handle_notification)
+                    print(f"Warning: device did not advertise characteristic {char_uuid}. Attempting to subscribe anyway...")
+                print(f"Subscribing to characteristic {char_uuid}...")
+                await client.start_notify(char_uuid, handle_notification)
                 print("BLE logger connected and subscribed. Waiting for notifications...")
                 # Stay connected until disconnected or exception
                 # Handle bleak versions where `is_connected` may be a coroutine or a boolean property
@@ -112,13 +171,17 @@ def tail_serial(port, baud, out_path):
     # Prefer pyserial for robust non-interactive serial capture
     try:
         import serial as pyserial
+    except ImportError:
+        pyserial = None
+
+    if pyserial is not None:
         print(f"Starting serial monitor via pyserial on {port} @ {baud}")
         # write a startup marker so we can see the monitor started even if no data
         try:
             with open(out_path, "a", buffering=1) as f:
                 f.write(f"{datetime.datetime.now().isoformat()} SERIAL_MONITOR_STARTED pyserial on {port} @ {baud}\n")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Failed to write serial monitor start marker: {e}", file=sys.stderr)
         # Open the serial port and keep reading. If errors occur, retry with backoff.
         backoff = 0.5
         max_backoff = 30.0
@@ -143,8 +206,8 @@ def tail_serial(port, baud, out_path):
                         ts = datetime.datetime.now().isoformat()
                         try:
                             f.write(f"{ts} {line}")
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            print(f"Failed to write serial log: {e}", file=sys.stderr)
                         print(line, end='')
             except Exception as e:
                 print(f"Serial monitor error/open failed: {e}")
@@ -152,7 +215,7 @@ def tail_serial(port, baud, out_path):
             print(f"Retrying serial monitor in {backoff} seconds...")
             time.sleep(backoff)
             backoff = min(backoff * 2.0, max_backoff)
-    except Exception:
+    else:
         # Fallback: prefer PlatformIO monitor if available, else cat the device
         pio_cmd = ["pio", "device", "monitor", "-p", port, "-b", str(baud)]
         if shutil.which("pio"):
@@ -202,12 +265,29 @@ def main():
     parser.add_argument("--serial-baud", default=115200, type=int)
     parser.add_argument("--ble-addr", default=None, help="Optional BLE device address to connect to")
     parser.add_argument("--out-dir", default="logs")
+    parser.add_argument("--ble-protocol", choices=['auto', 'serial', 'midi'], default='auto',
+                        help="Which BLE protocol to prefer: 'serial' for UART-over-BLE, 'midi' for BLE-MIDI, or 'auto'")
     parser.add_argument("--scan-time", default=5.0, type=float)
+    parser.add_argument("--pair", action='store_true', help="Attempt to pair/bond with the device before subscribing (if supported)")
     args = parser.parse_args()
 
     outdir = Path(args.out_dir)
     outdir.mkdir(parents=True, exist_ok=True)
-    ble_log = outdir / "ble_midi.log"
+    # Choose BLE protocol target: auto -> prefer BLE-Serial then BLE-MIDI
+    ble_protocol = args.ble_protocol
+    if ble_protocol == 'auto':
+        # try serial first
+        target_service = BLE_SERIAL_SERVICE
+        target_char = BLE_SERIAL_TX
+        ble_log = outdir / "ble_serial.log"
+    elif ble_protocol == 'serial':
+        target_service = BLE_SERIAL_SERVICE
+        target_char = BLE_SERIAL_TX
+        ble_log = outdir / "ble_serial.log"
+    else:
+        target_service = BLE_MIDI_SERVICE
+        target_char = BLE_MIDI_CHAR
+        ble_log = outdir / "ble_midi.log"
     serial_log = outdir / "serial.log"
 
     # Initialize/clear files
@@ -227,7 +307,7 @@ def main():
             serial_thread.start()
 
         # Run BLE logger in asyncio using asyncio.run for modern Python
-        coro = run_ble_logger(ble_log, device_addr=args.ble_addr, scan_time=args.scan_time)
+        coro = run_ble_logger(ble_log, target_service, target_char, device_addr=args.ble_addr, scan_time=args.scan_time, pair=args.pair)
         try:
             asyncio.run(coro)
         except KeyboardInterrupt:
@@ -235,9 +315,10 @@ def main():
     finally:
         # allow serial thread to terminate
         try:
-            serial_thread.join(timeout=1.0)
-        except Exception:
-            pass
+            if serial_thread:
+                serial_thread.join(timeout=1.0)
+        except Exception as e:
+            print(f"Error joining serial thread: {e}", file=sys.stderr)
 
 if __name__ == '__main__':
     main()

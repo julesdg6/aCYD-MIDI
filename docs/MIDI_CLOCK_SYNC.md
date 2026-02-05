@@ -9,7 +9,7 @@ The sequencer/timing issue tracked in [issue #62](https://github.com/julesdg6/aC
 - The clock still tracks internal/external masters, start/stop state, and external clock pulses via `clockManagerSequencerStarted/Stopped/External*` helpers, so the global timing model remains centralised.
 
 ## Sequencer Sync API
-- `SequencerSyncState` now exposes `consumeReadySteps(stepIntervalTicks)` (`include/clock_manager.h:27-123`), which returns how many `stepIntervalTicks` have elapsed since the last call and advances `lastTick` accordingly.
+- `SequencerSyncState` now exposes `consumeReadySteps(stepIntervalTicks)` (`include/clock_manager.h:95-119`), which returns how many `stepIntervalTicks` have elapsed since the last call and advances `lastTick` accordingly.
 - Every module that previously called `readyForStep()` now loops over the returned `readySteps` so it plays the appropriate number of steps even when multiple 16ths have occurred between updates.
 - A convenience `readyForStep()` wrapper remains for compatibility, but the new API is what each mode should use moving forward.
 

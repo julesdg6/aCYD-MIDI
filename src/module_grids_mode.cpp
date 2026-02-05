@@ -203,9 +203,13 @@ void drawGridsMode() {
   // Show current step position if playing - positioned just above the slider area
   if (grids.playing) {
     int stepIndicatorY = sliderY - SCALE_Y(8);  // Moved closer to bottom, just above sliders
-    int stepW = SCALE_X(18);
+    // Scale step indicators to fit within pad width
+    int availableWidth = padSize - SCALE_X(4);  // Small margin
     int stepSpacing = SCALE_X(1);
-    int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
+    int stepW = (availableWidth - (GRIDS_STEPS - 1) * stepSpacing) / GRIDS_STEPS;
+    stepW = std::max(stepW, SCALE_X(2));  // Minimum visible width
+    int totalStepWidth = GRIDS_STEPS * stepW + (GRIDS_STEPS - 1) * stepSpacing;
+    int stepStartX = padX + (padSize - totalStepWidth) / 2;
     
     for (int i = 0; i < GRIDS_STEPS; i++) {
       int x = stepStartX + i * (stepW + stepSpacing);

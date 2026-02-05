@@ -38,14 +38,16 @@ inline void processBLESerialCommands() {
   // Status command
   if (strcmp(command, "status") == 0) {
     char response[256];
+    const char* modeName = (currentMode < 18) ? kModeNames[currentMode] : "Unknown";
     snprintf(response, sizeof(response),
              "Mode: %s\nBPM: %d\nBLE MIDI: %s\nVersion: %s",
-             kModeNames[currentMode],
+             modeName,
              sharedBPM,
              deviceConnected ? "Connected" : "Disconnected",
              ACYD_MIDI_VERSION);
     bleSerial.println(response);
   }
+  
   
   // Get BPM
   else if (strcmp(command, "get bpm") == 0) {

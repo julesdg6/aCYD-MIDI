@@ -87,10 +87,7 @@ ESP-NOW can act as a MIDI clock source:
 
 **Clock Master Options:**
 - **Internal Clock**: Device generates its own tempo
-**Clock Master Options:**
-- **Internal Clock**: Device generates its own tempo
 - **Wi-Fi MIDI**: Sync to Wi-Fi MIDI clock
-- **BLE MIDI**: Sync to Bluetooth MIDI clock
 - **BLE MIDI**: Sync to Bluetooth MIDI clock
 - **Hardware MIDI**: Sync to DIN MIDI clock
 - **ESP-NOW MIDI**: Sync to ESP-NOW MIDI clock

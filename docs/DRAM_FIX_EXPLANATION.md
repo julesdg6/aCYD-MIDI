@@ -180,11 +180,12 @@ spiffs,   data, spiffs,  0x3D0000,0x30000,
 
 #### 15. Disabled C++ RTTI
 **File**: `platformio.ini`
-**Change**: `build_unflags = -fno-rtti`
+**Change**: Add `-fno-rtti` to `build_flags` (for example: `build_flags += -fno-rtti`) or include `-D DISABLE_RTTI` as appropriate for your build system. Note: using `build_unflags = -fno-rtti` is incorrect — `build_unflags` removes flags from the toolchain; to disable RTTI you must *add* the `-fno-rtti` flag.
 
 **Impact**:
-- Removes C++ Runtime Type Information
-- Savings: ~500-1000 bytes
+- Disables C++ Runtime Type Information (RTTI)
+- Expected savings: ~500-1000 bytes of flash/DRAM depending on usage of dynamic_cast/typeid
+- Behavior: `typeid` and `dynamic_cast` for polymorphic types may be unavailable or produce linker errors if code relies on RTTI; ensure any use of those features is removed or guarded when disabling RTTI.
 
 #### 16. PROGMEM Optimization
 **File**: `src/module_morph_mode.cpp`

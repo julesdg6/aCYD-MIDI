@@ -18,6 +18,10 @@ RAGAS = {
 def generate_phrase(scale, length=16, start_octave=0):
     """Very simple random-walk phrase on a raga scale."""
     phrase = []
+    # Defensive: require a non-empty scale
+    if not scale:
+        raise ValueError("scale must be a non-empty sequence")
+
     current_degree = random.choice(range(len(scale)))
     octave = start_octave
 

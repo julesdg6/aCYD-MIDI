@@ -94,10 +94,10 @@ uClock.stop();   // Stop the clock
 
 | BPM | Old Interval (ms) | uClock (hardware) | Error (old) | Error (new) |
 |-----|------------------|-------------------|-------------|-------------|
-| 60  | 41ms             | Hardware precise  | +2.4%       | ~0%         |
+| 60  | 41ms             | Hardware precise  | ~1.6%       | ~0%         |
 | 120 | 20ms             | Hardware precise  | +4.2%       | ~0%         |
 | 140 | 17ms             | Hardware precise  | +5.0%       | ~0%         |
-| 180 | 13ms             | Hardware precise  | +7.7%       | ~0%         |
+| 180 | 13ms             | Hardware precise  | ~6.8%       | ~0%         |
 
 ## Benefits
 
@@ -143,9 +143,9 @@ uClock.stop();   // Stop the clock
 To verify the fix is working:
 1. Set BPM to 120 in the UI
 2. Count MIDI clock messages over 1 minute
-3. Should receive: 120 BPM × 24 ticks/quarter × 4 quarters = **11,520 ticks/minute**
-4. Old code sent ~12,000 ticks/minute (125 BPM)
-5. New code sends exactly 11,520 ticks/minute (120 BPM)
+3. Should receive: 120 BPM × 24 ticks/quarter = **2,880 ticks/minute**
+4. Old code sent ~3,000 ticks/minute (125 BPM)
+5. New code sends exactly 2,880 ticks/minute (120 BPM)
 
 ## Migration
 

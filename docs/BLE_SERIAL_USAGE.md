@@ -1,5 +1,7 @@
 # BLE Serial Service Usage Guide
 
+> NOTE: BLE Serial support has been removed from the active build configuration because it was unreliable in practice. The firmware no longer enables or advertises the UART-over-BLE service. The remainder of this document is kept for historical/reference purposes only.
+
 ## Overview
 
 The BLE Serial service provides a UART-like serial interface over BLE for control, debug, and configuration purposes. It runs alongside the BLE MIDI service over a single BLE connection.

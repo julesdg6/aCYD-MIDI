@@ -33,11 +33,16 @@ def parse_ble():
                 hexstr = ''
             # normalize
             hexstr = hexstr.lower()
-            # split into bytes
-            try:
-                b = [int(hexstr[i:i+2],16) for i in range(0, len(hexstr),2)]
-            except Exception:
+            # validate even-length hex and parse
+            if len(hexstr) % 2 != 0:
+                print(f"Odd-length hex string in BLE log: '{hexstr}'", file=sys.stderr)
                 b = []
+            else:
+                try:
+                    b = list(bytes.fromhex(hexstr))
+                except ValueError as e:
+                    print(f"Failed to parse hex '{hexstr}': {e}", file=sys.stderr)
+                    b = []
             entries.append((t,b,line))
     return entries
 
@@ -98,7 +103,7 @@ def main():
         delta = (first_tb - first_clock).total_seconds()
         print(f'First BLE clock at {first_clock}, first TB3PO entry at {first_tb}, delta={delta:.3f}s')
 
-    # Map first 50 BLE clocks to nearest TB3PO ticks (if any)
+    # Map first 200 BLE clocks to nearest TB3PO ticks (if any)
     print('\nSample mapping of early BLE clock events to TB3PO tick entries:')
     for i,c in enumerate(clocks[:200]):
         nearest = find_nearest(serial, c[0])

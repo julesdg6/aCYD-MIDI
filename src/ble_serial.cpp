@@ -65,6 +65,10 @@ bool BLESerial::begin(BLEServer *server) {
     BLE_SERIAL_CHARACTERISTIC_TX_UUID,
     BLECharacteristic::PROPERTY_NOTIFY
   );
+  if (!pTxCharacteristic) {
+    Serial.println("BLE Serial: Failed to create TX characteristic");
+    return false;
+  }
   pTxCharacteristic->addDescriptor(new BLE2902());
   
   // Create RX characteristic (client -> device, write)
@@ -72,7 +76,14 @@ bool BLESerial::begin(BLEServer *server) {
     BLE_SERIAL_CHARACTERISTIC_RX_UUID,
     BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
   );
+  if (!pRxCharacteristic) {
+    Serial.println("BLE Serial: Failed to create RX characteristic");
+    return false;
+  }
   pRxCharacteristic->setCallbacks(new BLESerialCallbacks(this));
+  
+  // Register server callbacks so we receive connect/disconnect events
+  server->setCallbacks(new BLESerialServerCallbacks(this));
   
   // Start the service
   pService->start();
@@ -82,35 +93,35 @@ bool BLESerial::begin(BLEServer *server) {
 }
 
 void BLESerial::onRxWrite(const uint8_t *data, size_t length) {
-  // Add received data to RX buffer
-  // Apply buffer overflow protection
+  // Add received data to RX buffer with mutex protection
+  std::lock_guard<std::mutex> g(rxMutex);
   size_t available_space = BLE_SERIAL_RX_BUFFER_SIZE - rxBuffer.size();
   size_t bytes_to_add = min(length, available_space);
-  
   if (bytes_to_add < length) {
     Serial.println("BLE Serial: RX buffer overflow, dropping data");
   }
-  
   for (size_t i = 0; i < bytes_to_add; i++) {
     rxBuffer.push_back(data[i]);
   }
 }
 
 int BLESerial::available() {
-  return rxBuffer.size();
+  std::lock_guard<std::mutex> g(rxMutex);
+  return (int)rxBuffer.size();
 }
 
 int BLESerial::read() {
+  std::lock_guard<std::mutex> g(rxMutex);
   if (rxBuffer.empty()) {
     return -1;
   }
-  
   uint8_t byte = rxBuffer.front();
   rxBuffer.erase(rxBuffer.begin());
   return byte;
 }
 
 size_t BLESerial::readBytes(uint8_t *buffer, size_t length) {
+  std::lock_guard<std::mutex> g(rxMutex);
   size_t count = 0;
   while (count < length && !rxBuffer.empty()) {
     buffer[count++] = rxBuffer.front();
@@ -120,15 +131,18 @@ size_t BLESerial::readBytes(uint8_t *buffer, size_t length) {
 }
 
 size_t BLESerial::readLine(char *buffer, size_t maxLen) {
+  std::lock_guard<std::mutex> g(rxMutex);
   size_t count = 0;
   while (count < maxLen - 1 && !rxBuffer.empty()) {
     uint8_t byte = rxBuffer.front();
     rxBuffer.erase(rxBuffer.begin());
-    
     if (byte == '\n' || byte == '\r') {
+      // Consume trailing \n after \r (handle \r\n)
+      if (byte == '\r' && !rxBuffer.empty() && rxBuffer.front() == '\n') {
+        rxBuffer.erase(rxBuffer.begin());
+      }
       break;
     }
-    
     buffer[count++] = byte;
   }
   buffer[count] = '\0';
@@ -136,6 +150,7 @@ size_t BLESerial::readLine(char *buffer, size_t maxLen) {
 }
 
 int BLESerial::peek() {
+  std::lock_guard<std::mutex> g(rxMutex);
   if (rxBuffer.empty()) {
     return -1;
   }
@@ -152,13 +167,12 @@ size_t BLESerial::write(const uint8_t *buffer, size_t length) {
   }
   
   // Add data to TX buffer with overflow protection
+  std::lock_guard<std::mutex> g(txMutex);
   size_t available_space = BLE_SERIAL_TX_BUFFER_SIZE - txBuffer.size();
   size_t bytes_to_add = min(length, available_space);
-  
   if (bytes_to_add < length) {
     Serial.println("BLE Serial: TX buffer overflow, dropping data");
   }
-  
   for (size_t i = 0; i < bytes_to_add; i++) {
     txBuffer.push_back(buffer[i]);
   }
@@ -179,35 +193,30 @@ size_t BLESerial::println(const char *str) {
 bool BLESerial::flush() {
   if (!clientConnected || !pTxCharacteristic) {
     // Clear buffer if not connected
+    std::lock_guard<std::mutex> g(txMutex);
     txBuffer.clear();
     return false;
   }
-  
   sendTxData();
   return true;
 }
 
 void BLESerial::sendTxData() {
-  if (!clientConnected || !pTxCharacteristic || txBuffer.empty()) {
+  if (!clientConnected || !pTxCharacteristic) {
     return;
   }
-  
-  // Send data in chunks to respect BLE MTU
-  // Note: We send all pending data in one loop iteration to maintain
-  // responsiveness. The BLE stack handles internal buffering.
-  while (!txBuffer.empty()) {
-    size_t chunkSize = min((size_t)BLE_SERIAL_TX_MAX_CHUNK, txBuffer.size());
-    
-    // Copy chunk to temporary buffer
-    uint8_t chunk[BLE_SERIAL_TX_MAX_CHUNK];
-    for (size_t i = 0; i < chunkSize; i++) {
-      chunk[i] = txBuffer[i];
-    }
-    
-    // Send via BLE notification
+  // Send at most one chunk per invocation to avoid overflowing the BLE queue
+  std::lock_guard<std::mutex> g(txMutex);
+  if (txBuffer.empty()) return;
+  size_t chunkSize = min((size_t)BLE_SERIAL_TX_MAX_CHUNK, txBuffer.size());
+  uint8_t chunk[BLE_SERIAL_TX_MAX_CHUNK];
+  for (size_t i = 0; i < chunkSize; i++) {
+    chunk[i] = txBuffer[i];
+  }
+  // Attempt to notify; if client disconnected mid-way, leave buffer intact
+  if (clientConnected) {
     pTxCharacteristic->setValue(chunk, chunkSize);
     pTxCharacteristic->notify();
-    
     // Remove sent data from buffer
     txBuffer.erase(txBuffer.begin(), txBuffer.begin() + chunkSize);
   }
@@ -227,6 +236,8 @@ void BLESerial::loop() {
 }
 
 void BLESerial::clear() {
+  std::lock_guard<std::mutex> g1(rxMutex);
+  std::lock_guard<std::mutex> g2(txMutex);
   rxBuffer.clear();
   txBuffer.clear();
 }

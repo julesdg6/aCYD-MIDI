@@ -226,9 +226,17 @@ if (bpm >= 40 && bpm <= 300) {
 
 ### 3. BLE Authentication
 
-**Existing:** BLE device uses security callbacks and static PIN (inherited from BLE MIDI)
+**Existing:** The firmware by default configures BLE security using a static PIN. This PIN is controlled by the build/runtime configuration option `BLESecurity::setStaticPIN()` in the headless startup code (see `src/main_headless.cpp`), and in development builds the PIN defaults to `123456` for convenience.
 
-**Note:** BLE Serial uses same security context as BLE MIDI
+**Recommendation:** Do not ship devices with the default static PIN. On first-run the device should prompt the user to change the PIN or the installer should provision a unique PIN. The static PIN value is set programmatically via `pSecurity->setStaticPIN(<value>)` — change this call to read from secure storage (or a config file) or generate and persist a random PIN on first boot.
+
+**Alternatives / Stronger Options:** Consider using stronger BLE authentication modes instead of a static PIN:
+- Just Works with encryption (no user input, but encrypted link)
+- Numeric Comparison (user verifies a displayed code on both devices)
+- Passkey Entry (user types a numeric passkey on one device)
+- Bonding with authenticated link keys (store long-term keys for trusted peers)
+
+Include an administrative note in your provisioning docs describing how to rotate or disable the static PIN in production, and provide steps to require users to change the default PIN at first setup.
 
 ## Testing Strategy
 
@@ -285,22 +293,45 @@ TX_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 RX_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 
 async def test_ble_serial():
-    devices = await BleakScanner.discover()
-    acyd = next(d for d in devices if "aCYD MIDI" in d.name)
-    
-    async with BleakClient(acyd) as client:
-        # Subscribe to TX
-        def handler(sender, data):
-            print(f"RX: {data.decode()}")
-        
-        await client.start_notify(TX_UUID, handler)
-        
-        # Send commands
-        await client.write_gatt_char(RX_UUID, b"status\n")
-        await asyncio.sleep(1)
-        
-        await client.write_gatt_char(RX_UUID, b"help\n")
-        await asyncio.sleep(1)
+  devices = await BleakScanner.discover()
+  acyd = next((d for d in devices if d.name and "aCYD MIDI" in d.name), None)
+  if acyd is None:
+    print("No aCYD MIDI device found during scan.")
+    return
+
+  from bleak import BleakError
+  client = BleakClient(acyd)
+  try:
+    await client.connect()
+    # Subscribe to TX
+    def handler(sender, data):
+      try:
+        print(f"RX: {data.decode()}")
+      except Exception as e:
+        print(f"Notification decode error: {e}")
+
+    await client.start_notify(TX_UUID, handler)
+
+    # Send commands (check write result where supported)
+    try:
+      await client.write_gatt_char(RX_UUID, b"status\n")
+      await asyncio.sleep(1)
+      await client.write_gatt_char(RX_UUID, b"help\n")
+      await asyncio.sleep(1)
+    except BleakError as e:
+      print(f"BLE write error: {e}")
+    finally:
+      try:
+        await client.stop_notify(TX_UUID)
+      except Exception:
+        pass
+  except BleakError as e:
+    print(f"BLE connection error: {e}")
+  finally:
+    try:
+      await client.disconnect()
+    except Exception:
+      pass
 
 asyncio.run(test_ble_serial())
 ```
