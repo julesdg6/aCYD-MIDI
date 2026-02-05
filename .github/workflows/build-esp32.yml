@@ -261,7 +261,7 @@ jobs:
               
               // Filter for failed jobs
               const failedJobs = jobs.data.jobs.filter(job => 
-                job.conclusion === 'failure' || job.status === 'completed' && job.conclusion !== 'success'
+                job.status === 'completed' && job.conclusion === 'failure'
               );
               
               if (failedJobs.length > 0) {
@@ -364,8 +364,8 @@ jobs:
             core.info(`✅ Created failure issue #${issue.data.number}: ${issue.data.html_url}`);
             
             // Link to parent issue if provided
-            const parent = process.env.PARENT_ISSUE || '${{ github.event.inputs.parent_issue }}' || '';
-            if (parent && parent !== '' && parent !== 'undefined') {
+            const parent = process.env.PARENT_ISSUE || '';
+            if (parent) {
               try {
                 const comment = `## 🔗 Automated CI Failure Sub-Issue Created
             
