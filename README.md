@@ -38,6 +38,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 ### Core Features
 
 - **Bluetooth MIDI** - Wireless connection to DAWs and music software
+- **BLE Serial** - Optional dual-service BLE (MIDI + Serial control/debug) for live parameter control, remote configuration, and debugging ([docs/BLE_SERIAL_USAGE.md](docs/BLE_SERIAL_USAGE.md))
 - **ESP-NOW MIDI** - Low-latency wireless MIDI networking between multiple CYD devices without pairing (<10ms latency, auto-discovery, MIDI clock sync) ([docs/ESP_NOW_MIDI.md](docs/ESP_NOW_MIDI.md))
 - **Hardware MIDI** - Dual BLE + DIN-5 output with selectable UART0 (production) or UART2 (development), conditional debug, and wiring/build guidance ([docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md), [docs/HARDWARE_MIDI_CONFIG.md](docs/HARDWARE_MIDI_CONFIG.md))
 - **Touchscreen Interface** - Intuitive visual controls optimized for the CYD display
@@ -73,6 +74,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
      - `firmware-esp32-2432S028Rv2` - Default (UART2 for development with debug)
      - `firmware-esp32-2432S028Rv2-uart0` - Production (UART0 for hardware MIDI, no debug)
      - `firmware-esp32-2432S028Rv2-uart2` - Explicit UART2 configuration
+     - `firmware-esp32-2432S028Rv2-ble-serial` - UART2 with BLE Serial enabled
      
      **ESP32-4832S035C (Capacitive Touch):**
      - `firmware-esp32-4832S035C` - Default (UART2 for development with debug)

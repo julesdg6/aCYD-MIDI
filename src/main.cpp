@@ -46,6 +46,11 @@
 #include "module_grids_mode.h"
 #include "esp_now_midi_module.h"
 
+#if ENABLE_BLE_SERIAL
+#include "ble_serial.h"
+#include "ble_serial_commands.h"
+#endif
+
 static uint32_t lv_last_tick = 0;
 static lv_obj_t *render_obj = nullptr;
 static bool ble_initialized = false;
@@ -277,6 +282,8 @@ void setupBLE() {
   BLEDevice::setSecurityCallbacks(new MyBLESecurityCallbacks());
   BLEServer *server = BLEDevice::createServer();
   server->setCallbacks(new MIDICallbacks());
+  
+  // Create BLE MIDI service
   BLEService *service = server->createService(SERVICE_UUID);
   pCharacteristic = service->createCharacteristic(
       CHARACTERISTIC_UUID,
@@ -287,8 +294,21 @@ void setupBLE() {
   pCharacteristic->addDescriptor(new BLE2902());
   pCharacteristic->setCallbacks(new MidiCharacteristicCallbacks());
   service->start();
+  
+#if ENABLE_BLE_SERIAL
+  // Create BLE Serial service (if enabled)
+  if (bleSerial.begin(server)) {
+    Serial.println("BLE Serial service started successfully");
+  } else {
+    Serial.println("BLE Serial service failed to start");
+  }
+#endif
+  
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(SERVICE_UUID);
+#if ENABLE_BLE_SERIAL
+  advertising->addServiceUUID(BLE_SERIAL_SERVICE_UUID);
+#endif
   advertising->setScanResponse(true);
   advertising->setMinPreferred(0x06);
   advertising->setMaxPreferred(0x12);
@@ -1145,6 +1165,14 @@ void loop() {
 #endif
 
   handleMidiTransports();
+
+#if ENABLE_BLE_SERIAL
+  // Process BLE Serial service
+  bleSerial.loop();
+  
+  // Process BLE Serial commands
+  processBLESerialCommands();
+#endif
 
   // Handle deferred BLE actions set by BLE callbacks (run in main loop)
   if (ble_disconnect_action) {
