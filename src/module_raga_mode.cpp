@@ -141,35 +141,54 @@ void drawRagaMode() {
   tft.fillScreen(THEME_BG);
   drawHeader("RAGA", "Indian Classical Scales", 3);
 
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Root: " + getNoteNameFromMIDI(raga.rootNote), MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(10), 1);
-  tft.drawString(raga.playing ? "Playing" : "Idle", DISPLAY_WIDTH - MARGIN_SMALL - SCALE_X(80), HEADER_HEIGHT + SCALE_Y(10), 1);
+  // Status line
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  String status = raga.playing ? "PLAYING" : "IDLE";
+  tft.drawString(status, MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(6), 2);
+  
   const TalaPattern &activePattern = getCurrentTalaPattern();
   int beatDisplay = (g_lastTalaBeatIndex >= 0) ? g_lastTalaBeatIndex + 1 : g_talaBeatIndex + 1;
   beatDisplay = ((beatDisplay - 1) % activePattern.beats) + 1;
-  tft.drawString("Tala: " + String(kTalaNames[static_cast<int>(raga.currentTala)]) + " " +
-                    String(beatDisplay) + "/" + String(activePattern.beats),
-                 MARGIN_SMALL, HEADER_HEIGHT + SCALE_Y(24), 1);
-
-  const int selectorSpacing = selectorRowSpacing();
-  const int ragaRowTop = HEADER_HEIGHT + SCALE_Y(30);
-  const SelectorLayout ragaLayout = computeSelectorLayout(ragaRowTop);
   tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Raga", MARGIN_SMALL, ragaLayout.y - SCALE_Y(18), 2);
-  drawRoundButton(ragaLayout.minusX, ragaLayout.y, ragaLayout.minusW, ragaLayout.height, "-", THEME_ERROR, false, 5);
+  tft.drawString(String(kTalaNames[static_cast<int>(raga.currentTala)]) + " " +
+                    String(beatDisplay) + "/" + String(activePattern.beats),
+                 DISPLAY_WIDTH - SCALE_X(90), HEADER_HEIGHT + SCALE_Y(6), 1);
+  tft.drawString("Root: " + getNoteNameFromMIDI(raga.rootNote), DISPLAY_WIDTH - SCALE_X(90), 
+                 HEADER_HEIGHT + SCALE_Y(18), 1);
+
+  // SECTION 1: Scale Selection (Raga and Tala)
+  const int sectionY = HEADER_HEIGHT + SCALE_Y(32);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("SCALE SELECTION", MARGIN_SMALL, sectionY, 2);
+  
+  const int selectorSpacing = SCALE_Y(14);  // Increased from 10
+  const int ragaRowTop = sectionY + SCALE_Y(18);
+  const SelectorLayout ragaLayout = computeSelectorLayout(ragaRowTop);
+  
+  // Raga selector
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Raga", MARGIN_SMALL, ragaLayout.y - SCALE_Y(16), 1);
+  drawRoundButton(ragaLayout.minusX, ragaLayout.y, ragaLayout.minusW, ragaLayout.height, "-", THEME_ERROR, false, 4);
   drawRoundButton(ragaLayout.valueX, ragaLayout.y, ragaLayout.valueW, ragaLayout.height,
                   String(kRagaNames[static_cast<int>(raga.currentRaga)]), THEME_PRIMARY, false, 4);
-  drawRoundButton(ragaLayout.plusX, ragaLayout.y, ragaLayout.plusW, ragaLayout.height, "+", THEME_SUCCESS, false, 5);
+  drawRoundButton(ragaLayout.plusX, ragaLayout.y, ragaLayout.plusW, ragaLayout.height, "+", THEME_SUCCESS, false, 4);
 
+  // Tala selector  
   const int talaRowTop = ragaLayout.y + ragaLayout.height + selectorSpacing;
   const SelectorLayout talaLayout = computeSelectorLayout(talaRowTop);
-  tft.drawString("Tala", MARGIN_SMALL, talaLayout.y - SCALE_Y(18), 2);
-  drawRoundButton(talaLayout.minusX, talaLayout.y, talaLayout.minusW, talaLayout.height, "-", THEME_ERROR, false, 5);
+  tft.drawString("Tala", MARGIN_SMALL, talaLayout.y - SCALE_Y(16), 1);
+  drawRoundButton(talaLayout.minusX, talaLayout.y, talaLayout.minusW, talaLayout.height, "-", THEME_ERROR, false, 4);
   drawRoundButton(talaLayout.valueX, talaLayout.y, talaLayout.valueW, talaLayout.height,
                   String(kTalaNames[static_cast<int>(raga.currentTala)]), THEME_ACCENT, false, 4);
-  drawRoundButton(talaLayout.plusX, talaLayout.y, talaLayout.plusW, talaLayout.height, "+", THEME_SUCCESS, false, 5);
+  drawRoundButton(talaLayout.plusX, talaLayout.y, talaLayout.plusW, talaLayout.height, "+", THEME_SUCCESS, false, 4);
 
-  const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
+  // SECTION 2: Playback Control
+  const int controlY = DISPLAY_HEIGHT - SCALE_Y(84);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("PLAYBACK", MARGIN_SMALL, controlY, 2);
+  
+  const int buttonsY = controlY + SCALE_Y(16);
+  
   // Play button: show STOP when playing, PENDING (orange) when start is pending,
   // otherwise show PLAY (green).
   const char *playLabel;
@@ -184,13 +203,15 @@ void drawRagaMode() {
     playLabel = "PLAY";
     playColor = THEME_SUCCESS;
   }
-  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35), playLabel, playColor);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35),
+  
+  int playBtnW = SCALE_X(70);
+  drawRoundButton(MARGIN_SMALL, buttonsY, playBtnW, SCALE_Y(44), playLabel, playColor, false, 2);
+  
+  // Drone control (grouped with playback)
+  int droneBtnW = SCALE_X(90);
+  drawRoundButton(MARGIN_SMALL + playBtnW + SCALE_X(8), buttonsY, droneBtnW, SCALE_Y(44),
                   raga.droneEnabled ? "DRONE ON" : "DRONE OFF",
-                  raga.droneEnabled ? THEME_SUCCESS : THEME_SECONDARY);
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("Scale: " + String(kRagaNames[static_cast<int>(raga.currentRaga)]),
-                 MARGIN_SMALL, controlY - SCALE_Y(15), 1);
+                  raga.droneEnabled ? THEME_SUCCESS : THEME_SURFACE, false, 2);
 }
 
 void toggleRagaPlayback() {
@@ -221,15 +242,20 @@ void handleRagaMode() {
     return;
   }
 
-  const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
+  // Playback controls (bottom section)
+  const int controlY = DISPLAY_HEIGHT - SCALE_Y(84);
+  const int buttonsY = controlY + SCALE_Y(16);
+  int playBtnW = SCALE_X(70);
+  
   if (touch.justPressed &&
-      isButtonPressed(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35) )) {
+      isButtonPressed(MARGIN_SMALL, buttonsY, playBtnW, SCALE_Y(44))) {
     toggleRagaPlayback();
     return;
   }
 
+  int droneBtnW = SCALE_X(90);
   if (touch.justPressed &&
-      isButtonPressed(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35))) {
+      isButtonPressed(MARGIN_SMALL + playBtnW + SCALE_X(8), buttonsY, droneBtnW, SCALE_Y(44))) {
     raga.droneEnabled = !raga.droneEnabled;
     requestRedraw();
     return;
@@ -239,8 +265,11 @@ void handleRagaMode() {
     return;
   }
 
-  const int ragaRowTop = HEADER_HEIGHT + SCALE_Y(30);
+  // Scale selection controls (upper section)
+  const int sectionY = HEADER_HEIGHT + SCALE_Y(32);
+  const int ragaRowTop = sectionY + SCALE_Y(18);
   SelectorLayout ragaLayout = computeSelectorLayout(ragaRowTop);
+  
   if (touch.justPressed && isButtonPressed(ragaLayout.minusX, ragaLayout.y, ragaLayout.minusW, ragaLayout.height)) {
     cycleRaga(-1);
     return;
@@ -250,8 +279,10 @@ void handleRagaMode() {
     return;
   }
 
-  const int talaRowTop = ragaLayout.y + ragaLayout.height + selectorRowSpacing();
+  const int selectorSpacing = SCALE_Y(14);
+  const int talaRowTop = ragaLayout.y + ragaLayout.height + selectorSpacing;
   SelectorLayout talaLayout = computeSelectorLayout(talaRowTop);
+  
   if (touch.justPressed && isButtonPressed(talaLayout.minusX, talaLayout.y, talaLayout.minusW, talaLayout.height)) {
     cycleTala(-1);
     return;
