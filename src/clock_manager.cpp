@@ -216,7 +216,8 @@ void updateClockManager() {
       uClockRunning = true;
       unlockClockManager();
     } else if (needStop) {
-      // Fix: Call uClock.stop() while uClockRunning is still true
+      // Set uClockRunning to false first to prevent new ticks from being processed,
+      // then call uClock.stop() to halt the clock
       lockClockManager();
       uClockRunning = false;
       unlockClockManager();
@@ -232,7 +233,8 @@ void updateClockManager() {
     }
     unlockClockManager();
     if (needStop) {
-      // Fix: Call uClock.stop() while uClockRunning is still true
+      // Set uClockRunning to false first to prevent new ticks from being processed,
+      // then call uClock.stop() to halt the clock
       lockClockManager();
       uClockRunning = false;
       unlockClockManager();
@@ -267,12 +269,16 @@ void updateClockManager() {
     unlockClockManager();
     
     // Detect counter wrap or reset: if tickCount < lastProcessedTick, treat as reset
-    if (currentTickCount < lastProcessedTick) {
+    // (but only if we didn't just handle a reset via the flag above)
+    if (!resetDetected && currentTickCount < lastProcessedTick) {
       lastProcessedTick = 0;
     }
+    resetDetected = false;  // Clear after first iteration
     
-    // Process ticks while pending or while we haven't caught up to current tick
-    if (pending || lastProcessedTick < currentTickCount) {
+    // Process ticks while we haven't caught up to current tick
+    // The pending flag indicates ISR has set a new tick value
+    if (lastProcessedTick < currentTickCount) {
+      // Clear pending flag since we're processing the tick
       if (pending) {
         lockClockManager();
         tickPending = false;
@@ -284,6 +290,12 @@ void updateClockManager() {
       sendMIDIClock();
       requestRedraw();
     } else {
+      // We've caught up; clear pending flag if it was set
+      if (pending) {
+        lockClockManager();
+        tickPending = false;
+        unlockClockManager();
+      }
       break;
     }
   }
