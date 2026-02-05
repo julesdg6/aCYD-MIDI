@@ -19,6 +19,7 @@ jobs:
           - esp32-2432S028Rv2
           - esp32-2432S028Rv2-uart2
           - esp32-2432S028Rv2-uart0
+          - esp32-2432S028Rv2-ble-serial
           - esp32-4832S035C
           - esp32-4832S035C-uart2
           - esp32-4832S035C-uart0
