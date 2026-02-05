@@ -75,11 +75,13 @@ showSplashScreen("Booting...", 400);
 showSplashScreen(String(), 500);
 
 // Could also use default delay (if no second arg)
-// showSplashScreen("Starting");
+// showSplashScreen("Starting");  // Valid; commented out as an example
 
 // Could use both defaults (if no args)
-// showSplashScreen();
+// showSplashScreen();            // Valid; commented out as an example
 ```
+
+Note: the commented examples above are valid call forms because `showSplashScreen` declares default parameters in the header; they are left commented to avoid accidental compilation in this sample.
 
 ## Verification
 

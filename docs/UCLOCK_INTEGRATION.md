@@ -6,7 +6,7 @@ This project uses the **uClock library** from the julesdg6 fork for professional
 
 ## Library Details
 
-- **Repository**: https://github.com/julesdg6/uClock
+- **Repository**: https://github.com/midilab/uClock
 - **Purpose**: Hardware timer-based BPM clock generator for MIDI applications
 - **Key Feature**: Fixed compatibility with ESP32 Arduino Core >= 3.0.0 (espressif32@6.10.0)
 
@@ -21,10 +21,52 @@ The original uClock library had compatibility issues with newer ESP32 Arduino Co
 
 ### Configuration
 
-**platformio.ini**:
+**platformio.ini** (recommend pinning to a tag or commit):
 ```ini
+# Pin the uClock dependency to a specific tag or commit for reproducible builds.
 lib_deps =
-    https://github.com/julesdg6/uClock.git
+    https://github.com/midilab/uClock.git#v1.0.0  ; replace with desired tag or commit
+```
+
+If you maintain a fork with ESP32 Arduino Core 3.x fixes, use that fork's URL and a pinned tag/commit instead.
+
+**ISR safety note (important)**
+
+uClock callbacks run in interrupt context. Callback implementations must be short and ISR-safe:
+
+- Do not call `Serial.print`/`Serial.println` inside callback functions.
+- Avoid blocking calls, dynamic memory allocation, and floating-point heavy work in callbacks.
+- Use atomic or ISR-safe flags (e.g., `volatile` or `std::atomic_bool`) to signal the main loop for deferred work.
+- Prefer to set a flag or enqueue a small ISR-safe message then perform logging or heavy work in the main loop.
+
+Example (ISR-safe pattern):
+
+```cpp
+// ISR callbacks should only set a flag
+volatile bool uClockStartedFlag = false;
+volatile bool uClockStoppedFlag = false;
+
+static void onClockStartCallback() {
+  uClockStartedFlag = true; // set flag only
+}
+
+static void onClockStopCallback() {
+  uClockStoppedFlag = true; // set flag only
+}
+
+// In the main loop or update function (non-ISR context)
+void updateClockManager() {
+  if (uClockStartedFlag) {
+    uClockStartedFlag = false;
+    // Safe to call Serial.println here
+    Serial.println("[uClock] Clock started");
+  }
+  if (uClockStoppedFlag) {
+    uClockStoppedFlag = false;
+    Serial.println("[uClock] Clock stopped");
+  }
+  // ...existing update logic...
+}
 ```
 
 ### Implementation

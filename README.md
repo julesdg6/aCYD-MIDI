@@ -231,7 +231,7 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 
 ## Releases
 
-- `docs/CHANGELOG.md` captures the public changelog for each version.
+- `CHANGELOG.md` captures the public changelog for each version.
 - `docs/RELEASE.md` documents the release process and checklist.
 - `docs/RELEASE_SUMMARY.md` maps the recent release work and high-level impact.
 - `docs/PR_SUMMARY.md` highlights the performance optimization branch that drives the current UI responsiveness.

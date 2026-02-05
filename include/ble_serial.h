@@ -8,6 +8,7 @@
 #include <BLE2902.h>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 // BLE Serial Service UUID (custom service)
 // Generated UUIDs for BLE Serial service
@@ -126,7 +127,7 @@ public:
 private:
   BLECharacteristic *pTxCharacteristic;
   BLECharacteristic *pRxCharacteristic;
-  bool clientConnected;
+  std::atomic<bool> clientConnected{false};
   
   // RX buffer (data received from BLE client)
   std::vector<uint8_t> rxBuffer;

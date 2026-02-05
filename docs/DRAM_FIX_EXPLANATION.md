@@ -67,7 +67,7 @@ spiffs,   data, spiffs,  0x3D0000,0x30000,
 
 #### 5. LVGL Memory Pool (Header default → 16KB; build override possible)
 **File**: `include/lv_conf.h`
-**Change**: Default `LV_MEM_SIZE` in the header is `(16 * 1024U)`. The project build flag (`-D LV_MEM_SIZE=24576` in `platformio.ini`) may override this to 24KB for specific build targets. See `platformio.ini` for the authoritative build-time setting used when building firmware.
+**Change**: The header default for `LV_MEM_SIZE` is `(16 * 1024U)` (16KB). The project currently sets a build-time override in `platformio.ini` with `-D LV_MEM_SIZE=24576` (24KB) for the active builds. In other words: build-time `LV_MEM_SIZE = 24KB` (from `platformio.ini`), header default `LV_MEM_SIZE = 16KB` (in `include/lv_conf.h`). See `include/lv_conf.h` and `platformio.ini` for the authoritative locations of these values.
 
 **Impact**: 
 - Savings: 8KB of DRAM
@@ -122,7 +122,7 @@ spiffs,   data, spiffs,  0x3D0000,0x30000,
 
 #### 10. Reduced Color Format Support
 **File**: `include/lv_conf.h`
-**Changes**: Disabled 7 unused color formats:
+**Changes**: Disabled 8 unused color formats:
 - `LV_DRAW_SW_SUPPORT_RGB565A8 = 0`
 - `LV_DRAW_SW_SUPPORT_XRGB8888 = 0`
 - `LV_DRAW_SW_SUPPORT_ARGB8888 = 0`

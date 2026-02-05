@@ -22,12 +22,12 @@ public:
   BLESerialServerCallbacks(BLESerial *serial) : pSerial(serial) {}
   
   void onConnect(BLEServer *server) override {
-    pSerial->clientConnected = true;
+    pSerial->clientConnected.store(true);
     Serial.println("BLE Serial client connected");
   }
   
   void onDisconnect(BLEServer *server) override {
-    pSerial->clientConnected = false;
+    pSerial->clientConnected.store(false);
     Serial.println("BLE Serial client disconnected");
   }
 
@@ -82,7 +82,8 @@ bool BLESerial::begin(BLEServer *server) {
   }
   pRxCharacteristic->setCallbacks(new BLESerialCallbacks(this));
   
-  // Register server callbacks so we receive connect/disconnect events
+  // Register server callbacks so we receive connect/disconnect events.
+  // Note: setCallbacks() gives ownership of callbacks to the server; ensure no other component relies on server-level callbacks
   server->setCallbacks(new BLESerialServerCallbacks(this));
   
   // Start the service
@@ -131,6 +132,8 @@ size_t BLESerial::readBytes(uint8_t *buffer, size_t length) {
 }
 
 size_t BLESerial::readLine(char *buffer, size_t maxLen) {
+  if (maxLen == 0) return 0;
+  // ensure room for null terminator
   std::lock_guard<std::mutex> g(rxMutex);
   size_t count = 0;
   while (count < maxLen - 1 && !rxBuffer.empty()) {
@@ -194,7 +197,7 @@ size_t BLESerial::println(const char *str) {
 }
 
 bool BLESerial::flush() {
-  if (!clientConnected || !pTxCharacteristic) {
+  if (!clientConnected.load() || !pTxCharacteristic) {
     // Clear buffer if not connected
     std::lock_guard<std::mutex> g(txMutex);
     txBuffer.clear();
@@ -205,7 +208,7 @@ bool BLESerial::flush() {
 }
 
 void BLESerial::sendTxData() {
-  if (!clientConnected || !pTxCharacteristic) {
+  if (!clientConnected.load() || !pTxCharacteristic) {
     return;
   }
   // Send at most one chunk per invocation to avoid overflowing the BLE queue
@@ -217,7 +220,7 @@ void BLESerial::sendTxData() {
     chunk[i] = txBuffer[i];
   }
   // Attempt to notify; if client disconnected mid-way, leave buffer intact
-  if (clientConnected) {
+  if (clientConnected.load()) {
     pTxCharacteristic->setValue(chunk, chunkSize);
     pTxCharacteristic->notify();
     // Remove sent data from buffer
@@ -226,13 +229,19 @@ void BLESerial::sendTxData() {
 }
 
 bool BLESerial::isConnected() {
-  return clientConnected;
+  return clientConnected.load();
 }
 
 void BLESerial::loop() {
-  // Auto-flush TX buffer periodically
+  // Auto-flush TX buffer periodically, check emptiness under mutex to avoid data race
   unsigned long now = millis();
-  if (!txBuffer.empty() && (now - lastFlushTime) >= FLUSH_INTERVAL_MS) {
+  bool needsFlush = false;
+  {
+    std::lock_guard<std::mutex> g(txMutex);
+    needsFlush = !txBuffer.empty() && (now - lastFlushTime) >= FLUSH_INTERVAL_MS;
+  }
+  if (needsFlush) {
+    // perform flush without holding txMutex to avoid deadlocks
     flush();
     lastFlushTime = now;
   }

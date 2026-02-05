@@ -79,13 +79,19 @@ def raga_to_midi(raga_name, bars=16, notes_per_bar=4, bpm=90,
         track.append(Message('note_off', note=note, velocity=0,
                              time=dur, channel=channel))
 
-    # Build a safe filename from the raga name to avoid path traversal
-    if filename is None:
-        base = os.path.basename(raga_name)
-        # Keep only alphanumerics, hyphen and underscore; replace others with '_'
-        safe = re.sub(r'[^A-Za-z0-9_-]', '_', base)
-        if not safe:
-            safe = 'raga'
+    # Build a safe filename from the incoming filename or raga name to avoid path traversal
+    base = os.path.basename(filename or raga_name)
+    name, ext = os.path.splitext(base)
+    # Keep only alphanumerics, hyphen and underscore; replace others with '_'
+    safe = re.sub(r'[^A-Za-z0-9_-]', '_', name)
+    if not safe:
+        safe = 'raga'
+    # Ensure .mid extension
+    if filename:
+        if ext.lower() != '.mid':
+            ext = '.mid'
+        filename = f"{safe}{ext}"
+    else:
         filename = f"{safe}_improv.mid"
     mid.save(filename)
     print(f"Saved {filename}")

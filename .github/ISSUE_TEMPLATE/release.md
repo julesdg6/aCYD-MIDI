@@ -48,7 +48,7 @@ assignees: ''
 
 ## Release Process
 
-See [RELEASE_CHECKLIST.md](../../RELEASE_CHECKLIST.md) for detailed steps.
+See [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md) for detailed steps.
 
 ## Post-Release Tasks
 

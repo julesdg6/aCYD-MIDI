@@ -1,5 +1,7 @@
 # aCYD-MIDI Examples
 
+DEPRECATION NOTICE: The BLE Serial example (`test_ble_serial.py`) is retained for historical/reference purposes only. BLE Serial support has been removed from the active build configuration; see `docs/BLE_SERIAL_USAGE.md` for details. Use the BLE-MIDI scripts and tools for current testing and automation.
+
 This directory contains example scripts and tools for working with aCYD-MIDI.
 
 ## BLE Serial Test Client

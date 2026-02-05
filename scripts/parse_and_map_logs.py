@@ -10,6 +10,9 @@ FMT = '%Y-%m-%dT%H:%M:%S.%f'
 
 def parse_ble():
     entries = []
+    if not os.path.exists(BLE_LOG):
+        print(f"BLE log not found: {BLE_LOG}", file=sys.stderr)
+        return entries
     with open(BLE_LOG, 'r') as f:
         for line in f:
             line=line.strip()
@@ -49,6 +52,9 @@ def parse_ble():
 
 def parse_serial():
     tb_entries = []
+    if not os.path.exists(SERIAL_LOG):
+        print(f"Serial log not found: {SERIAL_LOG}", file=sys.stderr)
+        return tb_entries
     with open(SERIAL_LOG,'r') as f:
         for line in f:
             if '[TB3PO]' in line:

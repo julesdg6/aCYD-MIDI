@@ -58,6 +58,27 @@ loop() {
 3. Keep existing UI code in default task
 4. Measure latency improvements
 
+Before creating `midiTask` and `uiTask`, create the shared queue used for inter-task updates and validate it succeeded. Example initialization (call from setup/initialization code):
+
+```cpp
+// Global or file-scope queue handle
+static QueueHandle_t uiUpdateQueue = NULL;
+
+// In initialization code (before starting tasks):
+uiUpdateQueue = xQueueCreate(32, sizeof(TouchEvent)); // 32-entry queue
+if (uiUpdateQueue == NULL) {
+  // Failed to create queue: handle gracefully (log and abort or retry)
+  Serial.println("Failed to create uiUpdateQueue");
+  // Handle error: halt startup or fall back to single-threaded mode
+}
+
+// Then create tasks and pass/extern uiUpdateQueue so tasks can use it
+// xTaskCreate(midiTask, "MIDI", MIDI_TASK_STACK_SIZE, NULL, MIDI_TASK_PRIORITY, NULL);
+// xTaskCreate(uiTask, "UI", UI_TASK_STACK_SIZE, NULL, UI_TASK_PRIORITY, NULL);
+```
+
+Ensure `uiUpdateQueue` is either a global/external symbol visible to both tasks or passed to tasks via the `pvParameters` argument so they use the same initialized queue. Check the returned `QueueHandle_t` for NULL and handle failures early to avoid tasks starting with an uninitialized queue.
+
 #### Phase 2: Inter-task Communication
 1. Implement lock-free FIFO queue for touch events
 2. Use FreeRTOS queue for state updates

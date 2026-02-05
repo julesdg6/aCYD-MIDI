@@ -26,7 +26,7 @@ import subprocess
 import signal
 import time
 from pathlib import Path
-# (shutil already imported at top)
+import shutil
 
 try:
     from bleak import BleakScanner, BleakClient
@@ -257,7 +257,6 @@ def _handle_signal(signum, frame):
     # Exit process; asyncio.run will be interrupted
     sys.exit(0)
 
-import shutil
 
 def main():
     parser = argparse.ArgumentParser()

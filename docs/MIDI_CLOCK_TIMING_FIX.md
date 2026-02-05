@@ -32,9 +32,10 @@ Replace integer millisecond math with **microsecond-precision accumulator**.
 ```cpp
 // NEW CODE (in updateClockManager)
 
-// 1. Calculate interval in microseconds (no truncation)
+// 1. Calculate interval in microseconds (integer division truncates fractional microseconds)
+// Note: this uses integer arithmetic and will truncate fractional microseconds (very small).
+// If true fractional microsecond accuracy is required, compute with floating-point or fixed-point and round.
 uint64_t intervalMicros = (60000000ULL / bpm) / CLOCK_TICKS_PER_QUARTER;
-// At 120 BPM: 20,833.33µs (exact!)
 
 // 2. Track elapsed time
 uint32_t nowMicros = micros();
@@ -57,8 +58,7 @@ while (microAccumulator >= intervalMicros) {
 
 **Microsecond Precision:**
 - `micros()` returns microseconds (1µs = 0.001ms)
-- Allows representing 20.833ms exactly as 20,833µs
-- No truncation or rounding errors
+- Using microsecond timestamps yields very high resolution for interval accumulation, but note that the integer division in the interval calculation can truncate fractional microseconds (for example, 20.833...ms → 20,833µs). This truncation is tiny (≈0.0016% per tick at 120 BPM) but does exist; if you need to preserve fractions of a microsecond use floating-point or fixed-point arithmetic and round to the desired resolution.
 
 **Accumulator Pattern:**
 - Tracks fractional time across calls

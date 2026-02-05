@@ -146,7 +146,7 @@ All mode handler functions updated to use `requestRedraw()` instead of calling f
 - `src/module_slink_mode.cpp` - 2 replacements
 - `src/module_tb3po_mode.cpp` - 6 replacements
 
-**Total**: 57 draw call optimizations across 14 mode files
+**Total**: 57 draw call optimizations across 16 mode files
 
 ## Performance Impact
 
@@ -180,7 +180,7 @@ When testing on hardware:
 - Well-documented changes
 
 ### Safety
-- Uses volatile for thread-safe flag
+- Uses `volatile` for a simple single-writer/single-reader flag in this design. Note: `volatile` does *not* provide atomicity or memory-ordering guarantees. In this code the pattern is a single writer (requesting context) and a single reader/clearer (the main loop), which is why `volatile` is acceptable here. For general multi-threaded access or multiple writers/readers, use `std::atomic<bool>` or appropriate synchronization primitives instead.
 - No breaking changes to public APIs
 - Backwards compatible
 

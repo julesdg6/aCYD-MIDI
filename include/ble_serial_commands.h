@@ -14,6 +14,8 @@ static const char* kModeNames[] = {
   "Raga", "Euclidean", "Morph"
 };
 
+static const size_t kNumModes = sizeof(kModeNames) / sizeof(kModeNames[0]);
+
 /**
  * Process BLE Serial commands
  * Call this from the main loop to handle incoming BLE Serial commands
@@ -30,15 +32,15 @@ inline void processBLESerialCommands() {
     return;
   }
   
-  // Convert to lowercase for case-insensitive matching
+  // Convert to lowercase for case-insensitive matching (cast to unsigned char to avoid UB)
   for (size_t i = 0; i < len; i++) {
-    command[i] = tolower(command[i]);
+    command[i] = tolower((unsigned char)command[i]);
   }
   
   // Status command
   if (strcmp(command, "status") == 0) {
     char response[256];
-    const char* modeName = (currentMode < 18) ? kModeNames[currentMode] : "Unknown";
+    const char* modeName = (currentMode >= 0 && currentMode < (int)kNumModes) ? kModeNames[currentMode] : "Unknown";
     snprintf(response, sizeof(response),
              "Mode: %s\nBPM: %d\nBLE MIDI: %s\nVersion: %s",
              modeName,
@@ -76,24 +78,11 @@ inline void processBLESerialCommands() {
   
   // List available modes
   else if (strcmp(command, "list modes") == 0) {
-    bleSerial.println("0: Menu");
-    bleSerial.println("1: Settings");
-    bleSerial.println("2: Keyboard");
-    bleSerial.println("3: Sequencer");
-    bleSerial.println("4: Bouncing Ball");
-    bleSerial.println("5: Physics Drop");
-    bleSerial.println("6: Random Generator");
-    bleSerial.println("7: XY Pad");
-    bleSerial.println("8: Arpeggiator");
-    bleSerial.println("9: Grid Piano");
-    bleSerial.println("10: Auto Chord");
-    bleSerial.println("11: LFO");
-    bleSerial.println("12: SLINK");
-    bleSerial.println("13: TB3PO");
-    bleSerial.println("14: Grids");
-    bleSerial.println("15: Raga");
-    bleSerial.println("16: Euclidean");
-    bleSerial.println("17: Morph");
+    for (size_t i = 0; i < kNumModes; ++i) {
+      char buf[64];
+      snprintf(buf, sizeof(buf), "%zu: %s", i, kModeNames[i]);
+      bleSerial.println(buf);
+    }
   }
   
   // Help command
