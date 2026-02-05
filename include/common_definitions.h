@@ -90,8 +90,9 @@ void initDisplayConfig();
 // only the BLE-MIDI service will be active. This forcibly sets the
 // compile-time flag to 0 to avoid accidentally compiling BLE-Serial
 // related code paths.
-#undef ENABLE_BLE_SERIAL
+#ifndef ENABLE_BLE_SERIAL
 #define ENABLE_BLE_SERIAL 0
+#endif
 
 // BLE MIDI UUIDs
 #define SERVICE_UUID        "03b80e5a-ede8-4b33-a751-6ce34ec4c700"
