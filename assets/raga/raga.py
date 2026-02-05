@@ -38,16 +38,20 @@ def generate_phrase(scale, length=16, start_octave=0):
 
 def raga_to_midi(raga_name, bars=16, notes_per_bar=4, bpm=90,
                  tonic=TONIC, filename=None, channel=0):
+    # Validate raga_name to provide helpful error messages to callers
+    if raga_name not in RAGAS:
+        available = ', '.join(sorted(RAGAS.keys()))
+        raise ValueError(f"Unknown raga '{raga_name}'. Available ragas: {available}")
     scale = RAGAS[raga_name]
     mid = MidiFile()
     track = MidiTrack()
     mid.tracks.append(track)
 
-    track.append(Message('program_change', program=0, time=0))  # Acoustic Grand
+    track.append(Message('program_change', program=0, time=0, channel=channel))  # Acoustic Grand
     ticks_per_beat = mid.ticks_per_beat
     dur = ticks_per_beat  # quarter notes
     tempo = bpm2tempo(bpm)
-    track.append(Message('control_change', control=7, value=100, time=0))  # volume
+    track.append(Message('control_change', control=7, value=100, time=0, channel=channel))  # volume
     # tempo meta
     from mido import MetaMessage
     track.append(MetaMessage('set_tempo', tempo=tempo, time=0))

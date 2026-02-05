@@ -16,7 +16,6 @@ static const uint8_t euclidRequestedTracks = 1;
 static volatile bool euclidAssignedFlag = false;
 
 // ISR callback for uClock step sequencer extension
-// ISR callback for uClock step sequencer extension
 static void onEuclidStepISR(uint32_t step, uint8_t track) {
   (void)step;
   if (euclidAssignedTrack == 0xFF) {
@@ -107,6 +106,12 @@ void initializeEuclideanMode() {
   euclidSync.reset();
   euclideanState.tripletMode = false;
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
+  
+  noInterrupts();
+  euclidStepCount = 0;
+  euclidAssignedTrack = 0xFF;
+  euclidAssignedFlag = false;
+  interrupts();
   
   // Step callback registration is done at startup via registerAllStepCallbacks().
   

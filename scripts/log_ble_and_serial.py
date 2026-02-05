@@ -56,40 +56,54 @@ async def run_ble_logger(out_path, device_addr=None):
         ts = datetime.datetime.now().isoformat()
         hexdata = data.hex()
         line = f"{ts} {sender} {hexdata}\n"
-        out_path.write_text(out_path.read_text() + line)
+        try:
+            with out_path.open("a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception:
+            pass
         print(line, end='')
 
+    # Try to find device if address not provided
     if device_addr is None:
-        dev = await find_midi_device()
+        dev = await find_midi_device(timeout=5.0)
         if dev is None:
             print("No BLE MIDI device found.")
             return
         device_addr = dev.address
 
-    print(f"Connecting to BLE device {device_addr}...")
-    async with BleakClient(device_addr) as client:
-        # Some bleak versions expose service discovery differently; avoid hard failure.
+    # Loop and reconnect on disconnect/errors
+    print(f"BLE logger loop starting for device {device_addr}...")
+    while True:
         try:
-            svcs = await client.get_services()
-            has_char = any(c.uuid.lower() == BLE_MIDI_CHAR for s in svcs for c in s.characteristics)
-        except Exception:
-            has_char = False
-        if not has_char:
-            print("Warning: device did not advertise MIDI char UUID. Continuing and attempting to subscribe...")
-        print(f"Subscribing to characteristic {BLE_MIDI_CHAR}...")
-        try:
-            await client.start_notify(BLE_MIDI_CHAR, handle_notification)
+            print(f"Connecting to BLE device {device_addr}...")
+            async with BleakClient(device_addr) as client:
+                try:
+                    svcs = await client.get_services()
+                    has_char = any(c.uuid.lower() == BLE_MIDI_CHAR for s in svcs for c in s.characteristics)
+                except Exception:
+                    has_char = False
+                if not has_char:
+                    print("Warning: device did not advertise MIDI char UUID. Continuing and attempting to subscribe...")
+                print(f"Subscribing to characteristic {BLE_MIDI_CHAR}...")
+                await client.start_notify(BLE_MIDI_CHAR, handle_notification)
+                print("BLE logger connected and subscribed. Waiting for notifications...")
+                # Stay connected until disconnected or exception
+                # Handle bleak versions where `is_connected` may be a coroutine or a boolean property
+                try:
+                    is_connected_callable = callable(getattr(client, "is_connected", None))
+                except Exception:
+                    is_connected_callable = False
+                if is_connected_callable:
+                    while await client.is_connected():
+                        await asyncio.sleep(1.0)
+                else:
+                    while client.is_connected:
+                        await asyncio.sleep(1.0)
+                print("BLE client disconnected, will attempt reconnect...")
         except Exception as e:
-            print(f"Failed to start notify on {BLE_MIDI_CHAR}: {e}")
-            raise
-        print("BLE logger running. Press Ctrl-C to stop.")
-        try:
-            while True:
-                await asyncio.sleep(1.0)
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await client.stop_notify(BLE_MIDI_CHAR)
+            print(f"BLE logger error: {e}")
+        # Wait a bit before reconnecting
+        await asyncio.sleep(2.0)
 
 serial_proc = None
 

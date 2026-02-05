@@ -108,7 +108,7 @@ def main():
         else:
             print(f'{i:3d} BLE {c[0].time()} -> no TB3PO match')
 
-    # Map first 50 BLE note-on events to TB3PO ticks
+    # Map first 100 BLE note-on events to TB3PO ticks
     print('\nSample mapping of BLE Note On events to TB3PO tick entries:')
     for i,n in enumerate(notes[:100]):
         nearest = find_nearest(serial, n[0])

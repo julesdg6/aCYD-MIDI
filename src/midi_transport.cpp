@@ -141,7 +141,7 @@ void midiTransportProcessIncomingBytes(const uint8_t *data, size_t length) {
 
 void sendWiFiMidiMessage(const uint8_t *data, size_t length) {
 #if WIFI_ENABLED
-  if (!isWiFiConnected() || length == 0) {
+  if (!isWiFiConnected() || data == nullptr || length == 0) {
     return;
   }
   wifiMidiUdp.beginPacket(kWifiMidiRemoteIP, kWifiMidiRemotePort);

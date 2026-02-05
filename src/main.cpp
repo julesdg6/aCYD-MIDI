@@ -316,7 +316,7 @@ void processSerialCommands() {
       String cmd = lineBuf;
       cmd.trim();
       lineBuf = "";
-      if (cmd.length() == 0) return;
+      if (cmd.length() == 0) continue;
       // Uppercase for simple compare
       for (size_t i = 0; i < cmd.length(); ++i) cmd[i] = toupper(cmd[i]);
       if (cmd.startsWith("MODE ")) {
@@ -1132,14 +1132,12 @@ void loop() {
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
     setupBLE();
     ble_initialized = true;
-    
-  #if ESP_NOW_ENABLED
+
   #if ESP_NOW_ENABLED
     // Initialize ESP-NOW after BLE to avoid conflicts
     Serial.println("ESP-NOW MIDI available (enable via Settings)");
   #endif
-  #endif
-    }
+  }
 
   updateTouch();
   updateHeaderCapture();
