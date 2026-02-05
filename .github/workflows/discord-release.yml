@@ -2,8 +2,8 @@ name: Notify Discord on Release
 
 on:
   release:
-    types: [published]
-
+    types: [published, prereleased, released]
+    
 jobs:
   discordNotification:
     runs-on: ubuntu-latest
