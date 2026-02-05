@@ -9,9 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify via Releasify
-        # NOTE: Pin this action to an immutable commit SHA for supply-chain safety.
-        # Replace <commit-sha> with the 40-character commit SHA from the teneplaysofficial/releasify-action repository.
-        uses: teneplaysofficial/releasify-action@<commit-sha>
+        uses: teneplaysofficial/releasify-action@v1
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           title: "🚀 New Release!"
