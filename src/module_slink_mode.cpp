@@ -170,8 +170,6 @@ void updateSlinkEngine() {
     
     // Process note offs
     processVoiceNoteOffs();
-    // Process note offs
-    processVoiceNoteOffs();
 }
 
 // ============================================================
@@ -1437,12 +1435,20 @@ void handleClockTab() {
         if (slink_state.clock_engine.note_len_min > 1000) {
             slink_state.clock_engine.note_len_min = 10;
         }
+        // Validate range: if min > max, clamp max to min
+        if (slink_state.clock_engine.note_len_min > slink_state.clock_engine.note_len_max) {
+            slink_state.clock_engine.note_len_max = slink_state.clock_engine.note_len_min;
+        }
         requestRedraw();
         return;
     } else if (isButtonPressed(MARGIN_SMALL + halfW + MARGIN_SMALL, noteY, halfW, SCALE_Y(38))) {
         slink_state.clock_engine.note_len_max += 50;
         if (slink_state.clock_engine.note_len_max > 2000) {
             slink_state.clock_engine.note_len_max = 50;
+        }
+        // Validate range: if max < min, clamp min to max
+        if (slink_state.clock_engine.note_len_max < slink_state.clock_engine.note_len_min) {
+            slink_state.clock_engine.note_len_min = slink_state.clock_engine.note_len_max;
         }
         requestRedraw();
         return;
