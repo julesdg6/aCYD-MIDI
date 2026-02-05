@@ -23,6 +23,7 @@ struct EuclideanState {
   uint8_t currentStep;
   bool tripletMode;
   bool pendingNoteRelease[EUCLIDEAN_VOICE_COUNT];
+  uint32_t tripletAccumulator;
 };
 
 extern EuclideanState euclideanState;

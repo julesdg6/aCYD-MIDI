@@ -83,6 +83,7 @@ void initializeEuclideanMode() {
   euclideanState.currentStep = 0;
   euclidSync.reset();
   euclideanState.tripletMode = false;
+  euclideanState.tripletAccumulator = 0;
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
   
   drawEuclideanMode();
@@ -175,29 +176,27 @@ void updateEuclideanSequencer() {
   
   if (justStarted) {
     euclideanState.currentStep = 0;
+    euclideanState.tripletAccumulator = 0;
   }
   
   if (!euclidSync.playing) {
     return;
   }
   
-  // Use consumeReadySteps instead of ISR callbacks for reliability
-  uint32_t readySteps = euclidSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
+  // Use consumeReadySteps with the appropriate tick interval based on triplet mode
+  uint32_t stepInterval = getEuclideanStepIntervalTicks();
+  uint32_t readySteps = euclidSync.consumeReadySteps(stepInterval);
   
   // Adjust for triplet mode if needed
   if (euclideanState.tripletMode) {
     // In triplet mode, we get more steps per 16th note
     // So we might need to accumulate more before advancing
-    static uint32_t tripletAccumulator = 0;
-    if (justStarted) {
-      tripletAccumulator = 0;
-    }
-    tripletAccumulator += readySteps;
+    euclideanState.tripletAccumulator += readySteps;
     // Advance every 1.5 steps (6 ticks per 16th in triplet vs 4 in straight)
     // This is approximate; actual timing handled by step interval
     uint32_t tripletDivisor = 3;  // Process every 3rd step in triplet mode
-    readySteps = tripletAccumulator / tripletDivisor;
-    tripletAccumulator %= tripletDivisor;
+    readySteps = euclideanState.tripletAccumulator / tripletDivisor;
+    euclideanState.tripletAccumulator %= tripletDivisor;
   }
   
   if (readySteps == 0) {
