@@ -39,6 +39,6 @@ void initializeTB3POMode();
 void drawTB3POMode();
 void handleTB3POMode();
 void updateTB3POPlayback();
-void registerTb3poStepCallback();
+void registerTB3POStepCallback();
 
 #endif // MODULE_TB3PO_MODE_H

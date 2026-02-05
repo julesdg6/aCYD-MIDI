@@ -44,6 +44,7 @@ bool addEspNowPeer(const uint8_t mac[6]);
 
 // Remove a peer by MAC address
 // Note: Not fully implemented - use clearEspNowPeers() and re-add peers instead
+[[deprecated("Not implemented - use clearEspNowPeers() instead")]]
 bool removeEspNowPeer(const uint8_t mac[6]);
 
 // Clear all peers

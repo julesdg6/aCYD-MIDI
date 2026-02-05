@@ -24,6 +24,7 @@ import os
 import datetime
 import subprocess
 import signal
+import time
 from pathlib import Path
 
 try:
@@ -51,7 +52,7 @@ async def find_midi_device(timeout=5.0):
             return d
     return None
 
-async def run_ble_logger(out_path, device_addr=None):
+async def run_ble_logger(out_path, device_addr=None, scan_time=5.0):
     async def handle_notification(sender, data: bytearray):
         ts = datetime.datetime.now().isoformat()
         hexdata = data.hex()
@@ -65,7 +66,7 @@ async def run_ble_logger(out_path, device_addr=None):
 
     # Try to find device if address not provided
     if device_addr is None:
-        dev = await find_midi_device(timeout=5.0)
+        dev = await find_midi_device(timeout=scan_time)
         if dev is None:
             print("No BLE MIDI device found.")
             return
@@ -118,28 +119,47 @@ def tail_serial(port, baud, out_path):
                 f.write(f"{datetime.datetime.now().isoformat()} SERIAL_MONITOR_STARTED pyserial on {port} @ {baud}\n")
         except Exception:
             pass
-        with pyserial.Serial(port, baud, timeout=1) as ser, open(out_path, "a", buffering=1) as f:
-            while True:
-                try:
-                    raw = ser.readline()
-                except Exception:
-                    raw = b""
-                if not raw:
-                    continue
-                try:
-                    line = raw.decode(errors='replace')
-                except Exception:
-                    line = str(raw)
-                ts = datetime.datetime.now().isoformat()
-                f.write(f"{ts} {line}")
-                print(line, end='')
+        # Open the serial port and keep reading. If errors occur, retry with backoff.
+        backoff = 0.5
+        max_backoff = 30.0
+        while True:
+            try:
+                with pyserial.Serial(port, baud, timeout=1) as ser, open(out_path, "a", buffering=1) as f:
+                    # reset backoff on successful open
+                    backoff = 0.5
+                    while True:
+                        try:
+                            raw = ser.readline()
+                        except Exception as e:
+                            print(f"Serial read error: {e}")
+                            break
+                        if not raw:
+                            # no data this iteration; loop again (read timeout=1s)
+                            continue
+                        try:
+                            line = raw.decode(errors='replace')
+                        except Exception:
+                            line = str(raw)
+                        ts = datetime.datetime.now().isoformat()
+                        try:
+                            f.write(f"{ts} {line}")
+                        except Exception:
+                            pass
+                        print(line, end='')
+            except Exception as e:
+                print(f"Serial monitor error/open failed: {e}")
+            # On error, sleep with exponential backoff then retry opening the port
+            print(f"Retrying serial monitor in {backoff} seconds...")
+            time.sleep(backoff)
+            backoff = min(backoff * 2.0, max_backoff)
     except Exception:
         # Fallback: prefer PlatformIO monitor if available, else cat the device
         pio_cmd = ["pio", "device", "monitor", "-p", port, "-b", str(baud)]
         if shutil.which("pio"):
             cmd = pio_cmd
         else:
-            cmd = ["/usr/bin/env", "sh", "-c", f"cat {port}"]
+            # Use direct exec of cat with argv list to avoid shell interpolation
+            cmd = ["cat", port]
 
         print(f"Starting serial monitor subprocess: {' '.join(cmd)}")
         # Open subprocess and stream to file
@@ -194,6 +214,10 @@ def main():
     ble_log.write_text("")
     serial_log.write_text("")
 
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGTERM, _handle_signal)
+
     try:
         # Start serial monitor in a thread/process (optional)
         import threading
@@ -203,7 +227,7 @@ def main():
             serial_thread.start()
 
         # Run BLE logger in asyncio using asyncio.run for modern Python
-        coro = run_ble_logger(ble_log, device_addr=args.ble_addr)
+        coro = run_ble_logger(ble_log, device_addr=args.ble_addr, scan_time=args.scan_time)
         try:
             asyncio.run(coro)
         except KeyboardInterrupt:

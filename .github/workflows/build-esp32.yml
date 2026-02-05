@@ -63,14 +63,19 @@ jobs:
 
       - name: Build firmware for ${{ matrix.env }}
         run: pio run -e ${{ matrix.env }}
+      - name: Prepare firmware artifacts for upload (${{ matrix.env }})
+        run: |
+          mkdir -p .pio/build/${{ matrix.env }}/artifacts
+          if [ -f .pio/build/${{ matrix.env }}/firmware.bin ]; then cp .pio/build/${{ matrix.env }}/firmware.bin .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin; fi
+          if [ -f .pio/build/${{ matrix.env }}/firmware.elf ]; then cp .pio/build/${{ matrix.env }}/firmware.elf .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf; fi
 
       - name: Upload firmware artifact (${{ matrix.env }})
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.env }}
           path: |
-            .pio/build/${{ matrix.env }}/firmware.bin
-            .pio/build/${{ matrix.env }}/firmware.elf
+            .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin
+            .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf
           if-no-files-found: error
 
   release:

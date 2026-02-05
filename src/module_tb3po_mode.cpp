@@ -337,7 +337,7 @@ void initializeTB3POMode() {
   drawTB3POMode();
 }
 
-void registerTb3poStepCallback() {
+void registerTB3POStepCallback() {
   uClock.setOnStep(onTb3poStepISR, 1);
 }
 

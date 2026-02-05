@@ -40,7 +40,7 @@ void sendHardwareMIDISingle(uint8_t byte1) {
 
 // BLE MIDI setup (minimal, no display dependencies)
 BLECharacteristic *pCharacteristic = nullptr;
-bool deviceConnected = false;
+volatile bool deviceConnected = false;
 uint8_t midiPacket[5] = {0x80, 0x80, 0, 0, 0};
 
 class MIDICallbacks : public BLEServerCallbacks {
@@ -92,6 +92,9 @@ void setupBLE() {
 
 unsigned long lastClock = 0;
 uint32_t clockTick = 0;
+// Track ESP-NOW initialization success to avoid calling esp_now_send when
+// ESP-NOW failed to initialize in setup(). Defaults to false.
+static bool espNowInitialized = false;
 
 void setup() {
   Serial.begin(115200);
@@ -108,17 +111,19 @@ void setup() {
   Serial.println("Step 4: esp_now_init()");
   if (esp_now_init() != ESP_OK) {
     Serial.println("ESP-NOW init failed");
-    return;
+    espNowInitialized = false;
+  } else {
+    espNowInitialized = true;
+    Serial.println("Step 5: Add ESP-NOW peer");
+    esp_now_peer_info_t peerInfo = {};
+    memset(peerInfo.peer_addr, 0xFF, 6);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.println("ESP-NOW add peer failed");
+    }
+    Serial.println("Step 6: Setup complete");
   }
-  Serial.println("Step 5: Add ESP-NOW peer");
-  esp_now_peer_info_t peerInfo = {};
-  memset(peerInfo.peer_addr, 0xFF, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("ESP-NOW add peer failed");
-  }
-  Serial.println("Step 6: Setup complete");
 }
 
 
@@ -137,9 +142,11 @@ void sendMidiClock() {
   }
   // Hardware MIDI
   sendHardwareMIDISingle(0xF8);
-  // ESP-NOW
-  uint8_t wifiClock = 0xF8;
-  esp_now_send(NULL, &wifiClock, 1);
+  // ESP-NOW (only if initialized)
+  if (espNowInitialized) {
+    uint8_t wifiClock = 0xF8;
+    esp_now_send(NULL, &wifiClock, 1);
+  }
   // USB Serial debug
   Serial.println("MIDI Clock");
 }
@@ -152,8 +159,10 @@ void sendMidiStart() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFA);
-  uint8_t wifiStart = 0xFA;
-  esp_now_send(NULL, &wifiStart, 1);
+  if (espNowInitialized) {
+    uint8_t wifiStart = 0xFA;
+    esp_now_send(NULL, &wifiStart, 1);
+  }
   Serial.println("MIDI Start");
 }
 void sendMidiStop() {
@@ -165,8 +174,10 @@ void sendMidiStop() {
     pCharacteristic->notify();
   }
   sendHardwareMIDISingle(0xFC);
-  uint8_t wifiStop = 0xFC;
-  esp_now_send(NULL, &wifiStop, 1);
+  if (espNowInitialized) {
+    uint8_t wifiStop = 0xFC;
+    esp_now_send(NULL, &wifiStop, 1);
+  }
   Serial.println("MIDI Stop");
 }
 

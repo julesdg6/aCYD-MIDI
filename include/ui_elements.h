@@ -59,13 +59,13 @@ inline void drawRoundButton(int x, int y, int w, int h, String text, uint16_t co
   tft.drawCentreString(text, x + w/2, textY, textFont);
 }
 
-static inline void drawWifiIndicator(int x, int y, uint16_t color) {
+static inline void drawWifiIndicator(int x, int y, uint16_t color, uint16_t bgColor = THEME_SURFACE) {
   const int radii[] = {SCALE_X(3), SCALE_X(5), SCALE_X(7)};
   for (int radius : radii) {
     tft.drawCircle(x, y, radius, color);
   }
   tft.fillCircle(x, y, SCALE_X(2), color);
-  tft.fillRect(x - radii[2], y, radii[2] * 2 + 1, radii[2], THEME_SURFACE);
+  tft.fillRect(x - radii[2], y, radii[2] * 2 + 1, radii[2], bgColor);
 }
 
 static inline void drawBluetoothIndicator(int x, int y, uint16_t color) {

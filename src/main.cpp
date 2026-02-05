@@ -174,7 +174,7 @@ void registerAllStepCallbacks() {
   // Register step callbacks for modules that use uClock step extension.
   // Declarations live in each module's header; calling these ensures
   // the ISR callbacks are registered before the clock can start.
-  registerTb3poStepCallback();
+  registerTB3POStepCallback();
   registerArpStepCallback();
   registerEuclidStepCallback();
   registerRandomStepCallback();

@@ -9,8 +9,8 @@
  * features. Key memory-constrained settings:
  * 
  * - LV_MEM_SIZE: 16KB (LVGL heap for UI objects)
- * - LV_DRAW_LAYER_SIMPLE_BUF_SIZE: 16KB (layer buffering)
- * - LV_DRAW_THREAD_STACK_SIZE: 4KB (drawing thread stack)
+ * - LV_DRAW_LAYER_SIMPLE_BUF_SIZE: 8KB (layer buffering)
+ * - LV_DRAW_THREAD_STACK_SIZE: 2KB (drawing thread stack)
  * 
  * DO NOT increase these values without careful testing, as it may cause
  * DRAM overflow and build failures. If adding new features that require

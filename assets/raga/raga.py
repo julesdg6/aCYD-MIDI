@@ -1,5 +1,5 @@
 # raga_midi.py
-from mido import Message, MidiFile, MidiTrack, bpm2tempo
+from mido import Message, MidiFile, MidiTrack, bpm2tempo, MetaMessage
 import random
 
 TONIC = 60  # Sa = C4
@@ -53,7 +53,6 @@ def raga_to_midi(raga_name, bars=16, notes_per_bar=4, bpm=90,
     tempo = bpm2tempo(bpm)
     track.append(Message('control_change', control=7, value=100, time=0, channel=channel))  # volume
     # tempo meta
-    from mido import MetaMessage
     track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
 
     total_notes = bars * notes_per_bar
