@@ -85,14 +85,6 @@ void initDisplayConfig();
 #define BOARD_NAME "esp32-2432S028Rv2"
 #endif
 
-// BLE Serial support has proven unreliable in practice for this project
-// and is therefore disabled. Do NOT enable BLE Serial; if BLE is enabled
-// only the BLE-MIDI service will be active. This forcibly sets the
-// compile-time flag to 0 to avoid accidentally compiling BLE-Serial
-// related code paths.
-#undef ENABLE_BLE_SERIAL
-#define ENABLE_BLE_SERIAL 0
-
 // BLE MIDI UUIDs
 #define SERVICE_UUID        "03b80e5a-ede8-4b33-a751-6ce34ec4c700"
 #define CHARACTERISTIC_UUID "7772e5db-3868-4112-a1a9-f2669d106bf3"
