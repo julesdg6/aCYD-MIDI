@@ -120,7 +120,7 @@ void drawSettingsMode() {
   const int buttonHeight = SCALE_Y(44);
   const int buttonSpacing = SCALE_X(6);
   const int bpmRowY = layout.bpmRowY - settingsScrollOffset;
-  if (bpmRowY >= layout.viewTop && bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) {
+  if (bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = bpmRowY - SCALE_Y(18);
     tft.drawString("Shared Tempo", rowInnerLeft, labelY, 2);
@@ -136,7 +136,7 @@ void drawSettingsMode() {
   }
 
   const int clockRowY = layout.clockRowY - settingsScrollOffset;
-  if (clockRowY >= layout.viewTop && clockRowY + compactRowHeight() > layout.viewTop && clockRowY < viewBottom) {
+  if (clockRowY + compactRowHeight() > layout.viewTop && clockRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = clockRowY - SCALE_Y(18);
     tft.drawString("Clock Master", rowInnerLeft, labelY, 2);
@@ -145,9 +145,7 @@ void drawSettingsMode() {
   }
 
   const int startModeRowY = layout.startModeRowY - settingsScrollOffset;
-  if (startModeRowY >= layout.viewTop &&
-      startModeRowY + compactRowHeight() > layout.viewTop &&
-      startModeRowY < viewBottom) {
+  if (startModeRowY + compactRowHeight() > layout.viewTop && startModeRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = startModeRowY - SCALE_Y(18);
     tft.drawString("Start Mode", rowInnerLeft, labelY, 2);
@@ -157,14 +155,14 @@ void drawSettingsMode() {
   }
 
   const int wifiRowY = layout.wifiRowY - settingsScrollOffset;
-  if (wifiRowY >= layout.viewTop && wifiRowY + statusRowHeight() > layout.viewTop && wifiRowY < viewBottom) {
+  if (wifiRowY + statusRowHeight() > layout.viewTop && wifiRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT, THEME_SURFACE);
     String wifiStatus = "WiFi: " + String(isWiFiConnected() ? "Connected" : "Offline");
     tft.drawString(wifiStatus, rowInnerLeft, wifiRowY, 2);
   }
 
   const int btRowY = layout.bluetoothRowY - settingsScrollOffset;
-  if (btRowY >= layout.viewTop && btRowY + statusRowHeight() > layout.viewTop && btRowY < viewBottom) {
+  if (btRowY + statusRowHeight() > layout.viewTop && btRowY < viewBottom) {
     tft.setTextColor(THEME_TEXT, THEME_SURFACE);
     String btStatus = "Bluetooth MIDI: " + String(deviceConnected ? "Connected" : "Idle");
     tft.drawString(btStatus, rowInnerLeft, btRowY, 2);
