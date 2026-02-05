@@ -5,6 +5,21 @@ All notable changes to aCYD-MIDI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Dual BLE Services**: BLE MIDI + BLE Serial (UART-style) running concurrently over single connection
+  - Optional compile-time flag `ENABLE_BLE_SERIAL` (disabled by default)
+  - Stream-like API with read/write/print/println operations
+  - Nordic UART Service (NUS) UUIDs for maximum compatibility
+  - 256-byte RX/TX buffers with overflow protection
+  - Auto-flush mechanism (20ms intervals) for rate limiting
+  - Non-blocking operations to keep MIDI real-time safe
+  - Example command interface (status, BPM control, mode queries)
+  - Comprehensive documentation and Python test client
+  - New build environment: `esp32-2432S028Rv2-ble-serial`
+  - See [docs/BLE_SERIAL_USAGE.md](docs/BLE_SERIAL_USAGE.md) for complete documentation
+
 ## [0.0.3] - 2026-02-05
 
 ### Added
