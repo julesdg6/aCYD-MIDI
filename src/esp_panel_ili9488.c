@@ -173,6 +173,23 @@ esp_err_t ili9488_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, 
     y_start += ph->y_gap;
     y_end += ph->y_gap;
 
+    // Clamp coordinates to 16-bit range to prevent overflow in CASET/RASET assembly
+    if (x_start < 0) x_start = 0;
+    if (x_start > 0xFFFF) x_start = 0xFFFF;
+    if (x_end < 0) x_end = 0;
+    if (x_end > 0xFFFF) x_end = 0xFFFF;
+    if (y_start < 0) y_start = 0;
+    if (y_start > 0xFFFF) y_start = 0xFFFF;
+    if (y_end < 0) y_end = 0;
+    if (y_end > 0xFFFF) y_end = 0xFFFF;
+
+    // Ensure valid ranges after clamping
+    if (x_end <= x_start || y_end <= y_start)
+    {
+        log_w("Invalid coordinate range after clamping: x[%d,%d) y[%d,%d)", x_start, x_end, y_start, y_end);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_err_t res;
     const uint8_t caset[4] = {x_start >> 8, x_start, (x_end - 1) >> 8, (x_end - 1)};
     const uint8_t raset[4] = {y_start >> 8, y_start, (y_end - 1) >> 8, (y_end - 1)};
@@ -184,7 +201,8 @@ esp_err_t ili9488_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, 
     }
 
     uint8_t bytes_per_pixel = (ph->config.bits_per_pixel + 0x7) >> 3;
-    size_t len = (x_end - x_start) * (y_end - y_start) * bytes_per_pixel;
+    // Use size_t casts to prevent overflow in length calculation
+    size_t len = (size_t)(x_end - x_start) * (size_t)(y_end - y_start) * (size_t)bytes_per_pixel;
     if ((res = esp_lcd_panel_io_tx_color(ph->io, LCD_CMD_RAMWR, color_data, len)) != ESP_OK)
     {
         log_e("Sending RAMWR failed");

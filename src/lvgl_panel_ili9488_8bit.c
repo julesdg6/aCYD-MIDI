@@ -42,7 +42,12 @@ lv_display_t *lvgl_lcd_init(void)
         .sram_trans_align = 64};
 
     esp_lcd_i80_bus_handle_t i80_bus;
-    ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&i80_bus_config, &i80_bus));
+    esp_err_t rc = esp_lcd_new_i80_bus(&i80_bus_config, &i80_bus);
+    if (rc != ESP_OK) {
+        log_e("Failed to create I80 bus: %s", esp_err_to_name(rc));
+        lv_display_delete(display);
+        return NULL;
+    }
 
     const esp_lcd_panel_io_i80_config_t io_i80_config = {
         .cs_gpio_num = GPIO_NUM_NC,
@@ -65,7 +70,13 @@ lv_display_t *lvgl_lcd_init(void)
             .pclk_idle_low = !ILI9488_8BIT_PCLK_IDLE_HIGH}};
 
     esp_lcd_panel_io_handle_t io_handle;
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_i80_config, &io_handle));
+    rc = esp_lcd_new_panel_io_i80(i80_bus, &io_i80_config, &io_handle);
+    if (rc != ESP_OK) {
+        log_e("Failed to create panel IO: %s", esp_err_to_name(rc));
+        esp_lcd_del_i80_bus(i80_bus);
+        lv_display_delete(display);
+        return NULL;
+    }
 
     const esp_lcd_panel_dev_config_t panel_dev_config = {
         .reset_gpio_num = GPIO_NUM_NC,
@@ -75,7 +86,14 @@ lv_display_t *lvgl_lcd_init(void)
             .reset_active_high = ILI9488_DEV_CONFIG_FLAGS_RESET_ACTIVE_HIGH},
         .vendor_config = NULL};
     esp_lcd_panel_handle_t panel_handle;
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9488(io_handle, &panel_dev_config, &panel_handle));
+    rc = esp_lcd_new_panel_ili9488(io_handle, &panel_dev_config, &panel_handle);
+    if (rc != ESP_OK) {
+        log_e("Failed to create ILI9488 panel: %s", esp_err_to_name(rc));
+        esp_lcd_panel_io_del(io_handle);
+        esp_lcd_del_i80_bus(i80_bus);
+        lv_display_delete(display);
+        return NULL;
+    }
 
     lvgl_setup_panel(panel_handle);
     display->user_data = panel_handle;
