@@ -256,7 +256,7 @@ void updateClockManager() {
   // Handle any pending ticks (deferred from ISR). Do this after start/stop logic
   // so heavy work runs in task context and won't trigger the interrupt WDT.
   // Process ticks with wrap/reset detection.
-  bool firstIteration = true;
+  bool isFirstIterationAfterReset = resetDetected;
   while (true) {
     bool pending = false;
     uint32_t currentTickCount = 0;
@@ -266,14 +266,14 @@ void updateClockManager() {
     unlockClockManager();
     
     // Detect counter wrap or reset: if tickCount < lastProcessedTick, treat as reset.
-    // Skip wrap detection on first iteration if we already processed a reset flag,
+    // Skip wrap detection on first iteration after a reset flag was processed,
     // to avoid incorrectly treating the reset as a wrap.
     if (currentTickCount < lastProcessedTick) {
-      if (!firstIteration || !resetDetected) {
+      if (!isFirstIterationAfterReset) {
         lastProcessedTick = 0;
       }
     }
-    firstIteration = false;
+    isFirstIterationAfterReset = false;
     
     // Process ticks while we haven't caught up to current tick
     // The pending flag indicates ISR has set a new tick value
