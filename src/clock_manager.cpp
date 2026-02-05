@@ -265,35 +265,38 @@ void updateClockManager() {
     currentTickCount = tickCount;
     unlockClockManager();
     
-    // Detect counter wrap or reset: if tickCount < lastProcessedTick, treat as reset
-    // (but only if we didn't just handle a reset via the flag above on first iteration)
-    if (!(firstIteration && resetDetected) && currentTickCount < lastProcessedTick) {
-      lastProcessedTick = 0;
+    // Detect counter wrap or reset: if tickCount < lastProcessedTick, treat as reset.
+    // Skip wrap detection on first iteration if we already processed a reset flag,
+    // to avoid incorrectly treating the reset as a wrap.
+    if (currentTickCount < lastProcessedTick) {
+      if (!firstIteration || !resetDetected) {
+        lastProcessedTick = 0;
+      }
     }
     firstIteration = false;
     
     // Process ticks while we haven't caught up to current tick
     // The pending flag indicates ISR has set a new tick value
+    bool didProcessTick = false;
     if (lastProcessedTick < currentTickCount) {
-      // Clear pending flag since we're processing the tick
-      if (pending) {
-        lockClockManager();
-        tickPending = false;
-        unlockClockManager();
-      }
-      
       // Process one tick at a time to avoid blocking the main loop for too long.
       // This allows other tasks to run between tick processing.
       lastProcessedTick++;
+      didProcessTick = true;
+    }
+    
+    // Clear pending flag if we read it as true
+    if (pending) {
+      lockClockManager();
+      tickPending = false;
+      unlockClockManager();
+    }
+    
+    // If we processed a tick, send MIDI and request redraw, then continue loop
+    if (didProcessTick) {
       sendMIDIClock();
       requestRedraw();
     } else {
-      // We've caught up; clear pending flag if it was set
-      if (pending) {
-        lockClockManager();
-        tickPending = false;
-        unlockClockManager();
-      }
       break;
     }
   }
