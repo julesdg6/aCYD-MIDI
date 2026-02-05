@@ -823,7 +823,8 @@ void handleSlinkMode() {
 // UI Implementation
 // ============================================================
 
-static constexpr int kSlinkTabsPerRow = 4;
+// Put all 7 tabs on a single row - they'll be smaller but clearer
+static constexpr int kSlinkTabsPerRow = 7;  // Changed from 4 to 7
 static constexpr int kSlinkTabCount = SLINK_TAB_SETUP + 1;
 static const char *const kSlinkTabLabels[kSlinkTabCount] = {
     "MAIN",
@@ -944,25 +945,42 @@ void drawMainTab() {
     drawSlinkTabBar();
 
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
-    int waveHeight = SCALE_Y(70);
-    int waveSpacing = SCALE_Y(10);
-    drawWaveVisualization(contentY, waveHeight, &slink_state.wave_trigger, THEME_WARNING, "WAVE A");
-    drawWaveVisualization(contentY + waveHeight + waveSpacing, waveHeight, &slink_state.wave_pitch, THEME_ACCENT, "WAVE B");
+    
+    // Wave toggle buttons at top
+    int toggleW = SCALE_X(70);
+    int toggleH = SCALE_Y(32);
+    int toggleY = contentY;
+    drawRoundButton(MARGIN_SMALL, toggleY, toggleW, toggleH, "WAVE A",
+                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A ? THEME_WARNING : THEME_SURFACE, 
+                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A, 2);
+    drawRoundButton(MARGIN_SMALL + toggleW + SCALE_X(6), toggleY, toggleW, toggleH, "WAVE B",
+                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_B ? THEME_ACCENT : THEME_SURFACE,
+                    slink_state.main_subpage == SLINK_SUBPAGE_WAVE_B, 2);
+    
+    // Draw selected wave visualization - LARGER since we only show one
+    int waveY = toggleY + toggleH + SCALE_Y(10);
+    int waveHeight = SCALE_Y(110);  // Much larger - was 70px
+    
+    if (slink_state.main_subpage == SLINK_SUBPAGE_WAVE_A) {
+        drawWaveVisualization(waveY, waveHeight, &slink_state.wave_trigger, THEME_WARNING, "WAVE A (Trigger)");
+    } else {
+        drawWaveVisualization(waveY, waveHeight, &slink_state.wave_pitch, THEME_ACCENT, "WAVE B (Pitch)");
+    }
 
-    int bandY = contentY + 2 * (waveHeight + waveSpacing) + SCALE_Y(8);
+    // Band toggles below wave
+    int bandY = waveY + waveHeight + SCALE_Y(12);
     drawBandToggles(bandY);
 
-    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(12);
+    // Helper buttons at bottom - all on one row
+    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(10);
     for (int i = 0; i < 6; i++) {
         int x, y, w, h;
         getHelperButtonRect(i, helperY, x, y, w, h);
         drawRoundButton(x, y, w, h, kMainHelperLabels[i], kMainHelperColors[i], false, 2);
     }
 
-    int helperRows = 1;  // Changed from 2 rows to 1 row
-    int helperSpacingY = SCALE_Y(6);
-    int helperBlockHeight = helperRows * SCALE_Y(36) + (helperRows - 1) * helperSpacingY;
-    int statusY = helperY + helperBlockHeight + SCALE_Y(12);
+    // Status line at bottom
+    int statusY = helperY + SCALE_Y(42);
     char statusBuf[64];
     snprintf(statusBuf, sizeof(statusBuf), "BPM:%d | Voices:%d/%d",
              sharedBPM,
@@ -1280,9 +1298,27 @@ int countActiveVoices() {
 
 void handleMainTab() {
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
-    int waveHeight = SCALE_Y(70);
-    int waveSpacing = SCALE_Y(10);
-    int bandY = contentY + 2 * (waveHeight + waveSpacing) + SCALE_Y(8);
+    
+    // Handle wave toggle buttons
+    int toggleW = SCALE_X(70);
+    int toggleH = SCALE_Y(32);
+    int toggleY = contentY;
+    
+    if (isButtonPressed(MARGIN_SMALL, toggleY, toggleW, toggleH)) {
+        slink_state.main_subpage = SLINK_SUBPAGE_WAVE_A;
+        requestRedraw();
+        return;
+    }
+    if (isButtonPressed(MARGIN_SMALL + toggleW + SCALE_X(6), toggleY, toggleW, toggleH)) {
+        slink_state.main_subpage = SLINK_SUBPAGE_WAVE_B;
+        requestRedraw();
+        return;
+    }
+    
+    // Calculate positions based on new layout
+    int waveY = toggleY + toggleH + SCALE_Y(10);
+    int waveHeight = SCALE_Y(110);
+    int bandY = waveY + waveHeight + SCALE_Y(12);
 
     for (int i = 0; i < SLINK_BANDS; i++) {
         int x, y, w, h;
@@ -1294,7 +1330,7 @@ void handleMainTab() {
         }
     }
 
-    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(12);
+    int helperY = bandY + getBandToggleRowCount() * (getBandToggleHeight() + getBandToggleSpacing()) + SCALE_Y(10);
     for (int i = 0; i < 6; i++) {
         int x, y, w, h;
         getHelperButtonRect(i, helperY, x, y, w, h);
