@@ -8,6 +8,9 @@ on:
       - "v*"
   pull_request:
 
+permissions:
+  issues: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -63,21 +66,35 @@ jobs:
         run: pio --version
 
       - name: Build firmware for ${{ matrix.env }}
-        run: pio run -e ${{ matrix.env }}
+        run: |
+          set -o pipefail
+          mkdir -p .pio/build/${{ matrix.env }}
+          pio run -e ${{ matrix.env }} 2>&1 | tee .pio/build/${{ matrix.env }}/build.log
+
       - name: Prepare firmware artifacts for upload (${{ matrix.env }})
+        if: always()
         run: |
           mkdir -p .pio/build/${{ matrix.env }}/artifacts
           if [ -f .pio/build/${{ matrix.env }}/firmware.bin ]; then cp .pio/build/${{ matrix.env }}/firmware.bin .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin; fi
           if [ -f .pio/build/${{ matrix.env }}/firmware.elf ]; then cp .pio/build/${{ matrix.env }}/firmware.elf .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf; fi
 
       - name: Upload firmware artifact (${{ matrix.env }})
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.env }}
           path: |
             .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin
             .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf
-          if-no-files-found: error
+          if-no-files-found: ignore
+
+      - name: Upload build log (${{ matrix.env }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.env }}
+          path: .pio/build/${{ matrix.env }}/build.log
+          if-no-files-found: ignore
 
   release:
     needs: build
@@ -104,3 +121,53 @@ jobs:
           files: release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  report_failure:
+    needs: build
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: failure_artifacts
+
+      - name: Create CI failure issue with logs
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const artifactDir = 'failure_artifacts';
+            let body = `CI build failure on run: ${runUrl}\n\nArtifacts uploaded to the workflow run.\n\n`;
+            if (fs.existsSync(artifactDir)) {
+              const files = fs.readdirSync(artifactDir);
+              if (files.length) {
+                body += 'Artifacts:\n';
+                for (const f of files) {
+                  body += `- ${f}\n`;
+                }
+                body += '\n---\n\n';
+                for (const f of files) {
+                  if (f.endsWith('.log')) {
+                    try {
+                      const content = fs.readFileSync(path.join(artifactDir, f), 'utf8');
+                      const snippet = content.slice(0, 16000);
+                      body += `### ${f}\n\n\`\`\`\n${snippet}\n\`\`\`\n\n`;
+                    } catch (e) {
+                      body += `Failed to read ${f}: ${e.message}\n`;
+                    }
+                  }
+                }
+              }
+            }
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `CI: build failure (${process.env.GITHUB_REF} - run ${process.env.GITHUB_RUN_NUMBER})`,
+              body,
+              labels: ['ci-failure']
+            });
+            console.log('Created issue #' + issue.data.number);
