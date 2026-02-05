@@ -1,6 +1,5 @@
 #include "module_raga_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 #include <Arduino.h>
 #include <algorithm>
@@ -112,18 +111,6 @@ static int g_talaBeatIndex = 0;
 static int g_lastTalaBeatIndex = -1;
 static SequencerSyncState ragaSync;
 
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t ragaStepCount = 0;
-static const uint8_t ragaTrackIndex = 4;
-
-// ISR callback for uClock step sequencer extension
-static void onRagaStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (track == ragaTrackIndex) {
-    ragaStepCount++;
-  }
-}
-
 static bool updateRagaTempo();
 static void generateRagaPhrase();
 static void scheduleNextNote(unsigned long now);
@@ -148,9 +135,6 @@ void initializeRagaMode() {
   g_activeTempo = 0;
   ragaSync.reset();
   updateRagaTempo();
-  
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  uClock.setOnStep(onRagaStepISR, 1);
 }
 
 void drawRagaMode() {
@@ -186,9 +170,21 @@ void drawRagaMode() {
   drawRoundButton(talaLayout.plusX, talaLayout.y, talaLayout.plusW, talaLayout.height, "+", THEME_SUCCESS, false, 5);
 
   const int controlY = DISPLAY_HEIGHT - SCALE_Y(45);
-  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35),
-                  raga.playing ? "STOP" : "PLAY",
-                  raga.playing ? THEME_ERROR : THEME_SUCCESS);
+  // Play button: show STOP when playing, PENDING (orange) when start is pending,
+  // otherwise show PLAY (green).
+  const char *playLabel;
+  uint16_t playColor;
+  if (ragaSync.playing) {
+    playLabel = "STOP";
+    playColor = THEME_ERROR;
+  } else if (ragaSync.startPending) {
+    playLabel = "PENDING";
+    playColor = THEME_SECONDARY;
+  } else {
+    playLabel = "PLAY";
+    playColor = THEME_SUCCESS;
+  }
+  drawRoundButton(MARGIN_SMALL, controlY, SCALE_X(70), SCALE_Y(35), playLabel, playColor);
   drawRoundButton(MARGIN_SMALL + SCALE_X(78), controlY, SCALE_X(80), SCALE_Y(35),
                   raga.droneEnabled ? "DRONE ON" : "DRONE OFF",
                   raga.droneEnabled ? THEME_SUCCESS : THEME_SECONDARY);
@@ -314,6 +310,7 @@ static void scheduleNextNote(unsigned long now) {
   uint8_t accent = pattern.accents[beat];
   uint8_t velocity = std::min<uint8_t>(127, static_cast<uint8_t>(100 + accent * 8));
   sendMIDI(0x90, note, velocity);
+  Serial.printf("[RAGA] NoteOn note=%u vel=%u beat=%d\n", note, velocity, beat);
   g_currentNote = note;
   g_noteActive = true;
   g_noteOffTime = now + g_noteDurationMs;
@@ -324,6 +321,7 @@ static void scheduleNextNote(unsigned long now) {
 static void stopCurrentNote() {
   if (g_noteActive) {
     sendMIDI(0x80, g_currentNote, 0);
+    Serial.printf("[RAGA] NoteOff note=%u\n", g_currentNote);
     g_noteActive = false;
   }
 }
@@ -333,13 +331,16 @@ static void updateDroneNote() {
     if (!g_droneActive || g_droneNote != raga.rootNote) {
       if (g_droneActive) {
         sendMIDI(0x80, g_droneNote, 0);
+        Serial.printf("[RAGA] DroneOff note=%u\n", g_droneNote);
       }
       g_droneNote = raga.rootNote;
       sendMIDI(0x90, g_droneNote, 80);
+      Serial.printf("[RAGA] DroneOn note=%u vel=%u\n", g_droneNote, 80);
       g_droneActive = true;
     }
   } else if (g_droneActive) {
     sendMIDI(0x80, g_droneNote, 0);
+    Serial.printf("[RAGA] DroneOff note=%u\n", g_droneNote);
     g_droneActive = false;
   }
 }
@@ -358,30 +359,37 @@ static void updateRagaPlayback() {
   updateRagaTempo();
   updateDroneNote();
 
+  bool wasPlaying = ragaSync.playing;
   ragaSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = ragaSync.playing && !wasPlaying;
   raga.playing = ragaSync.playing;
+
+  // Use time-based note scheduling instead of step-based
+  static unsigned long lastNoteTime = 0;
+  
+  if (justStarted) {
+    lastNoteTime = 0;  // Reset timer on start
+    resetPhraseState();
+  }
 
   if (!raga.playing) {
     return;
   }
 
-  // Get steps from uClock step extension (ISR-safe)
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = ragaStepCount;
-  ragaStepCount = 0;
-  interrupts();
+  // Raga uses time-based scheduling, not step-based
+  unsigned long now = millis();
   
-  if (readySteps == 0) {
-    return;
-  }
-
-  for (uint32_t i = 0; i < readySteps; ++i) {
-    unsigned long loopNow = millis();
-    if (g_noteActive && loopNow >= g_noteOffTime) {
+  // Check if it's time to play the next note
+  if (lastNoteTime == 0 || now - lastNoteTime >= g_noteIntervalMs) {
+    if (g_noteActive && now >= g_noteOffTime) {
       stopCurrentNote();
     }
-    scheduleNextNote(loopNow);
+    scheduleNextNote(now);
+    lastNoteTime = now;
+    Serial.printf("[RAGA] played note, interval=%ums\n", g_noteIntervalMs);
+  } else if (g_noteActive && now >= g_noteOffTime) {
+    // Still turn off notes even if not scheduling new ones
+    stopCurrentNote();
   }
 }
 

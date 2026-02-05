@@ -87,6 +87,25 @@ If something goes wrong:
 - [ ] Increment patch version
 - [ ] Start release process again
 
+**Reverting a pushed release commit**
+
+If the release commit (for example `Prepare release vX.Y.Z`) was already pushed to `main`, you have two common options:
+
+- Revert the released commit and push the revert to `main` (recommended when the release must be undone):
+  ```bash
+  # If the release commit is the most recent commit on main
+  git revert HEAD
+  git push origin main
+
+  # Or revert a specific commit
+  git revert <commit-hash>
+  git push origin main
+  ```
+
+- Alternatively, leave the commit on `main` and fix the issues in a follow-up commit then bump the next release version (acceptable when issues are minor and a hotfix release is planned).
+
+Choose the approach appropriate for your release policy and communicate it to maintainers.
+
 ## Version Numbering Guide
 
 Following [Semantic Versioning](https://semver.org/):

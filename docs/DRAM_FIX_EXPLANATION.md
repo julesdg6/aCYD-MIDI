@@ -65,9 +65,9 @@ spiffs,   data, spiffs,  0x3D0000,0x30000,
 
 ### Phase 2: Aggressive LVGL Optimization (~13KB additional savings)
 
-#### 5. Reduced LVGL Memory Pool (40KB → 32KB)
+#### 5. LVGL Memory Pool (Header default → 16KB; build override possible)
 **File**: `include/lv_conf.h`
-**Change**: Line 87, `LV_MEM_SIZE` from `(40 * 1024U)` to `(32 * 1024U)`
+**Change**: Default `LV_MEM_SIZE` in the header is `(16 * 1024U)`. The project build flag (`-D LV_MEM_SIZE=24576` in `platformio.ini`) may override this to 24KB for specific build targets. See `platformio.ini` for the authoritative build-time setting used when building firmware.
 
 **Impact**: 
 - Savings: 8KB of DRAM

@@ -236,9 +236,28 @@ void updatePhysics() {
     return;
   }
   static unsigned long lastUpdate = 0;
-  
+  static unsigned long lastAutoSpawn = 0;
+  static bool wasInPlatformMode = true; // Track mode changes
+
   if (millis() - lastUpdate < 50) return; // 20 FPS to reduce flicker
-  
+
+  // Reset auto-spawn timer when entering drop mode
+  if (wasInPlatformMode && !platformMode) {
+    lastAutoSpawn = millis();
+  }
+  wasInPlatformMode = platformMode;
+
+  // Auto-spawn balls every 2 seconds if not in platform mode and below max
+  if (!platformMode && numActiveDropBalls < MAX_DROP_BALLS) {
+    if (millis() - lastAutoSpawn > 2000) {
+      // Spawn at random X position at top
+      int spawnX = random(SCALE_X(60), SCALE_X(260));
+      int spawnY = SCALE_Y(70);
+      spawnDropBall(spawnX, spawnY);
+      lastAutoSpawn = millis();
+    }
+  }
+
   for (int i = 0; i < MAX_DROP_BALLS; i++) {
     if (!dropBalls[i].active) continue;
     

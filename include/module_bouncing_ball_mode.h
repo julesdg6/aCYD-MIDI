@@ -15,7 +15,7 @@ struct Ball {
   bool active;
 };
 
-#define MAX_BALLS 4
+#define MAX_BALLS 16
 
 // Simple wall system - notes triggered by wall hits
 struct Wall {

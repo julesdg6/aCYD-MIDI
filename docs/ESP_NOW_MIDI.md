@@ -2,7 +2,7 @@
 
 ## Overview
 
-ESP-NOW MIDI enables low-latency wireless MIDI communication between multiple CYD devices without requiring Bluetooth pairing or Wi-Fi association. This feature allows you to create distributed MIDI setups with multiple CYD controllers working together.
+ESP-NOW MIDI enables low-latency wireless MIDI communication between multiple CYD (Cheap Yellow Display) devices without requiring Bluetooth pairing or Wi-Fi association. This feature allows you to create distributed MIDI setups with multiple CYD controllers working together.
 
 ## Features
 
@@ -87,7 +87,10 @@ ESP-NOW can act as a MIDI clock source:
 
 **Clock Master Options:**
 - **Internal Clock**: Device generates its own tempo
-- **WiFi MIDI**: Sync to Wi-Fi MIDI clock
+**Clock Master Options:**
+- **Internal Clock**: Device generates its own tempo
+- **Wi-Fi MIDI**: Sync to Wi-Fi MIDI clock
+- **BLE MIDI**: Sync to Bluetooth MIDI clock
 - **BLE MIDI**: Sync to Bluetooth MIDI clock
 - **Hardware MIDI**: Sync to DIN MIDI clock
 - **ESP-NOW MIDI**: Sync to ESP-NOW MIDI clock

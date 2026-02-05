@@ -136,8 +136,15 @@ static inline void triggerDrum(uint8_t note, bool trigger, uint8_t velocity) {
 }
 
 void updateGridsPlayback() {
+  bool wasPlaying = gridsSync.playing;
   gridsSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = gridsSync.playing && !wasPlaying;
   grids.playing = gridsSync.playing;
+  
+  if (justStarted) {
+    grids.step = 0;
+  }
+  
   if (!grids.playing) {
     return;
   }
@@ -147,6 +154,7 @@ void updateGridsPlayback() {
     return;
   }
 
+  // Process all ready steps for tight timing
   for (uint32_t i = 0; i < readySteps; ++i) {
     bool kickTrigger = grids.kickPattern[grids.step] >= (255 - grids.kickDensity);
     bool snareTrigger = grids.snarePattern[grids.step] >= (255 - grids.snareDensity);
@@ -192,9 +200,9 @@ void drawGridsMode() {
   tft.fillCircle(markerX, markerY, SCALE_X(5), THEME_TEXT);
   tft.drawCircle(markerX, markerY, SCALE_X(6), THEME_TEXT);
   
-  // Show current step position if playing
+  // Show current step position if playing - positioned just above the slider area
   if (grids.playing) {
-    int stepIndicatorY = sliderY - SCALE_Y(20);
+    int stepIndicatorY = sliderY - SCALE_Y(8);  // Moved closer to bottom, just above sliders
     int stepW = SCALE_X(18);
     int stepSpacing = SCALE_X(1);
     int stepStartX = padX + (padSize - (GRIDS_STEPS * (stepW + stepSpacing) - stepSpacing)) / 2;
@@ -225,10 +233,13 @@ void drawGridsMode() {
   int buttonY = padY;
   drawRoundButton(controlX, buttonY, controlW, buttonH, grids.playing ? "STOP" : "PLAY", THEME_PRIMARY);
   buttonY += buttonH + buttonSpacing;
-  drawRoundButton(controlX, buttonY, controlW, buttonH, "BPM-", THEME_SECONDARY);
+  
+  // BPM buttons side by side with half width each
+  int halfButtonW = (controlW - buttonSpacing) / 2;
+  drawRoundButton(controlX, buttonY, halfButtonW, buttonH, "BPM-", THEME_SECONDARY);
+  drawRoundButton(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH, "BPM+", THEME_SECONDARY);
   buttonY += buttonH + buttonSpacing;
-  drawRoundButton(controlX, buttonY, controlW, buttonH, "BPM+", THEME_SECONDARY);
-  buttonY += buttonH + buttonSpacing;
+  
   drawRoundButton(controlX, buttonY, controlW, buttonH, "RNDM", THEME_ACCENT);
   buttonY += buttonH + buttonSpacing;
 
@@ -292,10 +303,13 @@ void handleGridsMode() {
 
   bool playPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
   buttonY += buttonH + buttonSpacing;
-  bool bpmDownPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
+  
+  // BPM buttons side by side with half width each
+  int halfButtonW = (controlW - buttonSpacing) / 2;
+  bool bpmDownPressed = isButtonPressed(controlX, buttonY, halfButtonW, buttonH);
+  bool bpmUpPressed = isButtonPressed(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH);
   buttonY += buttonH + buttonSpacing;
-  bool bpmUpPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
-  buttonY += buttonH + buttonSpacing;
+  
   bool randomPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
   buttonY += buttonH + buttonSpacing;
 

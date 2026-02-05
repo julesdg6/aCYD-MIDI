@@ -87,8 +87,13 @@ bool addEspNowPeer(const char* macAddress) {
   if (sscanf(macAddress, "%x:%x:%x:%x:%x:%x",
              &values[0], &values[1], &values[2],
              &values[3], &values[4], &values[5]) == 6) {
+    // Validate parsed values are within 0..255 to avoid silent truncation
     for (int i = 0; i < 6; i++) {
-      mac[i] = (uint8_t)values[i];
+      if (values[i] < 0 || values[i] > 0xFF) {
+        Serial.printf("[ESP-NOW] Invalid MAC byte value %d in '%s'\n", values[i], macAddress);
+        return false;
+      }
+      mac[i] = static_cast<uint8_t>(values[i]);
     }
     return espNowMIDI.addPeer(mac);
   }
@@ -210,9 +215,10 @@ void onEspNowNoteOn(byte channel, byte note, byte velocity) {
     midiPacket[3] = note;
     midiPacket[4] = velocity;
     pCharacteristic->setValue(midiPacket, 5);
-  // Route to Hardware MIDI
-  sendHardwareMIDI(status, note, velocity);
+    pCharacteristic->notify();
+  }
   
+  // Route to Hardware MIDI
   sendHardwareMIDI(status, note, velocity);
   
   Serial.printf("[ESP-NOW RX] Note On: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
@@ -233,8 +239,11 @@ void onEspNowNoteOff(byte channel, byte note, byte velocity) {
   }
   
   // Route to Hardware MIDI
+  // Route to Hardware MIDI
   sendHardwareMIDI(status, note, velocity);
-  sendHardwareMIDI(status, note, velocity);
+  
+  Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
+}
   
   Serial.printf("[ESP-NOW RX] Note Off: Ch=%d, Note=%d, Vel=%d\n", channel, note, velocity);
 }

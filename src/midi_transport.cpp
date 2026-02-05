@@ -134,6 +134,9 @@ void midiTransportProcessIncomingBytes(const uint8_t *data, size_t length) {
   if (midiClockMaster != CLOCK_BLE) {
     return;
   }
+  if (data == nullptr || length == 0) {
+    return;
+  }
   for (size_t i = 0; i < length; ++i) {
     processTransportByte(data[i]);
   }
@@ -141,7 +144,7 @@ void midiTransportProcessIncomingBytes(const uint8_t *data, size_t length) {
 
 void sendWiFiMidiMessage(const uint8_t *data, size_t length) {
 #if WIFI_ENABLED
-  if (!isWiFiConnected() || length == 0) {
+  if (!isWiFiConnected() || data == nullptr || length == 0) {
     return;
   }
   wifiMidiUdp.beginPacket(kWifiMidiRemoteIP, kWifiMidiRemotePort);

@@ -1,24 +1,11 @@
 #include "module_euclidean_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 #include <algorithm>
 #include <cstring>
 
 EuclideanState euclideanState;
 static SequencerSyncState euclidSync;
-
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t euclidStepCount = 0;
-static const uint8_t euclidTrackIndex = 2;
-
-// ISR callback for uClock step sequencer extension
-static void onEuclidStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (track == euclidTrackIndex) {
-    euclidStepCount++;
-  }
-}
 
 // Y offset from bottom of display where control buttons are drawn.
 static const int CONTROL_Y_OFFSET = SCALE_Y(50);
@@ -97,9 +84,6 @@ void initializeEuclideanMode() {
   euclidSync.reset();
   euclideanState.tripletMode = false;
   std::memset(euclideanState.pendingNoteRelease, 0, sizeof(euclideanState.pendingNoteRelease));
-  
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  uClock.setOnStep(onEuclidStepISR, 1);
   
   drawEuclideanMode();
 }
@@ -185,24 +169,29 @@ void drawEuclideanMode() {
 }
 
 void updateEuclideanSequencer() {
+  bool wasPlaying = euclidSync.playing;
   euclidSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = euclidSync.playing && !wasPlaying;
+  
+  if (justStarted) {
+    euclideanState.currentStep = 0;
+  }
+  
   if (!euclidSync.playing) {
     return;
   }
   
-  // Get steps from uClock step extension (ISR-safe)
-  // For triplet mode, we need to handle differently based on division
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = euclidStepCount;
-  euclidStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = euclidSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   // Adjust for triplet mode if needed
   if (euclideanState.tripletMode) {
     // In triplet mode, we get more steps per 16th note
     // So we might need to accumulate more before advancing
     static uint32_t tripletAccumulator = 0;
+    if (justStarted) {
+      tripletAccumulator = 0;
+    }
     tripletAccumulator += readySteps;
     // Advance every 1.5 steps (6 ticks per 16th in triplet vs 4 in straight)
     // This is approximate; actual timing handled by step interval
@@ -214,6 +203,8 @@ void updateEuclideanSequencer() {
   if (readySteps == 0) {
     return;
   }
+
+  Serial.printf("[EUCLID] readySteps=%u currentStep=%u\n", readySteps, euclideanState.currentStep);
 
   for (uint32_t i = 0; i < readySteps; ++i) {
     releaseEuclideanNotes();

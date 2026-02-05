@@ -7,11 +7,20 @@ static SequencerSyncState tb3poSync;
 
 // ISR-safe step counter from uClock step extension
 static volatile uint32_t tb3poStepCount = 0;
-static const uint8_t tb3poTrackIndex = 0;
+// runtime-assigned base track
+static volatile uint8_t tb3poAssignedTrack = 0xFF;
+static const uint8_t tb3poRequestedTracks = 1;
+static volatile bool tb3poAssignedFlag = false;
 
 static void onTb3poStepISR(uint32_t step, uint8_t track) {
   (void)step;
-  if (track == tb3poTrackIndex) {
+  if (tb3poAssignedTrack == 0xFF) {
+    tb3poAssignedTrack = track;
+    tb3poAssignedFlag = true;
+    tb3poStepCount++;
+    return;
+  }
+  if (track >= tb3poAssignedTrack && track < tb3poAssignedTrack + tb3poRequestedTracks) {
     tb3poStepCount++;
   }
 }
@@ -149,12 +158,22 @@ void updateTB3POPlayback() {
                   tb3po.step, elapsedMs);
     tb3po.step = 0;
     tb3po.currentNote = -1;
+    // Clear any accumulated steps to prevent catch-up notes
+    if (tb3po.useInternalClock) {
+      noInterrupts();
+      tb3poStepCount = 0;
+      interrupts();
+    }
   }
   if (!tb3poSync.playing) {
     return;
   }
   uint32_t readySteps = 0;
   if (tb3po.useInternalClock) {
+    if (tb3poAssignedFlag) {
+      Serial.printf("[TB3PO] assignedTrack=%u requested=%u\n", (unsigned)tb3poAssignedTrack, (unsigned)tb3poRequestedTracks);
+      tb3poAssignedFlag = false;
+    }
     noInterrupts();
     readySteps = tb3poStepCount;
     tb3poStepCount = 0;
@@ -169,18 +188,29 @@ void updateTB3POPlayback() {
   for (uint32_t i = 0; i < readySteps; ++i) {
     uint32_t currentTick = clockManagerGetTickCount();
     bool gated = stepIsGated(tb3po.step);
-    Serial.printf("[TB3PO] tick=%u step=%u gate=%d playing=%d\n", currentTick, tb3po.step, gated,
+    bool slid = stepIsSlid(tb3po.step);
+    Serial.printf("[TB3PO] tick=%u step=%u gate=%d slide=%d playing=%d\n", currentTick, tb3po.step, gated, slid,
                   tb3poSync.playing);
-    if (tb3po.currentNote >= 0) {
+    
+    // Only send note-off if not sliding
+    if (tb3po.currentNote >= 0 && !slid) {
       sendMIDI(0x80, tb3po.currentNote, 0);
       tb3po.currentNote = -1;
     }
+    
     if (gated) {
       int note = getMIDINoteForStep(tb3po.step);
       int velocity = stepIsAccent(tb3po.step) ? 127 : 100;
+      
+      // If sliding and note is different, send note-off for old note first
+      if (slid && tb3po.currentNote >= 0 && tb3po.currentNote != note) {
+        sendMIDI(0x80, tb3po.currentNote, 0);
+      }
+      
       sendMIDI(0x90, note, velocity);
       tb3po.currentNote = note;
     }
+    
     tb3po.step++;
     if (tb3po.step >= tb3po.numSteps) {
       tb3po.step = 0;
@@ -309,9 +339,12 @@ void initializeTB3POMode() {
   tb3po.bpm = 120.0f;
   tb3po.useInternalClock = true;
   regenerateAll();
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  uClock.setOnStep(onTb3poStepISR, 1);
+  // Step callback registration is done at startup via registerAllStepCallbacks().
   drawTB3POMode();
+}
+
+void registerTB3POStepCallback() {
+  uClock.setOnStep(onTb3poStepISR, 1);
 }
 
 void handleTB3POMode() {

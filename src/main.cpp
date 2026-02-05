@@ -164,6 +164,18 @@ HardwareSerial MIDISerial(2);
 // Forward declarations for functions used before their definitions
 void switchMode(AppMode mode);
 void requestRedraw();
+// Serial command processing for automated tests / CLI
+void processSerialCommands();
+// Registration helper to ensure uClock step callbacks are registered early
+void registerAllStepCallbacks();
+
+// Implementations
+void registerAllStepCallbacks() {
+  // Register step callbacks for modules that use uClock step extension.
+  // Only TB-3PO currently uses ISR-based step counting.
+  // All other modules use consumeReadySteps() for direct clock manager queries.
+  registerTB3POStepCallback();
+}
 
 // Generate unique device name based on MAC address
 String getUniqueDeviceName() {
@@ -279,9 +291,61 @@ void setupBLE() {
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->setScanResponse(true);
   advertising->setMinPreferred(0x06);
-  advertising->setMinPreferred(0x12);
+  advertising->setMaxPreferred(0x12);
   BLEDevice::startAdvertising();
   Serial.printf("BLE advertising initialized for %s\n", deviceName.c_str());
+}
+
+// Minimal serial CLI to support automated testing. Commands (case-insensitive):
+// MODE <name>        -> switch to mode (e.g., MODE RAGA)
+// MODULE START RAGA   -> switch to mode and start Raga (uses toggleRagaPlayback)
+// MODULE STOP RAGA    -> stop Raga
+// Any unknown command is ignored.
+void processSerialCommands() {
+  static String lineBuf;
+  while (Serial.available()) {
+    int c = Serial.read();
+    if (c <= 0) break;
+    if (c == '\r') continue;
+    if (c == '\n') {
+      String cmd = lineBuf;
+      cmd.trim();
+      lineBuf = "";
+      if (cmd.length() == 0) continue;
+      // Uppercase for simple compare
+      for (size_t i = 0; i < cmd.length(); ++i) cmd[i] = toupper(cmd[i]);
+      if (cmd.startsWith("MODE ")) {
+        String arg = cmd.substring(5);
+        arg.trim();
+        if (arg == "RAGA") switchMode(RAGA);
+        else if (arg == "TB3PO") switchMode(TB3PO);
+        else if (arg == "SEQUENCER") switchMode(SEQUENCER);
+        else if (arg == "RNG" || arg == "RANDOM_GENERATOR") switchMode(RANDOM_GENERATOR);
+        Serial.printf("CLI: MODE %s -> %d\n", arg.c_str(), (int)currentMode);
+      } else if (cmd.startsWith("MODULE ")) {
+        // MODULE START RAGA
+        if (cmd.indexOf("START") != -1) {
+          if (cmd.indexOf("RAGA") != -1) {
+            switchMode(RAGA);
+            // toggleRagaPlayback starts/stops depending on current state
+            toggleRagaPlayback();
+            Serial.println("CLI: MODULE START RAGA");
+          }
+          // add more module handlers here as needed
+        } else if (cmd.indexOf("STOP") != -1) {
+          if (cmd.indexOf("RAGA") != -1) {
+            if (raga.playing) toggleRagaPlayback();
+            Serial.println("CLI: MODULE STOP RAGA");
+          }
+        }
+      } else {
+        Serial.printf("CLI: unknown command '%s'\n", cmd.c_str());
+      }
+    } else {
+      lineBuf += (char)c;
+      if (lineBuf.length() > 256) lineBuf = lineBuf.substring(lineBuf.length() - 256);
+    }
+  }
 }
 
 inline uint16_t blendColor(uint16_t from, uint16_t to, uint8_t ratio) {
@@ -1034,6 +1098,8 @@ void setup() {
   
   ble_init_start_ms = millis();
   initHardwareMIDI();  // Initialize hardware MIDI output
+  // Ensure all modules register uClock step callbacks before uClock is initialized
+  registerAllStepCallbacks();
   initClockManager();
   initMidiClockTask();
   initWiFi();  // Prepare WiFi (used by remote display and clock master suppliers)
@@ -1061,17 +1127,18 @@ void loop() {
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
     setupBLE();
     ble_initialized = true;
-    
-  #if ESP_NOW_ENABLED
+
   #if ESP_NOW_ENABLED
     // Initialize ESP-NOW after BLE to avoid conflicts
     Serial.println("ESP-NOW MIDI available (enable via Settings)");
   #endif
-  #endif
-    }
+  }
 
   updateTouch();
   updateHeaderCapture();
+
+  // Process simple serial CLI commands for automated testing
+  processSerialCommands();
 
 #if WIFI_ENABLED
   handleWiFi();

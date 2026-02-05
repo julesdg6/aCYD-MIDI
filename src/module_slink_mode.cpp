@@ -928,9 +928,9 @@ static_assert(sizeof(kMainHelperColors) / sizeof(kMainHelperColors[0]) ==
               "Helper colors must align with labels");
 
 static void getHelperButtonRect(int index, int y_start, int &x, int &y, int &w, int &h) {
-    const int columns = 3;
-    const int rows = 2;
-    int spacingX = SCALE_X(6);
+    const int columns = 6;  // Fit all 6 buttons in one row
+    const int rows = 1;
+    int spacingX = SCALE_X(4);  // Reduced spacing to fit
     int spacingY = SCALE_Y(6);
     h = SCALE_Y(36);
     w = (DISPLAY_WIDTH - 2 * MARGIN_SMALL - (columns - 1) * spacingX) / columns;
@@ -961,7 +961,7 @@ void drawMainTab() {
         drawRoundButton(x, y, w, h, kMainHelperLabels[i], kMainHelperColors[i], false, 2);
     }
 
-    int helperRows = 2;
+    int helperRows = 1;  // Changed from 2 rows to 1 row
     int helperSpacingY = SCALE_Y(6);
     int helperBlockHeight = helperRows * SCALE_Y(36) + (helperRows - 1) * helperSpacingY;
     int statusY = helperY + helperBlockHeight + SCALE_Y(12);

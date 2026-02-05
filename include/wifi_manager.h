@@ -9,8 +9,6 @@
   #include "config/wifi_config.h"
   #elif __has_include("config/wifi_config.local.h")
   #include "config/wifi_config.local.h"
-  #elif __has_include("config/wifi_config.local.h.template")
-  #include "config/wifi_config.local.h.template"
   #else
   // WiFi configuration not found - fall back to safe defaults
   #define WIFI_SSID "INVALID_SSID_CONFIGURE_ME"

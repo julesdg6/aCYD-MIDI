@@ -1,21 +1,11 @@
 #include "module_random_generator_mode.h"
 #include "clock_manager.h"
-#include <uClock.h>
 
 RandomGen randomGen;
 static SequencerSyncState randomSync;
 
-// ISR-safe step counter from uClock step extension
-static volatile uint32_t randomStepCount = 0;
-static const uint8_t randomTrackIndex = 3;
-
-// ISR callback for uClock step sequencer extension
-static void onRandomStepISR(uint32_t step, uint8_t track) {
-  (void)step;
-  if (track == randomTrackIndex) {
-    randomStepCount++;
-  }
-}
+// Accumulator for subdivision handling (counts incoming 16th-note ticks)
+static uint32_t subdivAccumulator = 0;
 
 static bool randomModuleRunning() {
   return randomSync.playing || randomSync.startPending;
@@ -59,9 +49,6 @@ void initializeRandomGeneratorMode() {
   randomGen.subdivision = 4;
   randomGen.currentNote = -1;
   randomSync.reset();
-  
-  // Register uClock step callback (ISR-safe) and allocate 1 track slot.
-  uClock.setOnStep(onRandomStepISR, 1);
 }
 
 void drawRandomGeneratorMode() {
@@ -164,11 +151,15 @@ void handleRandomGeneratorMode() {
     if (isButtonPressed(MARGIN_SMALL, y, SCALE_X(70), SCALE_Y(35))) {
       if (randomModuleRunning()) {
         randomSync.stopPlayback();
+        // Reset subdivision accumulator to avoid stale ticks carrying over
+        subdivAccumulator = 0;
         if (randomGen.currentNote != -1) {
           sendMIDI(0x80, randomGen.currentNote, 0);
           randomGen.currentNote = -1;
         }
       } else {
+        // Reset accumulator when starting to ensure deterministic timing
+        subdivAccumulator = 0;
         randomSync.requestStart();
       }
       requestRedraw();
@@ -266,33 +257,34 @@ void handleRandomGeneratorMode() {
 }
 
 void updateRandomGenerator() {
+  bool wasPlaying = randomSync.playing;
   randomSync.tryStartIfReady(!instantStartMode);
+  bool justStarted = randomSync.playing && !wasPlaying;
+  
   if (!randomSync.playing) {
     return;
   }
   
-  // Get steps from uClock step extension (ISR-safe)
-  uint32_t readySteps = 0;
-  noInterrupts();
-  readySteps = randomStepCount;
-  randomStepCount = 0;
-  interrupts();
+  // Use consumeReadySteps instead of ISR callbacks for reliability
+  uint32_t readySteps = randomSync.consumeReadySteps(CLOCK_TICKS_PER_SIXTEENTH);
   
   // Apply subdivision: we get 16th notes from uClock, but may need to skip some
-  static uint32_t subdivAccumulator = 0;
   subdivAccumulator += readySteps;
-  
+
   uint32_t stepsToPlay = 0;
-  // subdivision: 4=quarter, 8=eighth, 16=sixteenth note intervals
-  uint32_t subdivFactor = randomGen.subdivision / 4;
+  // subdivision: randomGen.subdivision is one of {4,8,16}
+  // compute factor as 16 / subdivision so quarter->4, eighth->2, sixteenth->1
+  uint32_t subdivFactor = 16 / randomGen.subdivision;
   if (subdivFactor == 0) subdivFactor = 1;
-  
+
   stepsToPlay = subdivAccumulator / subdivFactor;
   subdivAccumulator %= subdivFactor;
   
   if (stepsToPlay == 0) {
     return;
   }
+  
+  Serial.printf("[RNG] stepsToPlay=%u subdivision=%u\n", stepsToPlay, randomGen.subdivision);
   
   for (uint32_t i = 0; i < stepsToPlay; ++i) {
     playRandomNote();

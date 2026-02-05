@@ -8,9 +8,9 @@
  * carefully tuned to fit within DRAM limits while supporting all aCYD-MIDI
  * features. Key memory-constrained settings:
  * 
- * - LV_MEM_SIZE: 40KB (LVGL heap for UI objects)
- * - LV_DRAW_LAYER_SIMPLE_BUF_SIZE: 16KB (layer buffering)
- * - LV_DRAW_THREAD_STACK_SIZE: 4KB (drawing thread stack)
+ * - LV_MEM_SIZE: 16KB (LVGL heap for UI objects)
+ * - LV_DRAW_LAYER_SIMPLE_BUF_SIZE: 8KB (layer buffering)
+ * - LV_DRAW_THREAD_STACK_SIZE: 2KB (drawing thread stack)
  * 
  * DO NOT increase these values without careful testing, as it may cause
  * DRAM overflow and build failures. If adding new features that require
@@ -84,7 +84,7 @@
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
     /** Size of memory available for `lv_malloc()` in bytes (>= 2kB) */
     #ifndef LV_MEM_SIZE
-        #define LV_MEM_SIZE (16 * 1024U)          /**< [bytes] - Reduced for ESP32 DRAM constraints */
+                #define LV_MEM_SIZE (16U * 1024U)          /**< [bytes] - Header default: 16 KB. PlatformIO build flags may override this value (this project sets `-D LV_MEM_SIZE=24576` in platformio.ini to use 24KB). */
     #endif
 
     /** Size of the memory expand for `lv_malloc()` in bytes */
