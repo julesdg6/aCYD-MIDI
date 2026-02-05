@@ -89,9 +89,15 @@ jobs:
         with:
           path: dist
 
+      - name: Flatten artifact structure
+        run: |
+          mkdir -p release-files
+          find dist -type f \( -name "*.bin" -o -name "*.elf" \) -exec cp {} release-files/ \;
+          ls -lh release-files/
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/**/*
+          files: release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
