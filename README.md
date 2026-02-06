@@ -207,21 +207,64 @@ For traditional DIN-5 MIDI output with lower latency, see the complete guide:
 - Circuit components ~$5-10
 ## Usage
 
+### Basic Operation
+1. Power on the CYD - you'll see the splash screen
+2. Pair "CYD MIDI" via Bluetooth on your device
+3. Select as MIDI input in your DAW
+4. Tap a mode from the main menu to start playing
+
 ### Taking Screenshots
-1. Insert a MicroSD card into the CYD's SD card slot
+1. Insert a MicroSD card into the CYD's SD card slot (optional feature)
 2. From the main menu, tap the "SCREENSHOT" button
 3. Screenshots are saved as BMP files (screen000.bmp, screen001.bmp, etc.) to the SD card
 4. View the serial monitor for confirmation messages
-5. Hold the BACK button on the main menu for ~1.5 s to cycle through every mode and save `/<board>_<mode>_NNN.bmp` files inside `/screenshots`
-### 6. Optional: Enable Remote Display
-To view the CYD display in your web browser:
-1. Copy `config/wifi_config.local.h.template` to `config/wifi_config.local.h` and update `WIFI_SSID` / `WIFI_PASSWORD`
-2. Rebuild and upload
-3. Check Serial Monitor for the IP address
-4. Open the IP address in your browser
+5. Hold the BACK button on the main menu for ~1.5 s to cycle through every mode and save `/<board>_<mode>_NNN.bmp` files inside `/screenshots`
 
-The `config/wifi_config.local.h` file is ignored by git to keep credentials private.
-For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
+## Experimental & Optional Features
+
+Some features are **disabled by default** to reduce complexity and resource usage. You can enable them by modifying `platformio.ini` build flags:
+
+### WiFi & Remote Display (Disabled by Default)
+
+The remote display feature allows viewing the CYD screen in a web browser over WiFi. This is useful for debugging, demonstrations, and documentation.
+
+**Status:** ⚠️ Disabled by default (`WIFI_ENABLED=0`, `REMOTE_DISPLAY_ENABLED=0`)
+
+**To enable:**
+1. Copy `config/wifi_config.local.h.template` to `config/wifi_config.local.h`
+2. Update WiFi credentials in the file
+3. In `platformio.ini`, change build flags:
+   ```ini
+   -D WIFI_ENABLED=1
+   -D REMOTE_DISPLAY_ENABLED=1
+   ```
+4. Rebuild and upload
+
+**Note:** WiFi adds ~50KB to firmware size and requires 2.4GHz network. See [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md) for details.
+
+### ESP-NOW MIDI (Disabled by Default)
+
+ESP-NOW enables low-latency wireless MIDI networking between multiple CYD devices without pairing (<10ms latency).
+
+**Status:** ⚠️ Disabled by default (`ESP_NOW_ENABLED=0`)
+
+**To enable:**
+1. In `platformio.ini`, change build flags:
+   ```ini
+   -D ESP_NOW_ENABLED=1
+   ```
+2. Rebuild and upload
+3. Enable in Settings menu on each device
+
+**Note:** Can be enabled at runtime via Settings menu if compiled with support. See [docs/ESP_NOW_MIDI.md](docs/ESP_NOW_MIDI.md) for setup.
+
+### USB MIDI (ESP32-S3 Only)
+
+Native USB MIDI support for ESP32-S3 headless builds. Works on PC/Mac/Android/iOS without drivers.
+
+**Status:** ✅ Enabled for `esp32s3-headless` builds only
+
+**Note:** Requires ESP32-S3 hardware. Not available on ESP32 (non-S3) boards. See [docs/HEADLESS_USB_MIDI.md](docs/HEADLESS_USB_MIDI.md) for details.
 
 ## Troubleshooting
 
@@ -247,19 +290,25 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 
 ## Documentation
 
-- `docs/README.md` explains the overall feature set, capture flow, and Wi-Fi/remote display notes.
-- Implementation notes live in `docs/IMPLEMENTATION_SUMMARY.md`, `docs/SLINK_IMPLEMENTATION.md`, `docs/PERFORMANCE_OPTIMIZATIONS.md`, `docs/RTOS_IMPLEMENTATION_PLAN.md`, and the `docs/` concept files for hardware, MIDI clock, and memory guidance.
-- `docs/BUILD_VERIFICATION.md` lists the verification steps when building for release or testing hardware revisions.
-- `docs/DRAM_FIX_EXPLANATION.md` explains the longstanding SPIRAM workaround that keeps LVGL stable.
-- `docs/CI_FAILURE_REPORTING.md` documents the automated CI failure issue creation system that tracks build failures.
+For comprehensive documentation, see:
+- **[docs/README.md](docs/README.md)** - Complete documentation index
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 
-## Releases
+Key documentation files:
+- **Hardware Setup:** [Hardware MIDI](docs/HARDWARE_MIDI.md), [Circuit Diagrams](docs/CIRCUIT_DIAGRAMS.md), [Headless USB MIDI](docs/HEADLESS_USB_MIDI.md)
+- **Networking:** [ESP-NOW MIDI](docs/ESP_NOW_MIDI.md), [Remote Display](docs/REMOTE_DISPLAY.md)
+- **Implementation:** [SLINK Mode](docs/SLINK_IMPLEMENTATION.md), [Performance Optimizations](docs/PERFORMANCE_OPTIMIZATIONS.md)
+- **Build & Release:** [Build Verification](docs/BUILD_VERIFICATION.md), [Release Process](docs/RELEASE.md)
 
-- `docs/CHANGELOG.md` captures the public changelog for each version.
-- `docs/RELEASE.md` documents the release process and checklist.
-- `docs/RELEASE_SUMMARY.md` maps the recent release work and high-level impact.
-- `docs/PR_SUMMARY.md` highlights the performance optimization branch that drives the current UI responsiveness.
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup instructions
+- Coding standards and guidelines
+- Pull request process
+- How to report bugs and suggest features
 
 ## License
 
-MIT – see `LICENSE` for full terms.
+MIT License - see [LICENSE](LICENSE) for full terms.
