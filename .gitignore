@@ -61,17 +61,8 @@ secrets.h
 
 # Legacy/experimental (not for public release)
 legacy/
-experimental/
 
-# Test artifacts
-test_results/
-*.test
-
-# Documentation build artifacts
-docs/_build/
-docs/.buildinfo
-
-# Temporary files
-/tmp/
-temp/
-
+# Debug console build artifacts
+debug-console/node_modules/
+debug-console/dist/
+debug-console/.vite/
