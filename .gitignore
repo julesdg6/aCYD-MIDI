@@ -9,12 +9,20 @@ _codeql_detected_source_root/
 
 # VSCode
 .vscode/
+*.code-workspace
 
 # Git worktree metadata (avoid noise in VSCode)
 .worktrees/
 
 # macOS
 .DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Linux
+*~
 
 # Build artifacts
 *.elf
@@ -25,13 +33,19 @@ _codeql_detected_source_root/
 # Logs
 *.log
 
-# Python virtual envs
+# Python
 .venv/
 env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
 
 # Backup files
 *~
 *.swp
+*.bak
+*.tmp
 
 # WiFi credentials (keep template, ignore actual config)
 config/wifi_config.h
@@ -39,9 +53,13 @@ config/wifi_config.local.h
 
 # Local secrets (API keys, tokens)
 .secrets/
+secrets.h
 
+# IDE specific
+.idea/
+*.iml
 
-#legacy stuff we use to figure stuff out
+# Legacy/experimental (not for public release)
 legacy/
 
 # Debug console build artifacts
