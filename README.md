@@ -65,7 +65,31 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 ## Installation
 
-### Option A: Flash Pre-built Firmware (Recommended)
+### Option A: Web Installer (Easiest - No Software Required!)
+
+Flash firmware directly from your browser using ESP Web Tools:
+
+1. **Visit the Web Installer**: [https://julesdg6.github.io/aCYD-MIDI/flash.html](https://julesdg6.github.io/aCYD-MIDI/flash.html)
+
+2. **Requirements:**
+   - Chrome, Edge, or Opera browser (Web Serial API support)
+   - USB cable to connect your ESP32 to your computer
+   - ESP32 USB drivers (usually auto-installed)
+
+3. **Flash Process:**
+   - Connect your ESP32 board via USB
+   - Click the "Install" button for your board model
+   - Select your device's USB port when prompted
+   - Wait for flashing to complete (1-2 minutes)
+
+4. **Connect via Bluetooth**
+   - Device will restart automatically
+   - Pair "CYD MIDI" via Bluetooth
+   - Select as MIDI input in your DAW
+
+**Supported boards:** All ESP32-2432S028R, ESP32-4832S035C/R, ESP32-4832S040R variants, and headless builds.
+
+### Option B: Flash Pre-built Firmware (Command Line)
 
 1. **Download firmware** from the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page
    - Choose the appropriate `.bin` file for your board:
@@ -103,7 +127,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
    - Pair "CYD MIDI" via Bluetooth
    - Select as MIDI input in your DAW
 
-### Option B: Build from Source
+### Option C: Build from Source
 
 #### Using PlatformIO (Recommended)
 

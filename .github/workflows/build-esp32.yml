@@ -78,6 +78,14 @@ jobs:
           mkdir -p .pio/build/${{ matrix.env }}/artifacts
           if [ -f .pio/build/${{ matrix.env }}/firmware.bin ]; then cp .pio/build/${{ matrix.env }}/firmware.bin .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin; fi
           if [ -f .pio/build/${{ matrix.env }}/firmware.elf ]; then cp .pio/build/${{ matrix.env }}/firmware.elf .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf; fi
+          
+          # Copy bootloader and partition files needed for ESP Web Tools
+          if [ -f .pio/build/${{ matrix.env }}/bootloader.bin ]; then cp .pio/build/${{ matrix.env }}/bootloader.bin .pio/build/${{ matrix.env }}/artifacts/bootloader.bin; fi
+          if [ -f .pio/build/${{ matrix.env }}/partitions.bin ]; then cp .pio/build/${{ matrix.env }}/partitions.bin .pio/build/${{ matrix.env }}/artifacts/partitions.bin; fi
+          
+          # Find and copy boot_app0.bin from PlatformIO packages
+          BOOT_APP0=$(find ~/.platformio/packages -name "boot_app0.bin" | head -n 1)
+          if [ -n "$BOOT_APP0" ]; then cp "$BOOT_APP0" .pio/build/${{ matrix.env }}/artifacts/boot_app0.bin; fi
 
       - name: Upload firmware artifact (${{ matrix.env }})
         uses: actions/upload-artifact@v4
@@ -86,6 +94,9 @@ jobs:
           path: |
             .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.bin
             .pio/build/${{ matrix.env }}/artifacts/firmware-${{ matrix.env }}.elf
+            .pio/build/${{ matrix.env }}/artifacts/bootloader.bin
+            .pio/build/${{ matrix.env }}/artifacts/partitions.bin
+            .pio/build/${{ matrix.env }}/artifacts/boot_app0.bin
           if-no-files-found: error
 
   release:
@@ -107,6 +118,46 @@ jobs:
           mkdir -p release-files
           find dist -type f \( -name "*.bin" -o -name "*.elf" \) -exec cp {} release-files/ \;
           ls -lh release-files/
+          
+      - name: Prepare web installer files
+        run: |
+          # Create web installer directory structure
+          mkdir -p web-installer/manifests
+          
+          # Copy flash.html and manifests from repo
+          cp flash.html web-installer/
+          cp manifests/*.json web-installer/manifests/
+          
+          # Copy firmware binaries to web installer directory
+          cp release-files/firmware-*.bin web-installer/manifests/
+          
+          # Copy bootloader and partition files (they should be the same for all ESP32 builds)
+          # Find the first occurrence of each file type from any build
+          find release-files -name "bootloader.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/bootloader.bin
+          find release-files -name "partitions.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/partitions.bin
+          find release-files -name "boot_app0.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/boot_app0.bin
+          
+          # For ESP32-S3, we need separate bootloader and partitions
+          # Copy S3-specific files if they exist (from esp32s3-headless build)
+          if find release-files -path "*esp32s3-headless*bootloader.bin" -type f | head -n 1 | grep -q .; then
+            find release-files -path "*esp32s3-headless*bootloader.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/bootloader-s3.bin
+          fi
+          if find release-files -path "*esp32s3-headless*partitions.bin" -type f | head -n 1 | grep -q .; then
+            find release-files -path "*esp32s3-headless*partitions.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/partitions-s3.bin
+          fi
+          
+          echo "Web installer files prepared:"
+          ls -lh web-installer/
+          ls -lh web-installer/manifests/ | head -20
+
+      - name: Deploy web installer to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-installer
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: 'Deploy web installer for ${{ github.ref_name }}'
 
       - name: Extract changelog for this release
         id: changelog
