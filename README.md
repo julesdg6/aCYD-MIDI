@@ -12,6 +12,8 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 
 **Download pre-built firmware:** Check the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page for ready-to-flash `.bin` files for your board configuration.
 
+**Web Debug Console:** Try the [online debugging tool](https://julesdg6.github.io/aCYD-MIDI/debug-console/) to test MIDI and monitor device logs via Web Bluetooth and Web Serial (Chrome/Edge required).
+
 ## Features
 
 See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and Wi-Fi notes.
@@ -259,6 +261,20 @@ For full details, see [docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md)
 - `docs/RELEASE.md` documents the release process and checklist.
 - `docs/RELEASE_SUMMARY.md` maps the recent release work and high-level impact.
 - `docs/PR_SUMMARY.md` highlights the performance optimization branch that drives the current UI responsiveness.
+
+## Web Debug Console
+
+Use the [CYD Web Debug Console](https://julesdg6.github.io/aCYD-MIDI/debug-console/) to test and debug your CYD device directly from your browser:
+
+- **BLE MIDI Connection**: Connect wirelessly to send/receive MIDI messages
+- **Web Serial Monitoring**: View firmware logs via USB in real-time
+- **Live Control Panel**: TB-303-style keyboard and knobs for testing
+- **Time-Synced Logging**: Unified timeline showing all MIDI and Serial events
+- **Export Logs**: Download debug sessions as JSON or CSV
+
+**Requirements**: Chrome, Edge, or Opera browser (Web Bluetooth + Web Serial API support)
+
+See [`debug-console/README.md`](debug-console/README.md) for detailed usage instructions.
 
 ## License
 

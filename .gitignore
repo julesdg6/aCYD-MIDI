@@ -43,3 +43,8 @@ config/wifi_config.local.h
 
 #legacy stuff we use to figure stuff out
 legacy/
+
+# Debug console build artifacts
+debug-console/node_modules/
+debug-console/dist/
+debug-console/.vite/
