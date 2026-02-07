@@ -9,12 +9,43 @@ jobs:
   discordNotification:
     runs-on: ubuntu-latest
     steps:
-      - name: Notify via Releasify
-        # Pinned to v1 tag commit for supply-chain safety
-        uses: teneplaysofficial/releasify-action@bfade1fe75a8a4e8faafbc31c257e44ebfbe8352
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          title: "🚀 New Release!"
-          footer: "Published by CI"
-          username: "ReleaseBot"
-          avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Extract release information
+          RELEASE_NAME="${{ github.event.release.name }}"
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          RELEASE_URL="${{ github.event.release.html_url }}"
+          RELEASE_BODY="${{ github.event.release.body }}"
+          
+          # Truncate body if too long (Discord has a 2000 char limit for description)
+          if [ ${#RELEASE_BODY} -gt 1900 ]; then
+            RELEASE_BODY="${RELEASE_BODY:0:1900}..."
+          fi
+          
+          # Escape JSON special characters in the body
+          RELEASE_BODY_ESCAPED=$(echo "$RELEASE_BODY" | jq -Rs .)
+          
+          # Create Discord embed payload
+          cat > payload.json << EOF
+          {
+            "username": "ReleaseBot",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "embeds": [{
+              "title": "🚀 New Release: ${RELEASE_NAME:-$RELEASE_TAG}",
+              "description": $RELEASE_BODY_ESCAPED,
+              "url": "$RELEASE_URL",
+              "color": 5814783,
+              "footer": {
+                "text": "Published by CI"
+              },
+              "timestamp": "${{ github.event.release.published_at }}"
+            }]
+          }
+          EOF
+          
+          # Send to Discord
+          curl -H "Content-Type: application/json" \
+               -d @payload.json \
+               "$DISCORD_WEBHOOK"
