@@ -58,14 +58,16 @@ The following content is now available via GitHub Pages:
 ```
 /
 ├── docs/
-│   ├── index.html              ← Main landing page (NEW)
-│   ├── flash.html              ← Web installer (COPIED from root)
+│   ├── index.html              ← Main landing page
+│   ├── flash.html              ← Web installer
+│   ├── manifests/              ← ESP Web Tools manifests (COPIED from root)
+│   │   └── *.json
 │   ├── GITHUB_PAGES_SETUP.md   ← This file
 │   └── *.md                    ← Documentation files
 ├── debug-console/
 │   ├── index.html              ← Debug console (already exists)
 │   └── src/                    ← Debug console source
-├── manifests/                  ← ESP Web Tools manifests
+├── manifests/                  ← ESP Web Tools manifests (SOURCE)
 │   └── *.json
 └── flash.html                  ← Original (kept for backwards compatibility)
 ```
@@ -90,13 +92,14 @@ Add markdown (`.md`) or HTML files to `/docs/`
 
 ### "404 Not Found" errors
 - Ensure the entry file is named `index.html` in the `/docs` folder
-- Check that all paths are relative (e.g., `../manifests/` not `/manifests/`)
+- Check that all paths are relative (e.g., `./manifests/` for files in `/docs/manifests/`)
 - Wait a few minutes after deployment for DNS propagation
 
 ### Web Installer not working
-- Verify manifest paths point to `../manifests/*.json`
-- Check that manifest files exist in `/manifests/` folder
+- Verify manifest paths point to `./manifests/*.json` (relative to `/docs/flash.html`)
+- Check that manifest files exist in `/docs/manifests/` folder
 - Ensure ESP Web Tools script is loaded properly
+- **Note**: GitHub Pages serves only from the `/docs` folder, so manifests must be copied there
 
 ### Debug Console not loading
 - The debug console is at `/debug-console/` (outside `/docs/`)

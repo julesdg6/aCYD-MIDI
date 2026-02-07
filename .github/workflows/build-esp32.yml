@@ -124,10 +124,13 @@ jobs:
           # Create web installer directory structure
           mkdir -p web-installer/manifests
           
-          # Copy index.html (landing page), flash.html (web installer), and manifests from repo
-          cp index.html web-installer/
-          cp flash.html web-installer/
-          cp manifests/*.json web-installer/manifests/
+          # Copy index.html (landing page) and flash.html (web installer) from docs folder
+          # These have the correct paths for GitHub Pages deployment
+          cp docs/index.html web-installer/
+          cp docs/flash.html web-installer/
+          
+          # Copy manifest JSON files from docs/manifests (source of truth for web installer)
+          cp docs/manifests/*.json web-installer/manifests/
           
           # Copy firmware binaries to web installer directory
           cp release-files/firmware-*.bin web-installer/manifests/
