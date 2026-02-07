@@ -12,7 +12,7 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 
 **Download pre-built firmware:** Check the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page for ready-to-flash `.bin` files for your board configuration.
 
-**GitHub Pages:** Visit the [project website](https://julesdg6.github.io/aCYD-MIDI/) for project overview, or go directly to the [web installer](https://julesdg6.github.io/aCYD-MIDI/flash.html) for easy firmware flashing and the [debug console](https://julesdg6.github.io/aCYD-MIDI/debug-console/).
+**GitHub Pages:** Visit the [web installer](https://julesdg6.github.io/aCYD-MIDI/) for easy firmware flashing, or use the [debug console](https://julesdg6.github.io/aCYD-MIDI/debug-console/) for testing and troubleshooting.
 
 **Web Debug Console:** Try the [online debugging tool](https://julesdg6.github.io/aCYD-MIDI/debug-console/) to test MIDI and monitor device logs via Web Bluetooth and Web Serial (Chrome/Edge required).
 
@@ -73,7 +73,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 Flash firmware directly from your browser using ESP Web Tools:
 
-1. **Visit the Web Installer**: [https://julesdg6.github.io/aCYD-MIDI/flash.html](https://julesdg6.github.io/aCYD-MIDI/flash.html)
+1. **Visit the Web Installer**: [https://julesdg6.github.io/aCYD-MIDI/](https://julesdg6.github.io/aCYD-MIDI/)
 
 2. **Requirements:**
    - Chrome, Edge, or Opera browser (Web Serial API support)
