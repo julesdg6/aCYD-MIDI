@@ -66,6 +66,7 @@ This is the initial public release of aCYD-MIDI, a comprehensive touchscreen Blu
 
 - **Screenshot Capture** - LVGL snapshot to BMP writer with incremental filenames and SD card support
 - **Web Installer** - Browser-based firmware flashing using ESP Web Tools (no software installation required)
+- **Web Debug Console** - Browser-based MIDI/Serial debugging tool with TB-303-style interface, BLE MIDI and Web Serial support, real-time logging, and event export
 - **MIDI Clock Sync** - uClock step sequencer extension integration across all sequencer modules
 - **Unique Bluetooth Names** - Each device gets a unique name based on MAC address
 - **Memory Optimizations** - Comprehensive DRAM optimization (20-26KB freed)
