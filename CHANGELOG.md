@@ -51,6 +51,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.0]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.0.5...v0.1.0
 
 
+## [0.1.1] - 2026-02-07
+
+### Added
+- Web page updates and documentation tweaks for the public beta and release notes
+
+### Changed
+- Minor text and link fixes on the project website and README
+
+### Fixed
+- Corrected a few documentation links and formatting issues surfaced during release
+
+[0.1.1]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.0...v0.1.1
+
+
 ## [0.0.5] - 2026-02-05
 
 ### Added
