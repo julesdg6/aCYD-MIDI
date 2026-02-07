@@ -5,8 +5,8 @@ This folder contains supporting documentation that expands on the features summa
 ## Quick Links
 
 - [Main README](../README.md) - Project overview, installation, and quick start
-- [CHANGELOG](../CHANGELOG.md) - Version history and release notes
-- [CONTRIBUTING](../CONTRIBUTING.md) - How to contribute to the project
+- [CHANGELOG](CHANGELOG.md) - Version history and release notes
+- [CONTRIBUTING](CONTRIBUTING.md) - How to contribute to the project
 - [LICENSE](../LICENSE) - MIT License
 
 ## Feature Documentation
@@ -74,7 +74,7 @@ This folder contains supporting documentation that expands on the features summa
 
 ## Contributing to Documentation
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on improving documentation.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on improving documentation.
 
 Documentation improvements we welcome:
 - Fixing typos and unclear explanations
