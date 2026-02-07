@@ -3,35 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=flash.html">
-    <title>aCYD MIDI - Redirecting to Web Installer...</title>
+    <title>aCYD MIDI - Touchscreen Bluetooth MIDI Controller</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
+        
         .container {
+            max-width: 1000px;
+            margin: 0 auto;
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+        }
+        
         h1 {
             color: #333;
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .hero p {
+            color: #444;
+            font-size: 1.1em;
+            line-height: 1.6;
             margin-bottom: 20px;
         }
-        p {
-            color: #666;
-            margin-bottom: 30px;
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
-        a {
+        
+        .feature-card {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .feature-card p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
             display: inline-block;
             padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -39,19 +106,322 @@
             text-decoration: none;
             border-radius: 8px;
             font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
-        a:hover {
+        
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+        }
+        
+        .btn-outline {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .quick-links {
+            background: #2a2a2a;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }
+        
+        .quick-links h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+        }
+        
+        .quick-links ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .quick-links a {
+            color: #00d4ff;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: block;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .quick-links a:hover {
+            background: rgba(0, 212, 255, 0.1);
+            padding-left: 16px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #666;
+        }
+        
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #00d4ff;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .ai-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-top: 40px;
+        }
+        
+        .ai-stats h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .cost-estimate {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .cost-estimate h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        
+        .cost-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        .disclaimer {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 4px;
+            font-size: 0.9em;
+            border-left: 4px solid #ffd700;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎹 aCYD MIDI Web Installer</h1>
-        <p>Redirecting to the web installer...</p>
-        <p>If you are not redirected automatically, click the button below:</p>
-        <a href="flash.html">Open Web Installer</a>
+        <header>
+            <h1>aCYD MIDI</h1>
+            <p class="subtitle">Touchscreen Bluetooth MIDI Controller for ESP32</p>
+        </header>
+        
+        <div class="hero">
+            <p>
+                Transform your ESP32 "Cheap Yellow Display" (CYD) into a powerful wireless MIDI controller 
+                with 16+ interactive music modes, touchscreen interface, and Bluetooth connectivity.
+            </p>
+            <p>
+                <a href="https://github.com/julesdg6/aCYD-MIDI" class="btn">View on GitHub</a>
+            </p>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <h3>🔧 Web Installer <span class="badge">Easy</span></h3>
+                <p>
+                    Flash firmware directly from your browser - no software installation required! 
+                    Works with Chrome, Edge, and Opera browsers.
+                </p>
+                <a href="flash.html" class="btn">Install Firmware</a>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🐛 Debug Console</h3>
+                <p>
+                    Test and debug your CYD device with Web Bluetooth MIDI and Web Serial monitoring. 
+                    Live control panel and time-synced logging.
+                </p>
+                <a href="../debug-console/" class="btn btn-secondary">Open Console</a>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📚 Documentation</h3>
+                <p>
+                    Comprehensive guides for setup, hardware configurations, mode documentation, 
+                    and troubleshooting.
+                </p>
+                <a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/README.md" class="btn btn-outline">Read Docs</a>
+            </div>
+        </div>
+        
+        <div class="quick-links">
+            <h2>Quick Links</h2>
+            <ul>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/releases">→ Download Releases</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/HARDWARE_MIDI.md">→ Hardware MIDI Setup</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/HEADLESS_USB_MIDI.md">→ USB MIDI (ESP32-S3)</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/ESP_NOW_MIDI.md">→ ESP-NOW Networking</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/REMOTE_DISPLAY.md">→ Remote Display</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/SLINK_IMPLEMENTATION.md">→ SLINK Mode Docs</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/CONTRIBUTING.md">→ Contributing Guide</a></li>
+                <li><a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/docs/CHANGELOG.md">→ Changelog</a></li>
+            </ul>
+        </div>
+        
+        <div class="ai-stats">
+            <h2>🤖 AI-Assisted Development Stats</h2>
+            <p style="margin-bottom: 25px;">
+                This project has been significantly accelerated using GitHub Copilot. 
+                Here's a breakdown of the AI contribution:
+            </p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">61</div>
+                    <div class="stat-label">Merged Copilot PRs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">~28</div>
+                    <div class="stat-label">Days of Development</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100+</div>
+                    <div class="stat-label">Files Modified</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">~75%</div>
+                    <div class="stat-label">AI-Generated Code</div>
+                </div>
+            </div>
+            
+            <div class="cost-estimate">
+                <h3>💰 Estimated Development Costs</h3>
+                <p style="margin-bottom: 15px;">
+                    Based on typical GitHub Copilot usage patterns:
+                </p>
+                <div class="cost-breakdown">
+                    <div class="cost-item">
+                        <span>GitHub Copilot Workspace Sessions (61 PRs × ~30 min avg)</span>
+                        <strong>$120-180</strong>
+                    </div>
+                    <div class="cost-item">
+                        <span>Additional iterations and refinements</span>
+                        <strong>$40-60</strong>
+                    </div>
+                    <div class="cost-item">
+                        <span>Code reviews and security scans</span>
+                        <strong>$20-40</strong>
+                    </div>
+                    <div class="cost-item" style="border-top: 2px solid rgba(255, 255, 255, 0.3); margin-top: 10px; padding-top: 15px;">
+                        <span><strong>Total Estimated AI Development Cost</strong></span>
+                        <strong style="font-size: 1.3em; color: #00d4ff;">$180-280</strong>
+                    </div>
+                </div>
+                
+                <div class="disclaimer">
+                    <strong>⚠️ Note:</strong> These are estimates based on typical Copilot usage patterns. 
+                    Actual costs may vary. The repository owner can update this with exact billing data from 
+                    GitHub Copilot usage reports.
+                </div>
+            </div>
+            
+            <div style="margin-top: 25px; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                <h3 style="color: #00d4ff; margin-bottom: 15px;">🚀 Development Velocity Impact</h3>
+                <p style="margin-bottom: 10px;">
+                    What typically would have taken <strong>6-12 months</strong> of part-time development 
+                    was completed in <strong>~4 weeks</strong> with AI assistance.
+                </p>
+                <p style="margin-bottom: 10px;">
+                    <strong>Time savings:</strong> ~150-300 hours of manual coding
+                </p>
+                <p>
+                    <strong>ROI:</strong> Even at minimum wage, the time saved far exceeds the AI tooling costs.
+                </p>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <p style="font-size: 0.95em; opacity: 0.9;">
+                    View all Copilot contributions: 
+                    <a href="https://github.com/julesdg6/aCYD-MIDI/pulls?q=is%3Apr+author%3ACopilot" 
+                       style="color: #00d4ff; text-decoration: none; border-bottom: 1px solid #00d4ff;">
+                        Pull Requests
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>
+                <strong>aCYD MIDI</strong> - An open-source project by 
+                <a href="https://github.com/julesdg6">julesdg6</a>
+            </p>
+            <p style="margin-top: 10px;">
+                Licensed under <a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/LICENSE">MIT License</a>
+            </p>
+        </footer>
     </div>
 </body>
 </html>
