@@ -348,7 +348,6 @@ function renderSerialLog(): void {
   requestAnimationFrame(() => {
     const allEntries = logger.getEntries();
     const searchTerm = searchBoxSerial.value.toLowerCase();
-    const showDelta = showDeltaCheckSerial.checked;
     
     // Filter for serial entries only
     const entries = allEntries.filter(entry => {
@@ -386,7 +385,6 @@ function renderMidiLog(): void {
   requestAnimationFrame(() => {
     const allEntries = logger.getEntries();
     const searchTerm = searchBoxMidi.value.toLowerCase();
-    const showDelta = showDeltaCheckMidi.checked;
     
     // Filter for MIDI entries only
     const entries = allEntries.filter(entry => {
