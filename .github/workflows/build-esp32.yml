@@ -180,11 +180,11 @@ jobs:
               }
             }
             found { print }
-          ' docs/CHANGELOG.md)
+          ' CHANGELOG.md)
           
           # If no changelog found, use a default message
           if [ -z "$CHANGELOG_CONTENT" ]; then
-            CHANGELOG_CONTENT="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/CHANGELOG.md) for details."
+            CHANGELOG_CONTENT="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for details."
           fi
           
           # Save to output using multiline string format
