@@ -71,6 +71,24 @@
             margin: 20px 0;
             border-radius: 4px;
         }
+        .warning-box h3 {
+            margin-top: 0;
+            color: #e65100;
+        }
+        .warning-box code {
+            background: #ffe0b2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .warning-box ol, .warning-box ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        .warning-box li {
+            margin: 8px 0;
+        }
         .requirements {
             background: #f5f5f5;
             padding: 20px;
@@ -96,7 +114,7 @@
             text-decoration: underline;
         }
     </style>
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
 </head>
 <body>
     <div class="container">
@@ -250,8 +268,31 @@
             </div>
         </div>
 
+        <div class="warning-box">
+            <h3>⚠️ Troubleshooting Flash Errors</h3>
+            <p><strong>If you see "Failed to connect with the device" or "Read timeout exceeded" errors:</strong></p>
+            <p>The CYD boards use a CH340 USB-to-serial chip which can have compatibility issues with web-based flashing. Try these solutions:</p>
+            <ol>
+                <li><strong>Use PlatformIO/esptool instead:</strong> The web installer may not work reliably with CH340 chips. See the <a href="https://github.com/julesdg6/aCYD-MIDI#installation">Installation Guide</a> for PlatformIO instructions.</li>
+                <li><strong>Try a different USB cable:</strong> Use a high-quality USB cable with data lines (not charge-only).</li>
+                <li><strong>Try a different USB port:</strong> USB 2.0 ports often work better than USB 3.0 ports.</li>
+                <li><strong>Install CH340 drivers manually:</strong> Download from <a href="https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers/all" target="_blank">SparkFun's CH340 driver guide</a>.</li>
+                <li><strong>Manual boot mode (advanced):</strong> Some CYD boards may require manually entering download mode:
+                    <ul>
+                        <li>Hold the BOOT button (if available)</li>
+                        <li>Press and release the RST/EN button</li>
+                        <li>Release the BOOT button</li>
+                        <li>Try flashing again immediately</li>
+                    </ul>
+                </li>
+                <li><strong>Windows users:</strong> Make sure no other programs (Arduino IDE, PlatformIO, PuTTY, etc.) are using the COM port.</li>
+                <li><strong>Linux users:</strong> Add your user to the dialout group: <code>sudo usermod -a -G dialout $USER</code> then log out and back in.</li>
+            </ol>
+            <p><strong>Recommended:</strong> For the most reliable installation, use PlatformIO as described in the <a href="https://github.com/julesdg6/aCYD-MIDI#installation">main README</a>.</p>
+        </div>
+
         <div class="info-box">
-            <h3>After Installation</h3>
+            <h3>✅ After Successful Installation</h3>
             <ol>
                 <li>Wait for the installation to complete (usually 1-2 minutes)</li>
                 <li>Your device will automatically restart</li>
