@@ -99,6 +99,67 @@ jobs:
             .pio/build/${{ matrix.env }}/artifacts/boot_app0.bin
           if-no-files-found: error
 
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          path: dist
+
+      - name: Flatten artifact structure
+        run: |
+          mkdir -p release-files
+          find dist -type f \( -name "*.bin" -o -name "*.elf" \) -exec cp {} release-files/ \;
+          ls -lh release-files/
+          
+      - name: Prepare web installer files
+        run: |
+          # Create web installer directory structure
+          mkdir -p web-installer/manifests
+          
+          # Copy index.html (landing page) and flash.html (web installer) from docs folder
+          cp docs/index.html web-installer/
+          cp docs/flash.html web-installer/
+          
+          # Copy manifest JSON files from docs/manifests
+          cp docs/manifests/*.json web-installer/manifests/
+          
+          # Copy firmware binaries to web installer directory
+          cp release-files/firmware-*.bin web-installer/manifests/
+          
+          # Copy bootloader and partition files
+          find release-files -name "bootloader.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/bootloader.bin
+          find release-files -name "partitions.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/partitions.bin
+          find release-files -name "boot_app0.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/boot_app0.bin
+          
+          # Copy S3-specific files if they exist
+          if find release-files -path "*esp32s3-headless*bootloader.bin" -type f | head -n 1 | grep -q .; then
+            find release-files -path "*esp32s3-headless*bootloader.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/bootloader-s3.bin
+          fi
+          if find release-files -path "*esp32s3-headless*partitions.bin" -type f | head -n 1 | grep -q .; then
+            find release-files -path "*esp32s3-headless*partitions.bin" -type f | head -n 1 | xargs -I {} cp {} web-installer/manifests/partitions-s3.bin
+          fi
+          
+          echo "Web installer files prepared:"
+          ls -lh web-installer/
+          ls -lh web-installer/manifests/ | head -20
+
+      - name: Deploy web installer to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-installer
+          publish_branch: gh-pages
+          keep_files: true
+          commit_message: 'Deploy web installer from main branch - commit ${{ github.sha }}'
+
   release:
     needs: build
     runs-on: ubuntu-latest
