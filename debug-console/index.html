@@ -105,26 +105,54 @@
     .split-container {
       flex: 1;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       overflow: hidden;
     }
     
-    /* Left Panel - 303 Controls */
+    /* Top Panel - 303 Controls */
     .panel-303 {
-      flex: 0 0 50%;
+      flex: 0 0 33.333%;
       background: #242424;
-      border-right: 2px solid #00d4ff;
+      border-bottom: 2px solid #00d4ff;
       overflow-y: auto;
       padding: 20px;
     }
     
-    /* Right Panel - Logging */
-    .panel-logging {
+    /* Bottom Panel - Logging (split horizontally) */
+    .panel-logging-container {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+    
+    /* Serial Panel (left) */
+    .panel-serial {
       flex: 0 0 50%;
       background: #1a1a1a;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      border-right: 2px solid #00d4ff;
+    }
+    
+    /* MIDI Panel (right) */
+    .panel-midi {
+      flex: 0 0 50%;
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      background: #2a2a2a;
+      padding: 8px 20px;
+      border-bottom: 1px solid #00d4ff;
+      font-size: 14px;
+      font-weight: 600;
+      color: #00d4ff;
+      flex-shrink: 0;
     }
     
     .log-controls {
@@ -412,31 +440,49 @@
         </div>
       </div>
       
-      <!-- Bottom: Logging -->
-      <div class="panel-logging">
-        <div class="log-controls">
-          <input type="text" id="search-box" placeholder="Search logs...">
-          <label>
-            <input type="checkbox" id="filter-midi-in" checked> MIDI In
-          </label>
-          <label>
-            <input type="checkbox" id="filter-midi-out" checked> MIDI Out
-          </label>
-          <label>
-            <input type="checkbox" id="filter-serial" checked> Serial
-          </label>
-          <label>
-            <input type="checkbox" id="auto-scroll" checked> Auto-scroll
-          </label>
-          <label>
-            <input type="checkbox" id="show-delta" checked> Show Δt
-          </label>
-          <button class="secondary" id="pause-log">Pause</button>
-          <button class="secondary" id="clear-log">Clear</button>
-          <button class="secondary" id="export-json">Export JSON</button>
-          <button class="secondary" id="export-csv">Export CSV</button>
+      <!-- Bottom: Logging Container (split horizontally) -->
+      <div class="panel-logging-container">
+        <!-- Left: Serial Panel -->
+        <div class="panel-serial">
+          <div class="panel-header">Serial Monitor</div>
+          <div class="log-controls">
+            <input type="text" id="search-box-serial" placeholder="Search serial logs...">
+            <label>
+              <input type="checkbox" id="auto-scroll-serial" checked> Auto-scroll
+            </label>
+            <label>
+              <input type="checkbox" id="show-delta-serial" checked> Show Δt
+            </label>
+            <button class="secondary" id="pause-log-serial">Pause</button>
+            <button class="secondary" id="clear-log-serial">Clear</button>
+          </div>
+          <div class="log-viewer" id="log-viewer-serial"></div>
         </div>
-        <div class="log-viewer" id="log-viewer"></div>
+        
+        <!-- Right: MIDI Panel -->
+        <div class="panel-midi">
+          <div class="panel-header">MIDI Monitor (BLE)</div>
+          <div class="log-controls">
+            <input type="text" id="search-box-midi" placeholder="Search MIDI logs...">
+            <label>
+              <input type="checkbox" id="filter-midi-in" checked> MIDI In
+            </label>
+            <label>
+              <input type="checkbox" id="filter-midi-out" checked> MIDI Out
+            </label>
+            <label>
+              <input type="checkbox" id="auto-scroll-midi" checked> Auto-scroll
+            </label>
+            <label>
+              <input type="checkbox" id="show-delta-midi" checked> Show Δt
+            </label>
+            <button class="secondary" id="pause-log-midi">Pause</button>
+            <button class="secondary" id="clear-log-midi">Clear</button>
+            <button class="secondary" id="export-json">Export JSON</button>
+            <button class="secondary" id="export-csv">Export CSV</button>
+          </div>
+          <div class="log-viewer" id="log-viewer-midi"></div>
+        </div>
       </div>
     </div>
   </div>
