@@ -5,7 +5,7 @@
 #include <BLEDevice.h>
 
 // Version
-#define ACYD_MIDI_VERSION "0.1.1"
+#define ACYD_MIDI_VERSION "0.1.2"
 
 // ============================================================
 // Display Configuration and Autoscaling System

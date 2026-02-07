@@ -67,6 +67,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.5] - 2026-02-05
 
+## [0.1.2] - 2026-02-07
+
+### Added
+- Follow-up web copy and docs fixes; housekeeping for public beta
+
+### Changed
+- Small documentation and site link updates
+
+### Fixed
+- Minor text and formatting fixes on the website and README
+
+[0.1.2]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.1...v0.1.2
+
 ### Added
 - Support and fixes for ESP32-4832S040R and 4" CYD builds
 
