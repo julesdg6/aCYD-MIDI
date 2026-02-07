@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aCYD MIDI - Web Installer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .board-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .board-section h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .board-description {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .variant-group {
+            margin: 15px 0;
+        }
+        .variant-label {
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+        }
+        esp-web-install-button {
+            margin: 10px 10px 10px 0;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .requirements {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .requirements ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🎹 aCYD MIDI Web Installer
+        </h1>
+        <p class="subtitle">Flash your ESP32 display with aCYD MIDI firmware directly from your browser</p>
+
+        <div class="info-box">
+            <strong>✨ No software installation required!</strong> This web-based installer uses your browser to flash firmware directly to your ESP32 device via USB.
+        </div>
+
+        <div class="requirements">
+            <h3>Requirements</h3>
+            <ul>
+                <li><strong>Browser:</strong> Chrome, Edge, or Opera (Web Serial API support required)</li>
+                <li><strong>Connection:</strong> USB cable to connect your ESP32 board to your computer</li>
+                <li><strong>Drivers:</strong> ESP32 USB drivers (usually auto-installed, but see <a href="https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html" target="_blank">ESP32 driver guide</a> if needed)</li>
+            </ul>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Important:</strong> Flashing will erase all existing data on your device. Make sure to back up any configurations if needed.
+        </div>
+
+        <!-- ESP32-2432S028R (CYD) -->
+        <div class="board-section">
+            <h2>ESP32-2432S028R (CYD) - 2.8" Display</h2>
+            <p class="board-description">The classic "Cheap Yellow Display" - 320x240 resolution, 2.8" TFT display (~$15 from AliExpress/Amazon)</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">Default Build (UART2 for development with debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-2432S028Rv2.json">
+                    <button slot="activate">Install ESP32-2432S028Rv2</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Development Build (UART2 - explicit):</div>
+                <esp-web-install-button manifest="./manifests/esp32-2432S028Rv2-uart2.json">
+                    <button slot="activate">Install ESP32-2432S028Rv2 (UART2)</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Production Build (UART0 for hardware MIDI, no debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-2432S028Rv2-uart0.json">
+                    <button slot="activate">Install ESP32-2432S028Rv2 (UART0)</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- ESP32-4832S035C -->
+        <div class="board-section">
+            <h2>ESP32-4832S035C - 3.5" Capacitive Touch</h2>
+            <p class="board-description">Larger 480x320 display with capacitive touchscreen</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">Default Build (UART2 for development with debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035C.json">
+                    <button slot="activate">Install ESP32-4832S035C</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Development Build (UART2 - explicit):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035C-uart2.json">
+                    <button slot="activate">Install ESP32-4832S035C (UART2)</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Production Build (UART0 for hardware MIDI, no debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035C-uart0.json">
+                    <button slot="activate">Install ESP32-4832S035C (UART0)</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- ESP32-4832S035R -->
+        <div class="board-section">
+            <h2>ESP32-4832S035R - 3.5" Resistive Touch</h2>
+            <p class="board-description">Larger 480x320 display with resistive touchscreen</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">Default Build (UART2 for development with debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035R.json">
+                    <button slot="activate">Install ESP32-4832S035R</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Development Build (UART2 - explicit):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035R-uart2.json">
+                    <button slot="activate">Install ESP32-4832S035R (UART2)</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Production Build (UART0 for hardware MIDI, no debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S035R-uart0.json">
+                    <button slot="activate">Install ESP32-4832S035R (UART0)</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- ESP32-4832S040R -->
+        <div class="board-section">
+            <h2>ESP32-4832S040R - 4.0" Resistive Touch</h2>
+            <p class="board-description">Large 480x320 display with resistive touchscreen</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">Default Build (UART2 for development with debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S040R.json">
+                    <button slot="activate">Install ESP32-4832S040R</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Development Build (UART2 - explicit):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S040R-uart2.json">
+                    <button slot="activate">Install ESP32-4832S040R (UART2)</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Production Build (UART0 for hardware MIDI, no debug):</div>
+                <esp-web-install-button manifest="./manifests/esp32-4832S040R-uart0.json">
+                    <button slot="activate">Install ESP32-4832S040R (UART0)</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- Headless builds -->
+        <div class="board-section">
+            <h2>Headless Builds (No Display)</h2>
+            <p class="board-description">Firmware for ESP32/ESP32-S3 dongles without display - USB MIDI, BLE, and hardware MIDI support</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">ESP32 Headless (BLE + Hardware MIDI + ESP-NOW master):</div>
+                <esp-web-install-button manifest="./manifests/esp32-headless-midi-master.json">
+                    <button slot="activate">Install ESP32 Headless</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">ESP32-S3 Headless (Native USB MIDI + BLE + Hardware MIDI + ESP-NOW master):</div>
+                <esp-web-install-button manifest="./manifests/esp32s3-headless.json">
+                    <button slot="activate">Install ESP32-S3 Headless</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>After Installation</h3>
+            <ol>
+                <li>Wait for the installation to complete (usually 1-2 minutes)</li>
+                <li>Your device will automatically restart</li>
+                <li>Connect via Bluetooth: Look for "CYD MIDI" in your Bluetooth settings</li>
+                <li>Select "CYD MIDI" as MIDI input in your DAW or music software</li>
+                <li>Start making music! 🎵</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>aCYD MIDI Controller - Open Source Bluetooth MIDI Controller</p>
+            <p>
+                <a href="https://github.com/julesdg6/aCYD-MIDI">View on GitHub</a> | 
+                <a href="https://github.com/julesdg6/aCYD-MIDI/releases">Download Releases</a> | 
+                <a href="https://github.com/julesdg6/aCYD-MIDI/blob/main/README.md">Documentation</a>
+            </p>
+            <p style="font-size: 0.9em; margin-top: 15px;">
+                Need help? Check the <a href="https://github.com/julesdg6/aCYD-MIDI#troubleshooting">Troubleshooting Guide</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
