@@ -20,7 +20,7 @@ jobs:
         run: |
           # Truncate body if too long (Discord has a 2000 char limit for description)
           if [ ${#RELEASE_BODY} -gt 1900 ]; then
-            TRUNCATED_BODY="${RELEASE_BODY:0:1900}..."
+            TRUNCATED_BODY="${RELEASE_BODY:0:1897}..."
           else
             TRUNCATED_BODY="$RELEASE_BODY"
           fi
