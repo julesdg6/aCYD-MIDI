@@ -19,6 +19,7 @@ jobs:
           RELEASE_PUBLISHED_AT: ${{ github.event.release.published_at }}
         run: |
           # Truncate body if too long (Discord has a 2000 char limit for description)
+          # We use 1900 as a safe buffer, and 1897 accounts for the 3-char "..." suffix
           if [ ${#RELEASE_BODY} -gt 1900 ]; then
             TRUNCATED_BODY="${RELEASE_BODY:0:1897}..."
           else
