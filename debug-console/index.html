@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYD Web Debug Console</title>
+  <title>aCYD-MIDI Web Debug Console</title>
   <style>
     * {
       margin: 0;
@@ -105,20 +105,20 @@
     .split-container {
       flex: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       overflow: hidden;
     }
     
-    /* Top Panel - 303 Controls */
+    /* Left Panel - 303 Controls */
     .panel-303 {
       flex: 0 0 50%;
       background: #242424;
-      border-bottom: 2px solid #00d4ff;
+      border-right: 2px solid #00d4ff;
       overflow-y: auto;
       padding: 20px;
     }
     
-    /* Bottom Panel - Logging */
+    /* Right Panel - Logging */
     .panel-logging {
       flex: 0 0 50%;
       background: #1a1a1a;
@@ -356,7 +356,7 @@
   <div class="app-container">
     <!-- Header -->
     <div class="header">
-      <h1>CYD Web Debug Console</h1>
+      <h1>aCYD-MIDI Web Debug Console</h1>
       <div class="status-bar">
         <div class="status-indicator">
           <span class="status-dot" id="ble-status"></span>

@@ -364,4 +364,4 @@ createKeyboard();
 createKnobs();
 updateConnectionStatus();
 
-console.log('CYD Web Debug Console initialized');
+console.log('aCYD-MIDI Web Debug Console initialized');
