@@ -157,7 +157,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./web-installer
           publish_branch: gh-pages
-          force_orphan: true
+          keep_files: true
           commit_message: 'Deploy web installer for ${{ github.ref_name }}'
 
       - name: Extract changelog for this release

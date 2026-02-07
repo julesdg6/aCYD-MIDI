@@ -36,18 +36,25 @@ const slideToggle = $('slide-toggle');
 const panicBtn = $('panic');
 const testBurstBtn = $('test-burst');
 
-// Log controls
-const searchBox = $('search-box') as HTMLInputElement;
+// Log controls - Serial
+const searchBoxSerial = $('search-box-serial') as HTMLInputElement;
+const autoScrollCheckSerial = $('auto-scroll-serial') as HTMLInputElement;
+const showDeltaCheckSerial = $('show-delta-serial') as HTMLInputElement;
+const pauseLogBtnSerial = $('pause-log-serial');
+const clearLogBtnSerial = $('clear-log-serial');
+const logViewerSerial = $('log-viewer-serial');
+
+// Log controls - MIDI
+const searchBoxMidi = $('search-box-midi') as HTMLInputElement;
 const filterMidiIn = $('filter-midi-in') as HTMLInputElement;
 const filterMidiOut = $('filter-midi-out') as HTMLInputElement;
-const filterSerial = $('filter-serial') as HTMLInputElement;
-const autoScrollCheck = $('auto-scroll') as HTMLInputElement;
-const showDeltaCheck = $('show-delta') as HTMLInputElement;
-const pauseLogBtn = $('pause-log');
-const clearLogBtn = $('clear-log');
+const autoScrollCheckMidi = $('auto-scroll-midi') as HTMLInputElement;
+const showDeltaCheckMidi = $('show-delta-midi') as HTMLInputElement;
+const pauseLogBtnMidi = $('pause-log-midi');
+const clearLogBtnMidi = $('clear-log-midi');
 const exportJsonBtn = $('export-json');
 const exportCsvBtn = $('export-csv');
-const logViewer = $('log-viewer');
+const logViewerMidi = $('log-viewer-midi');
 
 // Knobs container
 const knobsGrid = $('knobs-grid');
@@ -235,55 +242,74 @@ testBurstBtn.addEventListener('click', () => {
   controller.sendTestBurst();
 });
 
-// Log controls
-searchBox.addEventListener('input', () => {
-  logger.updateConfig({ searchTerm: searchBox.value });
-  renderLog();
+// Log controls - Serial
+searchBoxSerial.addEventListener('input', () => {
+  renderSerialLog();
 });
 
-filterMidiIn.addEventListener('change', updateFilters);
-filterMidiOut.addEventListener('change', updateFilters);
-filterSerial.addEventListener('change', updateFilters);
-
-function updateFilters(): void {
-  const filters = new Set<any>();
-  if (filterMidiIn.checked) {
-    filters.add('BLE_IN');
-  }
-  if (filterMidiOut.checked) {
-    filters.add('BLE_OUT');
-    filters.add('UI_TO_MIDI');
-  }
-  if (filterSerial.checked) {
-    filters.add('SERIAL_IN');
-    filters.add('SERIAL_OUT');
-  }
-  logger.updateConfig({ filters });
-  renderLog();
-}
-
-autoScrollCheck.addEventListener('change', () => {
-  logger.updateConfig({ autoScroll: autoScrollCheck.checked });
+autoScrollCheckSerial.addEventListener('change', () => {
+  // Auto-scroll is handled per render
 });
 
-showDeltaCheck.addEventListener('change', () => {
-  logger.updateConfig({ showDelta: showDeltaCheck.checked });
-  renderLog();
+showDeltaCheckSerial.addEventListener('change', () => {
+  renderSerialLog();
 });
 
-pauseLogBtn.addEventListener('click', () => {
+pauseLogBtnSerial.addEventListener('click', () => {
   if (logger.isPaused()) {
     logger.resume();
-    pauseLogBtn.textContent = 'Pause';
+    pauseLogBtnSerial.textContent = 'Pause';
+    pauseLogBtnMidi.textContent = 'Pause';
   } else {
     logger.pause();
-    pauseLogBtn.textContent = 'Resume';
+    pauseLogBtnSerial.textContent = 'Resume';
+    pauseLogBtnMidi.textContent = 'Resume';
   }
 });
 
-clearLogBtn.addEventListener('click', () => {
+clearLogBtnSerial.addEventListener('click', () => {
   logger.clear();
-  renderLog();
+  renderSerialLog();
+  renderMidiLog();
+});
+
+// Log controls - MIDI
+searchBoxMidi.addEventListener('input', () => {
+  renderMidiLog();
+});
+
+filterMidiIn.addEventListener('change', () => {
+  renderMidiLog();
+});
+
+filterMidiOut.addEventListener('change', () => {
+  renderMidiLog();
+});
+
+autoScrollCheckMidi.addEventListener('change', () => {
+  // Auto-scroll is handled per render
+});
+
+showDeltaCheckMidi.addEventListener('change', () => {
+  renderMidiLog();
+});
+
+pauseLogBtnMidi.addEventListener('click', () => {
+  if (logger.isPaused()) {
+    logger.resume();
+    pauseLogBtnSerial.textContent = 'Pause';
+    pauseLogBtnMidi.textContent = 'Pause';
+  } else {
+    logger.pause();
+    pauseLogBtnSerial.textContent = 'Resume';
+    pauseLogBtnMidi.textContent = 'Resume';
+  }
+});
+
+clearLogBtnMidi.addEventListener('click', () => {
+  logger.clear();
+  renderSerialLog();
+  renderMidiLog();
 });
 
 exportJsonBtn.addEventListener('click', () => {
@@ -312,19 +338,30 @@ function updateConnectionStatus(): void {
   connectSerialBtn.textContent = serialConnected ? 'Disconnect Serial' : 'Connect Serial';
 }
 
-let renderScheduled = false;
+let renderSerialScheduled = false;
+let renderMidiScheduled = false;
 
-function renderLog(): void {
-  if (renderScheduled) return;
-  renderScheduled = true;
+function renderSerialLog(): void {
+  if (renderSerialScheduled) return;
+  renderSerialScheduled = true;
   
   requestAnimationFrame(() => {
-    const entries = logger.getEntries();
-    const autoScroll = autoScrollCheck.checked;
-    const wasAtBottom = logViewer.scrollHeight - logViewer.scrollTop <= logViewer.clientHeight + 50;
+    const allEntries = logger.getEntries();
+    const searchTerm = searchBoxSerial.value.toLowerCase();
     
-    // Simple rendering (for v1, can be optimized with virtualization later)
-    logViewer.innerHTML = entries
+    // Filter for serial entries only
+    const entries = allEntries.filter(entry => {
+      const isSerial = entry.source === 'SERIAL_IN' || entry.source === 'SERIAL_OUT';
+      if (!isSerial) return false;
+      if (searchTerm && !entry.text.toLowerCase().includes(searchTerm)) return false;
+      return true;
+    });
+    
+    const autoScroll = autoScrollCheckSerial.checked;
+    const wasAtBottom = logViewerSerial.scrollHeight - logViewerSerial.scrollTop <= logViewerSerial.clientHeight + 50;
+    
+    // Render entries
+    logViewerSerial.innerHTML = entries
       .map(entry => {
         const cssClass = logger.getSourceClass(entry.source);
         const formatted = logger.formatEntry(entry);
@@ -334,16 +371,58 @@ function renderLog(): void {
     
     // Auto-scroll if enabled and was at bottom
     if (autoScroll && wasAtBottom) {
-      logViewer.scrollTop = logViewer.scrollHeight;
+      logViewerSerial.scrollTop = logViewerSerial.scrollHeight;
     }
     
-    renderScheduled = false;
+    renderSerialScheduled = false;
+  });
+}
+
+function renderMidiLog(): void {
+  if (renderMidiScheduled) return;
+  renderMidiScheduled = true;
+  
+  requestAnimationFrame(() => {
+    const allEntries = logger.getEntries();
+    const searchTerm = searchBoxMidi.value.toLowerCase();
+    
+    // Filter for MIDI entries only
+    const entries = allEntries.filter(entry => {
+      // Check filters
+      if (entry.source === 'BLE_IN' && !filterMidiIn.checked) return false;
+      if ((entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI') && !filterMidiOut.checked) return false;
+      
+      const isMidi = entry.source === 'BLE_IN' || entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI';
+      if (!isMidi) return false;
+      if (searchTerm && !entry.text.toLowerCase().includes(searchTerm)) return false;
+      return true;
+    });
+    
+    const autoScroll = autoScrollCheckMidi.checked;
+    const wasAtBottom = logViewerMidi.scrollHeight - logViewerMidi.scrollTop <= logViewerMidi.clientHeight + 50;
+    
+    // Render entries
+    logViewerMidi.innerHTML = entries
+      .map(entry => {
+        const cssClass = logger.getSourceClass(entry.source);
+        const formatted = logger.formatEntry(entry);
+        return `<div class="log-entry ${cssClass}">${formatted}</div>`;
+      })
+      .join('');
+    
+    // Auto-scroll if enabled and was at bottom
+    if (autoScroll && wasAtBottom) {
+      logViewerMidi.scrollTop = logViewerMidi.scrollHeight;
+    }
+    
+    renderMidiScheduled = false;
   });
 }
 
 // Subscribe to log updates
 eventBus.subscribe(() => {
-  renderLog();
+  renderSerialLog();
+  renderMidiLog();
 });
 
 function downloadFile(filename: string, content: string): void {
@@ -364,4 +443,4 @@ createKeyboard();
 createKnobs();
 updateConnectionStatus();
 
-console.log('CYD Web Debug Console initialized');
+console.log('aCYD-MIDI Web Debug Console initialized');
