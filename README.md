@@ -12,7 +12,7 @@ Special thanks to Brian Lough for putting together the resources on this board. 
 
 **Download pre-built firmware:** Check the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page for ready-to-flash `.bin` files for your board configuration.
 
-**GitHub Pages:** Visit the [project website](https://julesdg6.github.io/aCYD-MIDI/) for easy access to the web installer and debug console.
+**GitHub Pages:** Visit the [web installer](https://julesdg6.github.io/aCYD-MIDI/) for easy firmware flashing, or use the [debug console](https://julesdg6.github.io/aCYD-MIDI/debug-console/) for testing and troubleshooting.
 
 **Web Debug Console:** Try the [online debugging tool](https://julesdg6.github.io/aCYD-MIDI/debug-console/) to test MIDI and monitor device logs via Web Bluetooth and Web Serial (Chrome/Edge required).
 
@@ -296,8 +296,8 @@ Native USB MIDI support for ESP32-S3 headless builds. Works on PC/Mac/Android/iO
 
 For comprehensive documentation, see:
 - **[docs/README.md](docs/README.md)** - Complete documentation index
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[CHANGELOG.md](docs/CHANGELOG.md)** - Version history and release notes
 
 Key documentation files:
 - **Hardware Setup:** [Hardware MIDI](docs/HARDWARE_MIDI.md), [Circuit Diagrams](docs/CIRCUIT_DIAGRAMS.md), [Headless USB MIDI](docs/HEADLESS_USB_MIDI.md)
@@ -307,7 +307,7 @@ Key documentation files:
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
 - Development setup instructions
 - Coding standards and guidelines
 - Pull request process

@@ -124,7 +124,8 @@ jobs:
           # Create web installer directory structure
           mkdir -p web-installer/manifests
           
-          # Copy flash.html and manifests from repo
+          # Copy index.html (landing page), flash.html (web installer), and manifests from repo
+          cp index.html web-installer/
           cp flash.html web-installer/
           cp manifests/*.json web-installer/manifests/
           
@@ -176,11 +177,11 @@ jobs:
               }
             }
             found { print }
-          ' CHANGELOG.md)
+          ' docs/CHANGELOG.md)
           
           # If no changelog found, use a default message
           if [ -z "$CHANGELOG_CONTENT" ]; then
-            CHANGELOG_CONTENT="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for details."
+            CHANGELOG_CONTENT="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/CHANGELOG.md) for details."
           fi
           
           # Save to output using multiline string format
