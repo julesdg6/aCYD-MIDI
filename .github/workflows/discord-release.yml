@@ -18,10 +18,15 @@ jobs:
           RELEASE_BODY: ${{ github.event.release.body }}
           RELEASE_PUBLISHED_AT: ${{ github.event.release.published_at }}
         run: |
-          # Truncate body if too long (Discord has a 2000 char limit for description)
-          # We use 1900 as a safe buffer, and 1897 accounts for the 3-char "..." suffix
-          if [ ${#RELEASE_BODY} -gt 1900 ]; then
-            TRUNCATED_BODY="${RELEASE_BODY:0:1897}..."
+          # Discord embed description limit is 2000 characters
+          # We use 1900 as a safe buffer to account for formatting
+          # Truncate to 1897 to leave room for the 3-char "..." suffix
+          MAX_DESCRIPTION_LENGTH=1900
+          ELLIPSIS_LENGTH=3
+          
+          if [ ${#RELEASE_BODY} -gt $MAX_DESCRIPTION_LENGTH ]; then
+            TRUNCATE_AT=$((MAX_DESCRIPTION_LENGTH - ELLIPSIS_LENGTH))
+            TRUNCATED_BODY="${RELEASE_BODY:0:$TRUNCATE_AT}..."
           else
             TRUNCATED_BODY="$RELEASE_BODY"
           fi

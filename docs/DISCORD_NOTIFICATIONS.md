@@ -139,6 +139,7 @@ To customize the notification format, edit `.github/workflows/discord-release.ym
 
 **Change embed color:**
 ```yaml
+# In the jq command, modify the color value:
 color: 5814783  # Current: Blue-purple
 # Try:
 # 3066993 - Green
@@ -148,25 +149,33 @@ color: 5814783  # Current: Blue-purple
 
 **Change bot name/avatar:**
 ```yaml
-username: "ReleaseBot"
-avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+# In the jq command, modify the --arg parameters:
+--arg username "ReleaseBot"
+--arg avatar "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
 ```
 
-**Add fields:**
-```jq
-{
+**Add fields to the embed:**
+
+You would need to modify the jq JSON construction to add additional fields. For example:
+
+```yaml
+# Add --arg parameters for new data
+--arg author "${{ github.event.release.author.login }}" \
+
+# Then in the jq JSON object, add fields array:
+'{
   # ... existing fields ...
   embeds: [{
-    # ... existing embed ...
+    # ... existing embed properties ...
     fields: [
       {
         name: "Author",
-        value: "${{ github.event.release.author.login }}",
+        value: $author,
         inline: true
       }
     ]
   }]
-}
+}'
 ```
 
 ## Getting Help
