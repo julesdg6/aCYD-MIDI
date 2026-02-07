@@ -272,6 +272,8 @@ Native USB MIDI support for ESP32-S3 headless builds. Works on PC/Mac/Android/iO
 
 ## Troubleshooting
 
+### Device Issues
+
 - **Upload Speed**: Lower it to `115200` if the sketch isn't uploading
 - **Blank screen**: Check TFT_eSPI pin configuration
 - **No touch**: Verify touchscreen library installation
@@ -279,6 +281,15 @@ Native USB MIDI support for ESP32-S3 headless builds. Works on PC/Mac/Android/iO
 - **UI too small/large**: Check display resolution detection in serial output
 - **Screenshot fails**: Ensure SD card is properly inserted and formatted (FAT32)
 - **Remote Display not working**: Ensure WiFi credentials are correct and your network is 2.4GHz (ESP32 doesn't support 5GHz)
+
+### Web Pages Issues
+
+If you're having trouble with the web installer or debug console:
+
+- **Web installer not loading**: See [GitHub Pages Troubleshooting Guide](docs/GITHUB_PAGES_TROUBLESHOOTING.md)
+- **Debug console 404 errors**: Clear browser cache and verify GitHub Pages is enabled
+- **"Installation failed" errors**: Make sure your ESP32 device is connected via USB
+- **Browser compatibility**: Use Chrome, Edge, or Opera (Web Serial API required)
 
 ## New Modules & Fixes
 

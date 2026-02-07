@@ -12,38 +12,48 @@ jobs:
       - name: Send Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_PUBLISHED_AT: ${{ github.event.release.published_at }}
         run: |
-          # Extract release information
-          RELEASE_NAME="${{ github.event.release.name }}"
-          RELEASE_TAG="${{ github.event.release.tag_name }}"
-          RELEASE_URL="${{ github.event.release.html_url }}"
-          RELEASE_BODY="${{ github.event.release.body }}"
+          # Discord embed description limit is 2000 characters
+          # We use 1900 as a safe buffer to account for formatting
+          # Truncate to 1897 to leave room for the 3-char "..." suffix
+          MAX_DESCRIPTION_LENGTH=1900
+          ELLIPSIS_LENGTH=3
           
-          # Truncate body if too long (Discord has a 2000 char limit for description)
-          if [ ${#RELEASE_BODY} -gt 1900 ]; then
-            RELEASE_BODY="${RELEASE_BODY:0:1900}..."
+          if [ ${#RELEASE_BODY} -gt $MAX_DESCRIPTION_LENGTH ]; then
+            TRUNCATE_AT=$((MAX_DESCRIPTION_LENGTH - ELLIPSIS_LENGTH))
+            TRUNCATED_BODY="${RELEASE_BODY:0:$TRUNCATE_AT}..."
+          else
+            TRUNCATED_BODY="$RELEASE_BODY"
           fi
           
-          # Escape JSON special characters in the body
-          RELEASE_BODY_ESCAPED=$(echo "$RELEASE_BODY" | jq -Rs .)
-          
-          # Create Discord embed payload
-          cat > payload.json << EOF
-          {
-            "username": "ReleaseBot",
-            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-            "embeds": [{
-              "title": "🚀 New Release: ${RELEASE_NAME:-$RELEASE_TAG}",
-              "description": $RELEASE_BODY_ESCAPED,
-              "url": "$RELEASE_URL",
-              "color": 5814783,
-              "footer": {
-                "text": "Published by CI"
-              },
-              "timestamp": "${{ github.event.release.published_at }}"
-            }]
-          }
-          EOF
+          # Create Discord embed payload using jq to properly escape all JSON
+          jq -n \
+            --arg username "ReleaseBot" \
+            --arg avatar "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
+            --arg title "🚀 New Release: ${RELEASE_NAME:-$RELEASE_TAG}" \
+            --arg description "$TRUNCATED_BODY" \
+            --arg url "$RELEASE_URL" \
+            --arg footer "Published by CI" \
+            --arg timestamp "$RELEASE_PUBLISHED_AT" \
+            '{
+              username: $username,
+              avatar_url: $avatar,
+              embeds: [{
+                title: $title,
+                description: $description,
+                url: $url,
+                color: 5814783,
+                footer: {
+                  text: $footer
+                },
+                timestamp: $timestamp
+              }]
+            }' > payload.json
           
           # Send to Discord
           curl -H "Content-Type: application/json" \
