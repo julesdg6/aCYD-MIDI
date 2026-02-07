@@ -5,6 +5,19 @@ All notable changes to aCYD-MIDI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-02-07
+
+### Added
+- Updated public web pages: the web installer, debug console, and documentation for the public beta. These site updates consolidate installer instructions and improve the live debug tooling documentation.
+
+### Changed
+- Clarified website copy and README links to point to the web installer and debug console for easy flashing and testing.
+
+### Fixed
+- Corrected out-of-date documentation references on the website and README so release notes reflect the current web pages and public beta flow.
+
+[0.1.3]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.2...v0.1.3
+
 ## [0.0.3] - 2026-02-05
 
 ### Added

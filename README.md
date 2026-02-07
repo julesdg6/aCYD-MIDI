@@ -8,6 +8,8 @@ Touchscreen Bluetooth MIDI controller for ESP32-based displays including the ESP
 
 Special thanks to Brian Lough for putting together the resources on this board. Check out his repo for more examples: https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display
 
+This project was based on and heavily inspired by NickCulbertson/CYD-MIDI-Controller — thank you to Nick Culbertson for the original implementation and design decisions that informed this work. See the original repository: https://github.com/NickCulbertson/CYD-MIDI-Controller
+
 ## Quick Start
 
 **Download pre-built firmware:** Check the [Releases](https://github.com/julesdg6/aCYD-MIDI/releases) page for ready-to-flash `.bin` files for your board configuration.
