@@ -63,6 +63,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **ESP32-4832S035C** - 3.5" 480x320 display with capacitive touch
 - **ESP32-4832S035R** - 3.5" 480x320 display with resistive touch
 - **ESP32-4832S040R** - 4.0" 480x320 display with resistive touch
+- **Elecrow ESP32 7.0"** - 7.0" 800x480 display with capacitive touch ([product page](https://www.elecrow.com/wiki/esp32-display-702727-intelligent-touch-screen-wi-fi26ble-800480-hmi-display.html))
 - **ESP32-S3 Dongles** - Headless USB MIDI mode (no display) with native USB MIDI support ([docs/HEADLESS_USB_MIDI.md](docs/HEADLESS_USB_MIDI.md))
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
@@ -120,6 +121,11 @@ Flash firmware directly from your browser using ESP Web Tools:
      - `firmware-esp32-4832S040R-uart0` - Production (UART0 for hardware MIDI, no debug)
      - `firmware-esp32-4832S040R-uart2` - Explicit UART2 configuration
      
+     **Elecrow ESP32 7.0" (7.0" Capacitive Touch):**
+     - `firmware-elecrow-esp32-7_0` - Default (UART2 for development with debug)
+     - `firmware-elecrow-esp32-7_0-uart0` - Production (UART0 for hardware MIDI, no debug)
+     - `firmware-elecrow-esp32-7_0-uart2` - Explicit UART2 configuration
+     
      **Headless USB MIDI:**
      - `firmware-esp32-headless-midi-master` - ESP32 headless (BLE + Hardware MIDI + ESP-NOW master, **no USB MIDI**)
      - `firmware-esp32s3-headless` - ESP32-S3 headless USB MIDI dongle (native USB MIDI + BLE + Hardware MIDI + ESP-NOW master)
@@ -152,6 +158,9 @@ Flash firmware directly from your browser using ESP Web Tools:
    
    # For ESP32-4832S040R (4.0" Resistive Touch)
    pio run -e esp32-4832S040R -t upload
+   
+   # For Elecrow ESP32 7.0" (7.0" Capacitive Touch)
+   pio run -e elecrow-esp32-7_0 -t upload
    
    # For Headless ESP32 USB MIDI
    pio run -e esp32-headless-midi-master -t upload
