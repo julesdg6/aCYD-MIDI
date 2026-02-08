@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [0.1.3]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.2...v0.1.3
 
+## [0.1.4] - 2026-02-08
+
+### Added
+- Support for 7" Elecrow devices (800x480 capacitive touch) and related board manifest and build configuration updates.
+
+[0.1.4]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.3...v0.1.4
+
 ## [0.0.3] - 2026-02-05
 
 ### Added
