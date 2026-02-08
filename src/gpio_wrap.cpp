@@ -9,9 +9,9 @@
 
 extern "C" {
 // Declaration of the real function provided by the linker when --wrap is used.
-void __real_gpio_set_level(gpio_num_t gpio_num, uint32_t level);
+esp_err_t __real_gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 
-void __wrap_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
+esp_err_t __wrap_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
   static bool logged_invalid = false;
 
@@ -23,6 +23,6 @@ void __wrap_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
   }
 
   // Forward to the real implementation to preserve original behavior.
-  __real_gpio_set_level(gpio_num, level);
+  return __real_gpio_set_level(gpio_num, level);
 }
 } // extern "C"
