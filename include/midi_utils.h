@@ -10,41 +10,17 @@
 #endif
 
 // MIDI utility functions
-inline void sendMIDI(byte cmd, byte note, byte vel) {
-  // Send via BLE MIDI
-  if (deviceConnected) {
-    uint8_t localPacket[5] = {midiPacket[0], midiPacket[1], cmd, note, vel};
-    Serial.printf("[MIDI] BLE send attempt cmd=0x%02X note=%u vel=%u deviceConnected=%d pCharacteristic=%p\n", cmd, note, vel, deviceConnected, pCharacteristic);
-    if (pCharacteristic) {
-      pCharacteristic->setValue(localPacket, 5);
-      pCharacteristic->notify();
-    } else {
-      Serial.printf("[MIDI] BLE notify skipped - pCharacteristic is NULL\n");
-    }
-  } else {
-    Serial.printf("[MIDI] BLE skipped (not connected) cmd=0x%02X note=%u vel=%u\n", cmd, note, vel);
-  }
-  
-  // Send via Hardware MIDI (DIN-5 connector)
-  sendHardwareMIDI(cmd, note, vel);
-  
-  // Send via ESP-NOW MIDI (only if enabled and mode is not OFF)
-#if ESP_NOW_ENABLED
-  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
-    sendEspNowMidi(cmd, note, vel);
-  }
-#endif
-  uint8_t wifiBuffer[3] = {cmd, note, vel};
-  sendWiFiMidiMessage(wifiBuffer, sizeof(wifiBuffer));
-}
+void sendMIDI(byte cmd, byte note, byte vel);
 
 inline void sendMIDIClock() {
   if (deviceConnected) {
     midiPacket[2] = 0xF8;
     midiPacket[3] = 0x00;
     midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
-    pCharacteristic->notify();
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
   }
   sendHardwareMIDISingle(0xF8);
 #if ESP_NOW_ENABLED
@@ -61,8 +37,10 @@ inline void sendMIDIStart() {
     midiPacket[2] = 0xFA;
     midiPacket[3] = 0x00;
     midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
-    pCharacteristic->notify();
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
   }
   sendHardwareMIDISingle(0xFA);
 #if ESP_NOW_ENABLED
@@ -79,8 +57,10 @@ inline void sendMIDIStop() {
     midiPacket[2] = 0xFC;
     midiPacket[3] = 0x00;
     midiPacket[4] = 0x00;
-    pCharacteristic->setValue(midiPacket, 5);
-    pCharacteristic->notify();
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
   }
   sendHardwareMIDISingle(0xFC);
 #if ESP_NOW_ENABLED
