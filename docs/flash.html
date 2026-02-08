@@ -248,6 +248,33 @@
             </div>
         </div>
 
+        <!-- Elecrow ESP32 7.0" -->
+        <div class="board-section">
+            <h2>Elecrow ESP32 7.0" - 7.0" Capacitive Touch</h2>
+            <p class="board-description">Large 800x480 display with capacitive touchscreen</p>
+            
+            <div class="variant-group">
+                <div class="variant-label">Default Build (UART2 for development with debug):</div>
+                <esp-web-install-button manifest="./manifests/elecrow-esp32-7_0.json">
+                    <button slot="activate">Install Elecrow ESP32 7.0"</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Development Build (UART2 - explicit):</div>
+                <esp-web-install-button manifest="./manifests/elecrow-esp32-7_0-uart2.json">
+                    <button slot="activate">Install Elecrow ESP32 7.0" (UART2)</button>
+                </esp-web-install-button>
+            </div>
+
+            <div class="variant-group">
+                <div class="variant-label">Production Build (UART0 for hardware MIDI, no debug):</div>
+                <esp-web-install-button manifest="./manifests/elecrow-esp32-7_0-uart0.json">
+                    <button slot="activate">Install Elecrow ESP32 7.0" (UART0)</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
         <!-- Headless builds -->
         <div class="board-section">
             <h2>Headless Builds (No Display)</h2>
