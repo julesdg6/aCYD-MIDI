@@ -64,7 +64,10 @@ volatile bool needsRedraw = false;
 uint16_t sharedBPM = 120;
 MidiClockMaster midiClockMaster = CLOCK_INTERNAL;
 bool displayColorsInverted = false;
-uint8_t displayRotationIndex = 3;
+#ifndef DEFAULT_DISPLAY_ROTATION
+#define DEFAULT_DISPLAY_ROTATION 3
+#endif
+uint8_t displayRotationIndex = DEFAULT_DISPLAY_ROTATION;
 bool instantStartMode = false;
 
 #define RGB565(r, g, b) (uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | (((b) & 0xF8) >> 3))
