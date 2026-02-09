@@ -19,6 +19,7 @@
 #include "header_capture.h"
 #include "midi_clock_task.h"
 #include "midi_transport.h"
+#include "module_bpm_settings_mode.h"
 #include "remote_display.h"
 #include "splash_screen.h"
 #include "ui_elements.h"
@@ -132,6 +133,7 @@ void appLoop() {
 
   // Check if BPM value in header was tapped (except in BPM_SETTINGS mode)
   if (currentMode != BPM_SETTINGS && isBPMValueTapped()) {
+    setPreviousModeForBPMSettings(currentMode);
     switchMode(BPM_SETTINGS);
   }
 

@@ -86,8 +86,13 @@ void drawStatusIndicators() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
+  // BPM display area constants
+  const int bpmSpacingFromIcons = SCALE_X(70);
+  const int bpmTouchWidth = SCALE_X(60);
+  const int bpmTouchHeight = SCALE_Y(20);
+  
   String bpmLabel = String(sharedBPM);
-  int bpmX = std::max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
+  int bpmX = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
   int bpmY = iconsStartY + totalHeight / 2 - SCALE_Y(6);
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);
   tft.drawString(bpmLabel, bpmX, bpmY, 2);
@@ -158,7 +163,7 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
 }
 
 bool isBPMValueTapped() {
-  // Calculate the BPM display area
+  // Calculate the BPM display area (must match drawStatusIndicators)
   const int iconSize = SCALE_X(12);
   const int iconSpacing = SCALE_X(4);
   const int gridCols = 2;
@@ -166,14 +171,16 @@ bool isBPMValueTapped() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
   
-  int bpmX = std::max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
+  // BPM display area constants (must match drawStatusIndicators)
+  const int bpmSpacingFromIcons = SCALE_X(70);
+  const int bpmTouchWidth = SCALE_X(60);
+  const int bpmTouchHeight = SCALE_Y(20);
+  
+  int bpmX = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
   int bpmY = iconsStartY;
   
   // Make the tappable area generous for better UX
-  int bpmW = SCALE_X(60);
-  int bpmH = SCALE_Y(20);
-  
-  return touch.justPressed && isButtonPressed(bpmX, bpmY, bpmW, bpmH);
+  return touch.justPressed && isButtonPressed(bpmX, bpmY, bpmTouchWidth, bpmTouchHeight);
 }
 
 void updateStatus() {

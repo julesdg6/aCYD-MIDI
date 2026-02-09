@@ -11,9 +11,13 @@ static constexpr uint16_t kBpmMax = 240;
 static AppMode previousMode = MENU;
 }
 
+void setPreviousModeForBPMSettings(AppMode mode) {
+  previousMode = mode;
+}
+
 void initializeBPMSettingsMode() {
-  // Store the current mode so we can return to it
-  previousMode = currentMode;
+  // previousMode is set via setPreviousModeForBPMSettings before switchMode is called
+  // This ensures we capture the correct previous mode
 }
 
 void drawBPMSettingsMode() {
