@@ -76,6 +76,35 @@ void drawBluetoothIndicator(int x, int y, uint16_t color) {
   tft.drawLine(x + diagOffset, y + SCALE_Y(2), stemX, y, color);
 }
 
+// Helper to calculate BPM display area position
+struct BPMDisplayArea {
+  int x;
+  int y;
+  int width;
+  int height;
+};
+
+static BPMDisplayArea calculateBPMDisplayArea() {
+  const int iconSize = SCALE_X(12);
+  const int iconSpacing = SCALE_X(4);
+  const int gridCols = 2;
+  const int totalWidth = gridCols * iconSize + (gridCols - 1) * iconSpacing;
+  int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
+  int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
+
+  // BPM display area constants
+  const int bpmSpacingFromIcons = SCALE_X(70);
+  const int bpmTouchWidth = SCALE_X(60);
+  const int bpmTouchHeight = SCALE_Y(20);
+  
+  BPMDisplayArea area;
+  area.x = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
+  area.y = iconsStartY;
+  area.width = bpmTouchWidth;
+  area.height = bpmTouchHeight;
+  return area;
+}
+
 void drawStatusIndicators() {
   const int iconSize = SCALE_X(12);
   const int iconSpacing = SCALE_X(4);
@@ -86,13 +115,10 @@ void drawStatusIndicators() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
-  // BPM display area constants
-  const int bpmSpacingFromIcons = SCALE_X(70);
-  const int bpmTouchWidth = SCALE_X(60);
-  const int bpmTouchHeight = SCALE_Y(20);
+  BPMDisplayArea bpmArea = calculateBPMDisplayArea();
   
   String bpmLabel = String(sharedBPM);
-  int bpmX = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
+  int bpmX = bpmArea.x;
   int bpmY = iconsStartY + totalHeight / 2 - SCALE_Y(6);
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);
   tft.drawString(bpmLabel, bpmX, bpmY, 2);
@@ -163,24 +189,8 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
 }
 
 bool isBPMValueTapped() {
-  // Calculate the BPM display area (must match drawStatusIndicators)
-  const int iconSize = SCALE_X(12);
-  const int iconSpacing = SCALE_X(4);
-  const int gridCols = 2;
-  const int totalWidth = gridCols * iconSize + (gridCols - 1) * iconSpacing;
-  int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
-  int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
-  
-  // BPM display area constants (must match drawStatusIndicators)
-  const int bpmSpacingFromIcons = SCALE_X(70);
-  const int bpmTouchWidth = SCALE_X(60);
-  const int bpmTouchHeight = SCALE_Y(20);
-  
-  int bpmX = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
-  int bpmY = iconsStartY;
-  
-  // Make the tappable area generous for better UX
-  return touch.justPressed && isButtonPressed(bpmX, bpmY, bpmTouchWidth, bpmTouchHeight);
+  BPMDisplayArea area = calculateBPMDisplayArea();
+  return touch.justPressed && isButtonPressed(area.x, area.y, area.width, area.height);
 }
 
 void updateStatus() {
