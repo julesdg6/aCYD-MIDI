@@ -255,23 +255,9 @@ void drawGridsMode() {
                   grids.playing ? THEME_ERROR : THEME_SUCCESS, false, 2);
   buttonY += buttonH + buttonSpacing;
   
-  // BPM controls with label
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("BPM", controlX, buttonY, 1);
-  buttonY += SCALE_Y(12);
+  // BPM controls removed - now accessible via header tap
   
-  // BPM buttons side by side with half width each
-  int halfButtonW = (controlW - buttonSpacing) / 2;
-  drawRoundButton(controlX, buttonY, halfButtonW, buttonH, "-", THEME_SECONDARY, false, 4);
-  drawRoundButton(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH, "+", THEME_SECONDARY, false, 4);
-  buttonY += buttonH + SCALE_Y(4);
-  
-  // BPM value
-  tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawCentreString(String(sharedBPM), controlX + controlW/2, buttonY, 4);
-  buttonY += SCALE_Y(26);
-  
-  // Random button with better spacing from BPM
+  // Random button
   drawRoundButton(controlX, buttonY, controlW, buttonH, "RNDM", THEME_ACCENT, false, 2);
 }
 
@@ -332,11 +318,7 @@ void handleGridsMode() {
   bool playPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
   buttonY += buttonH + buttonSpacing + SCALE_Y(12);  // Skip BPM label
   
-  // BPM buttons side by side with half width each
-  int halfButtonW = (controlW - buttonSpacing) / 2;
-  bool bpmDownPressed = isButtonPressed(controlX, buttonY, halfButtonW, buttonH);
-  bool bpmUpPressed = isButtonPressed(controlX + halfButtonW + buttonSpacing, buttonY, halfButtonW, buttonH);
-  buttonY += buttonH + SCALE_Y(30);  // Skip BPM value display
+  // BPM button handlers removed - now accessible via header tap
   
   bool randomPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
 
@@ -347,20 +329,6 @@ void handleGridsMode() {
       grids.step = 0;
       gridsSync.requestStart();
     }
-    requestRedraw();
-    return;
-  }
-  if (bpmDownPressed) {
-    int target = std::max<int>(GRIDS_MIN_BPM, static_cast<int>(sharedBPM) - 5);
-    grids.bpm = static_cast<float>(target);
-    setSharedBPM(static_cast<uint16_t>(target));
-    requestRedraw();
-    return;
-  }
-  if (bpmUpPressed) {
-    int target = std::min<int>(GRIDS_MAX_BPM, static_cast<int>(sharedBPM) + 5);
-    grids.bpm = static_cast<float>(target);
-    setSharedBPM(static_cast<uint16_t>(target));
     requestRedraw();
     return;
   }
