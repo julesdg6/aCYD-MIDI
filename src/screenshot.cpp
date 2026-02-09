@@ -149,8 +149,18 @@ bool takeScreenshot(const char* label) {
     char boardBuf[32];
     sanitizeLabel(BOARD_NAME, boardBuf, sizeof(boardBuf));
 
-    char filename[80];
-    snprintf(filename, sizeof(filename), "/screenshots/%s_%s_%03d.bmp", boardBuf, labelBuf, screenshot_count++);
+    // Convert version to use dashes instead of dots
+    char versionBuf[16];
+    strncpy(versionBuf, ACYD_MIDI_VERSION, sizeof(versionBuf) - 1);
+    versionBuf[sizeof(versionBuf) - 1] = '\0';
+    for (size_t i = 0; i < sizeof(versionBuf) && versionBuf[i]; i++) {
+        if (versionBuf[i] == '.') {
+            versionBuf[i] = '-';
+        }
+    }
+
+    char filename[96];
+    snprintf(filename, sizeof(filename), "/screenshots/%s-%s_%s_%03d.bmp", boardBuf, versionBuf, labelBuf, screenshot_count++);
 
     File file = SD.open(filename, FILE_WRITE);
     if (!file) {

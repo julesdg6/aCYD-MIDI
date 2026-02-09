@@ -65,12 +65,7 @@ void drawSequencerMode() {
   }
   drawRoundButton(MARGIN_SMALL, ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, seqPlayLabel, seqPlayColor);
   drawRoundButton(SCALE_X(70), ctrlY, BTN_MEDIUM_W, BTN_SMALL_H, "CLEAR", THEME_WARNING);
-  drawRoundButton(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM-", THEME_SECONDARY);
-  drawRoundButton(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H, "BPM+", THEME_SECONDARY);
-  
-  // BPM display
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString(String(sharedBPM), SCALE_X(240), ctrlY + SCALE_Y(7), 2);
+  // BPM buttons removed - now accessible via header tap
 }
 
 void drawSequencerGrid() {
@@ -163,15 +158,7 @@ void handleSequencerMode() {
       return;
     }
     
-    if (isButtonPressed(SCALE_X(130), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
-      changeSequencerTempo(-1);
-      return;
-    }
-    
-    if (isButtonPressed(SCALE_X(180), ctrlY, BTN_SMALL_W, BTN_SMALL_H)) {
-      changeSequencerTempo(+1);
-      return;
-    }
+    // BPM button handlers removed - now accessible via header tap
     
     // Grid interaction
     int gridX = MARGIN_SMALL + SCALE_X(35);

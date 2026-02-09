@@ -176,20 +176,7 @@ void drawEuclideanMode() {
                   playing ? THEME_ERROR : THEME_SUCCESS, false, 2);
   rightY += btnH + btnSpacing;
   
-  // BPM controls CONSOLIDATED in one row
-  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
-  tft.drawString("BPM", rightX, rightY, 1);
-  rightY += SCALE_Y(12);
-  
-  int bpmBtnW = (btnW - SCALE_X(6)) / 2;
-  drawRoundButton(rightX, rightY, bpmBtnW, btnH, "-", THEME_SECONDARY, false, 4);
-  drawRoundButton(rightX + bpmBtnW + SCALE_X(6), rightY, bpmBtnW, btnH, "+", THEME_SECONDARY, false, 4);
-  rightY += btnH + SCALE_Y(4);
-  
-  // BPM value displayed
-  tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawCentreString(String(sharedBPM), rightX + btnW/2, rightY, 4);
-  rightY += SCALE_Y(28);
+  // BPM controls removed - now accessible via header tap
   
   // Time division toggle
   drawRoundButton(rightX, rightY, btnW, btnH,
@@ -281,21 +268,7 @@ void handleEuclideanMode() {
   }
   rightY += btnH + btnSpacing;
   
-  // BPM controls
-  rightY += SCALE_Y(12);  // Skip "BPM" label
-  int bpmBtnW = (btnW - SCALE_X(6)) / 2;
-  
-  if (isButtonPressed(rightX, rightY, bpmBtnW, btnH)) {
-    adjustEuclidTempo(-5);
-    return;
-  }
-
-  if (isButtonPressed(rightX + bpmBtnW + SCALE_X(6), rightY, bpmBtnW, btnH)) {
-    adjustEuclidTempo(+5);
-    return;
-  }
-  
-  rightY += btnH + SCALE_Y(32);  // Skip BPM value display
+  // BPM control handlers removed - now accessible via header tap
   
   // Time division toggle
   if (isButtonPressed(rightX, rightY, btnW, btnH)) {

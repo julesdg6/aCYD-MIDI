@@ -115,17 +115,7 @@ void drawRandomGenControls() {
   
   y += spacing;
   
-  // Row 4: Tempo and Beat division
-  tft.setTextColor(THEME_TEXT, THEME_BG);
-  tft.drawString("Tempo", MARGIN_SMALL, y, 2);
-  tft.drawString(String(sharedBPM), MARGIN_SMALL, y + SCALE_Y(16), 4);
-  
-  // BPM +/- (small buttons)
-  drawRoundButton(MARGIN_SMALL + SCALE_X(55), y + SCALE_Y(10), SCALE_X(28), SCALE_Y(28), 
-                  "-", THEME_SECONDARY, false, 1);
-  drawRoundButton(MARGIN_SMALL + SCALE_X(88), y + SCALE_Y(10), SCALE_X(28), SCALE_Y(28), 
-                  "+", THEME_SECONDARY, false, 1);
-  
+  // Row 4: Beat division (Tempo removed - now accessible via header tap)
   // Beat division
   rangeX = DISPLAY_WIDTH / 2 + SCALE_X(10);
   String subdivText;
@@ -252,15 +242,7 @@ void handleRandomGeneratorMode() {
     
     y += spacing;
     
-    // Row 4: BPM +/-
-    if (isButtonPressed(MARGIN_SMALL + SCALE_X(55), y + SCALE_Y(10), SCALE_X(28), SCALE_Y(28))) {
-      adjustSharedTempo(-5);
-      return;
-    }
-    if (isButtonPressed(MARGIN_SMALL + SCALE_X(88), y + SCALE_Y(10), SCALE_X(28), SCALE_Y(28))) {
-      adjustSharedTempo(+5);
-      return;
-    }
+    // Row 4: BPM handlers removed - now accessible via header tap
     
     // Division button
     rangeX = DISPLAY_WIDTH / 2 + SCALE_X(10);

@@ -102,6 +102,7 @@ struct TouchState {
 enum AppMode {
   MENU,
   SETTINGS,
+  BPM_SETTINGS,
   KEYBOARD,
   SEQUENCER,
   BOUNCING_BALL,

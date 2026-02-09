@@ -19,6 +19,7 @@
 #include "header_capture.h"
 #include "midi_clock_task.h"
 #include "midi_transport.h"
+#include "module_bpm_settings_mode.h"
 #include "remote_display.h"
 #include "splash_screen.h"
 #include "ui_elements.h"
@@ -129,6 +130,15 @@ void appLoop() {
 
   updateTouch();
   updateHeaderCapture();
+
+  // Check if BPM value in header was tapped (except in BPM_SETTINGS mode)
+  // Note: setPreviousModeForBPMSettings must be called before switchMode
+  // because switchMode sets currentMode before calling init, making it
+  // impossible to capture the previous mode inside initializeBPMSettingsMode
+  if (currentMode != BPM_SETTINGS && isBPMValueTapped()) {
+    setPreviousModeForBPMSettings(currentMode);
+    switchMode(BPM_SETTINGS);
+  }
 
   // Process simple serial CLI commands for automated testing
   processSerialCommands();
