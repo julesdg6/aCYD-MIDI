@@ -8,7 +8,7 @@
 
 namespace {
 static inline int settingsRowSpacing() { return SCALE_Y(12); }
-static inline int bpmRowHeight() { return SCALE_Y(56); }
+// bpmRowHeight removed - BPM now accessible via header tap
 static inline int compactRowHeight() { return SCALE_Y(44); }
 static inline int statusRowHeight() { return SCALE_Y(26); }
 static inline int contentPadding() { return SCALE_Y(8); }
@@ -30,7 +30,7 @@ struct SettingsLayout {
   int viewWidth;
   int viewRight;
   int contentHeight;
-  int bpmRowY;
+  // bpmRowY removed - BPM now accessible via header tap
   int clockRowY;
   int startModeRowY;
   int wifiRowY;
@@ -56,8 +56,7 @@ static SettingsLayout computeSettingsLayout() {
   layout.viewRight = layout.viewLeft + layout.viewWidth;
   layout.viewHeight = DISPLAY_HEIGHT - layout.viewTop - SCALE_Y(6);
   int y = layout.viewTop + contentPadding();
-  layout.bpmRowY = y;
-  y += bpmRowHeight() + settingsRowSpacing();
+  // BPM row removed - now accessible via header tap
   layout.clockRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.startModeRowY = y;
@@ -88,9 +87,7 @@ static int settingsScrollStartY = 0;
 static int settingsScrollStartOffset = 0;
 } // namespace
 
-static constexpr uint16_t kBpmStep = 1;
-static constexpr uint16_t kBpmMin = 40;
-static constexpr uint16_t kBpmMax = 240;
+// BPM constants removed - now handled in BPM settings mode
 
 static const char *const kClockMasterLabels[] = {
   "Internal Clock",
@@ -123,24 +120,8 @@ void drawSettingsMode() {
   const int rowInnerW = rowBgW - 2 * buttonInset;
   const int buttonHeight = SCALE_Y(44);
   const int buttonSpacing = SCALE_X(6);
-  const int bpmRowY = layout.bpmRowY - settingsScrollOffset;
-  const int bpmLabelY = bpmRowY - SCALE_Y(18);
-  const int bpmLabelH = SCALE_Y(18);
-  if ((bpmRowY + bpmRowHeight() > layout.viewTop && bpmRowY < viewBottom) ||
-      (bpmLabelY + bpmLabelH > layout.viewTop && bpmLabelY < viewBottom)) {
-    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    int labelY = bpmLabelY;
-    tft.drawString("Shared Tempo", rowInnerLeft, labelY, 2);
-    int buttonY = bpmRowY + (bpmRowHeight() - buttonHeight) / 2;
-    tft.fillRoundRect(rowBgX, bpmRowY, rowBgW, bpmRowHeight(), 12, THEME_BG);
-    int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
-    int remainingWidth = rowInnerW - narrowBtnW * 2 - buttonSpacing;
-    int labelWidth = max(remainingWidth, SCALE_X(48));
-    int labelX = rowInnerLeft + narrowBtnW + buttonSpacing;
-    drawRoundButton(rowInnerLeft, buttonY, narrowBtnW, buttonHeight, "-", THEME_ERROR, false, 5);
-    drawRoundButton(labelX, buttonY, labelWidth, buttonHeight, String(sharedBPM), THEME_PRIMARY, false, 4);
-    drawRoundButton(labelX + labelWidth + buttonSpacing, buttonY, narrowBtnW, buttonHeight, "+", THEME_SUCCESS, false, 5);
-  }
+  
+  // BPM row removed - now accessible via header tap
 
   const int clockRowY = layout.clockRowY - settingsScrollOffset;
   const int clockLabelY = clockRowY - SCALE_Y(18);
@@ -306,32 +287,13 @@ void handleSettingsMode() {
   const int displayRotateX = rowInnerLeft + displayFirstWidth + buttonSpacing;
   const bool displayRowVisible = displayRowY >= layout.viewTop && displayRowY + compactRowHeight() > layout.viewTop &&
                                  displayRowY < layout.viewTop + layout.viewHeight;
-  const int bpmButtonY = layout.bpmRowY - settingsScrollOffset + (bpmRowHeight() - buttonHeight) / 2;
-  const int narrowBtnW = max(SCALE_X(26), rowInnerW / 8);
-  const int bpmLabelWidth = max(rowInnerW - 2 * narrowBtnW - buttonSpacing, SCALE_X(48));
-  const int bpmLabelX = rowInnerLeft + narrowBtnW + buttonSpacing;
-  const int minusX = rowInnerLeft;
-  const int plusX = bpmLabelX + bpmLabelWidth + buttonSpacing;
+  // BPM button handling removed - now accessible via header tap
   const int trackTop = layout.viewTop + SCALE_Y(3);
   const int trackHeight = layout.viewHeight - SCALE_Y(6);
   const int scrollTouchRight = layout.scrollbarTouchX + scrollBarTouchWidth();
 
   bool handled = false;
-  if (touch.justPressed && isButtonPressed(minusX, bpmButtonY, narrowBtnW, buttonHeight)) {
-    if (sharedBPM > kBpmMin) {
-      uint16_t newBPM = (sharedBPM - kBpmStep < kBpmMin) ? kBpmMin : sharedBPM - kBpmStep;
-      setSharedBPM(newBPM);
-      requestRedraw();
-    }
-    handled = true;
-  } else if (touch.justPressed && isButtonPressed(plusX, bpmButtonY, narrowBtnW, buttonHeight)) {
-    if (sharedBPM < kBpmMax) {
-      uint16_t newBPM = (sharedBPM + kBpmStep > kBpmMax) ? kBpmMax : sharedBPM + kBpmStep;
-      setSharedBPM(newBPM);
-      requestRedraw();
-    }
-    handled = true;
-  }
+  // BPM +/- button handling removed
 
   const int clockButtonY = layout.clockRowY - settingsScrollOffset;
   const int clockButtonX = rowInnerLeft;

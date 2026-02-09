@@ -6,6 +6,7 @@
 #include "module_arpeggiator_mode.h"
 #include "module_auto_chord_mode.h"
 #include "module_bouncing_ball_mode.h"
+#include "module_bpm_settings_mode.h"
 #include "module_euclidean_mode.h"
 #include "module_grid_piano_mode.h"
 #include "module_grids_mode.h"
@@ -40,11 +41,17 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
+static void initBPMSettingsMode() {
+  // Don't stop playback - allow BPM adjustment during playback
+  initializeBPMSettingsMode();
+}
+
 constexpr size_t kModeCount = static_cast<size_t>(MORPH) + 1;
 
 constexpr ModeEntry kModeTable[kModeCount] = {
     /* MENU */ {initMenuMode, drawMenu, handleMenu},
     /* SETTINGS */ {initSettingsMode, drawSettingsMode, handleSettingsMode},
+    /* BPM_SETTINGS */ {initBPMSettingsMode, drawBPMSettingsMode, handleBPMSettingsMode},
     /* KEYBOARD */ {initializeKeyboardMode, drawKeyboardMode, handleKeyboardMode},
     /* SEQUENCER */ {initializeSequencerMode, drawSequencerMode, handleSequencerMode},
     /* BOUNCING_BALL */ {initializeBouncingBallMode, drawBouncingBallMode, handleBouncingBallMode},

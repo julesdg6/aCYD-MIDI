@@ -1055,17 +1055,9 @@ void drawClockTab() {
     drawSlinkTabBar();
 
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
-    int mainH = SCALE_Y(52);
-    drawRoundButton(MARGIN_SMALL, contentY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, mainH,
-                    String(sharedBPM) + " BPM", THEME_PRIMARY, false, 4);
+    // BPM display and buttons removed - now accessible via header tap
 
-    int adjustY = contentY + mainH + SCALE_Y(10);
-    int adjustH = SCALE_Y(42);
-    int adjustW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
-    drawRoundButton(MARGIN_SMALL, adjustY, adjustW, adjustH, "-", THEME_ERROR, false, 5);
-    drawRoundButton(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH, "+", THEME_SUCCESS, false, 5);
-
-    int swingY = adjustY + adjustH + SCALE_Y(12);
+    int swingY = contentY;
     drawRoundButton(MARGIN_SMALL, swingY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(40),
                     String("Swing: ") + String((int)(slink_state.clock_engine.swing * 100)) + "%", THEME_ACCENT, false, 2);
 
@@ -1452,36 +1444,9 @@ void handlePitchTab() {
 
 void handleClockTab() {
     int contentY = HEADER_HEIGHT + getSlinkTabBarHeight() + SCALE_Y(8);
-    int mainH = SCALE_Y(52);
-    int adjustY = contentY + mainH + SCALE_Y(10);
-    int adjustH = SCALE_Y(42);
-    int adjustW = (DISPLAY_WIDTH - 3 * MARGIN_SMALL) / 2;
+    // BPM button handlers removed - now accessible via header tap
 
-    if (isButtonPressed(MARGIN_SMALL, adjustY, adjustW, adjustH)) {
-        uint16_t newBPM;
-        if (sharedBPM <= 45) {
-            newBPM = 40;
-        } else {
-            newBPM = sharedBPM - 5;
-        }
-        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
-        setSharedBPM(newBPM);
-        requestRedraw();
-        return;
-    } else if (isButtonPressed(MARGIN_SMALL + adjustW + MARGIN_SMALL, adjustY, adjustW, adjustH)) {
-        uint16_t newBPM;
-        if (sharedBPM >= 235) {
-            newBPM = 240;
-        } else {
-            newBPM = sharedBPM + 5;
-        }
-        slink_state.clock_engine.bpm = static_cast<float>(newBPM);
-        setSharedBPM(newBPM);
-        requestRedraw();
-        return;
-    }
-
-    int swingY = adjustY + adjustH + SCALE_Y(12);
+    int swingY = contentY;
     if (isButtonPressed(MARGIN_SMALL, swingY, DISPLAY_WIDTH - 2 * MARGIN_SMALL, SCALE_Y(40))) {
         slink_state.clock_engine.swing += 0.1f;
         if (slink_state.clock_engine.swing > 1.0f) {
