@@ -31,6 +31,8 @@ static WaaaveState state;
 // UI Constants
 static constexpr int SLIDER_BORDER_WIDTH = 1;
 static constexpr int KNOB_SENSITIVITY = 3;  // Pixels of drag per value increment
+static constexpr float KNOB_ROTATION_RANGE = 270.0f;  // Degrees of rotation
+static constexpr float KNOB_START_ANGLE = -135.0f;    // Starting angle in degrees
 
 // MIDI CC mappings for Korg nanoKONTROL2
 static constexpr uint8_t CC_KNOB_BASE = 16;
@@ -39,7 +41,9 @@ static constexpr uint8_t CC_S_BUTTON_BASE = 32;
 static constexpr uint8_t CC_M_BUTTON_BASE = 48;
 static constexpr uint8_t CC_R_BUTTON_BASE = 64;
 
-// Transport CC mappings (standard MIDI Machine Control)
+// Transport CC mappings (Korg nanoKONTROL2 specific)
+// Note: These are not standard MIDI Machine Control (MMC uses SysEx),
+// but are the CC assignments used by the Korg nanoKONTROL2 for transport
 static constexpr uint8_t CC_RECORD = 93;
 static constexpr uint8_t CC_PLAY = 94;
 static constexpr uint8_t CC_STOP = 95;
@@ -155,7 +159,7 @@ static void drawControlPage(int channelStart) {
     tft.drawCircle(knobCX, knobCY, knobSize / 2, THEME_TEXT);
     
     // Draw knob position indicator
-    float angle = (state.knobs[ch] / 127.0f) * 270.0f - 135.0f;  // -135 to +135 degrees
+    float angle = (state.knobs[ch] / 127.0f) * KNOB_ROTATION_RANGE + KNOB_START_ANGLE;
     float rad = angle * PI / 180.0f;
     int indicatorX = knobCX + (int)(cos(rad) * knobSize / 2);
     int indicatorY = knobCY + (int)(sin(rad) * knobSize / 2);
@@ -257,6 +261,9 @@ static void handleTransportPage() {
 }
 
 static void handleControlPage(int channelStart) {
+  // Static variable to track last knob position for drag tracking
+  static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  
   int numChannels = 4;
   int channelW = (DISPLAY_WIDTH - 2 * MARGIN_SMALL - SCALE_X(15)) / numChannels;
   int startY = HEADER_HEIGHT + SCALE_Y(30);
@@ -278,7 +285,6 @@ static void handleControlPage(int channelStart) {
         abs(touch.x - knobCX) <= knobTouchRadius &&
         abs(touch.y - knobCY) <= knobTouchRadius) {
       // Adjust knob based on horizontal drag with sensitivity
-      static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
       int deltaX = touch.x - lastKnobX[ch];
       if (lastKnobX[ch] == 0) {
         lastKnobX[ch] = touch.x;
@@ -297,7 +303,6 @@ static void handleControlPage(int channelStart) {
         lastKnobX[ch] = touch.x;
       }
     } else {
-      static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
       lastKnobX[ch] = 0;
     }
     

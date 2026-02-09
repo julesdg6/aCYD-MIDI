@@ -173,7 +173,7 @@ void drawMenu() {
   drawSettingsCog();
   
   // Select the appropriate tile array based on menu mode
-  const MenuTile* kMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
   
   const int gapX = SCALE_X(6);
   const int gapY = SCALE_Y(4);
@@ -191,7 +191,7 @@ void drawMenu() {
     uint16_t topBlend = blendColor(MENU_COLOR_TL, MENU_COLOR_TR, fx);
     uint16_t bottomBlend = blendColor(MENU_COLOR_BL, MENU_COLOR_BR, fx);
     uint16_t accent = blendColor(topBlend, bottomBlend, fy);
-    switch (kMenuTiles[i].icon) {
+    switch (activeMenuTiles[i].icon) {
       case MenuIcon::Keys:
         accent = MENU_COLOR_KEYS;
         break;
@@ -207,7 +207,7 @@ void drawMenu() {
       default:
         break;
     }
-    drawMenuTile(x, y, tileW, tileH, kMenuTiles[i], accent);
+    drawMenuTile(x, y, tileW, tileH, activeMenuTiles[i], accent);
   }
 }
 
@@ -255,7 +255,7 @@ void handleMenu() {
   const int startY = HEADER_HEIGHT + SCALE_Y(6);
 
   // Select the appropriate tile array based on menu mode
-  const MenuTile* kMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
 
   for (size_t i = 0; i < kMenuCols * kMenuRows; ++i) {
     int col = i % kMenuCols;
@@ -263,7 +263,7 @@ void handleMenu() {
     int x = startX + col * (tileW + gapX);
     int y = startY + row * (tileH + gapY);
     if (isButtonPressed(x, y, tileW, tileH)) {
-      const MenuTile &tile = kMenuTiles[i];
+      const MenuTile &tile = activeMenuTiles[i];
       switchMode(tile.mode);
       return;
     }
