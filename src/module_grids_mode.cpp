@@ -316,7 +316,7 @@ void handleGridsMode() {
   int buttonY = layout.padY;
 
   bool playPressed = isButtonPressed(controlX, buttonY, controlW, buttonH);
-  buttonY += buttonH + buttonSpacing + SCALE_Y(12);  // Skip BPM label
+  buttonY += buttonH + buttonSpacing;
   
   // BPM button handlers removed - now accessible via header tap
   
