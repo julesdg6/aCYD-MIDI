@@ -139,7 +139,7 @@ struct Scale {
 extern Scale scales[];
 extern const int NUM_SCALES;
 
-// Global objects - declared in main file
+// Global objects - defined in src/app/app_state.cpp
 extern TFT_eSPI tft;
 extern BLECharacteristic *pCharacteristic;
 extern bool deviceConnected;

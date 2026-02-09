@@ -60,3 +60,97 @@ void sendMIDI(byte cmd, byte note, byte vel) {
   sendWiFiMidiMessage(wifiBuffer, sizeof(wifiBuffer));
 }
 
+void sendMIDIClock() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xF8;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+  }
+
+  sendHardwareMIDISingle(0xF8);
+
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xF8, 0x00, 0x00);
+  }
+#endif
+
+  uint8_t wifiClock = 0xF8;
+  sendWiFiMidiMessage(&wifiClock, 1);
+}
+
+void sendMIDIStart() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xFA;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+  }
+
+  sendHardwareMIDISingle(0xFA);
+
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xFA, 0x00, 0x00);
+  }
+#endif
+
+  uint8_t wifiStart = 0xFA;
+  sendWiFiMidiMessage(&wifiStart, 1);
+}
+
+void sendMIDIStop() {
+  if (deviceConnected) {
+    midiPacket[2] = 0xFC;
+    midiPacket[3] = 0x00;
+    midiPacket[4] = 0x00;
+    if (pCharacteristic) {
+      pCharacteristic->setValue(midiPacket, 5);
+      pCharacteristic->notify();
+    }
+  }
+
+  sendHardwareMIDISingle(0xFC);
+
+#if ESP_NOW_ENABLED
+  if (espNowState.initialized && espNowState.mode != ESP_NOW_OFF) {
+    sendEspNowMidi(0xFC, 0x00, 0x00);
+  }
+#endif
+
+  uint8_t wifiStop = 0xFC;
+  sendWiFiMidiMessage(&wifiStop, 1);
+}
+
+int getNoteInScale(int scaleIndex, int degree, int octave) {
+  if (scaleIndex >= NUM_SCALES) return 60;
+
+  // If degree exceeds scale notes, wrap to next octave
+  int actualDegree = degree % scales[scaleIndex].numNotes;
+  int octaveOffset = degree / scales[scaleIndex].numNotes;
+
+  int rootNote = 60; // C4
+  return rootNote + scales[scaleIndex].intervals[actualDegree] + ((octave - 4 + octaveOffset) * 12);
+}
+
+String getNoteNameFromMIDI(int midiNote) {
+  static const char *const kNoteNames[] = {"C", "C#", "D", "D#", "E", "F",
+                                          "F#", "G", "G#", "A", "A#", "B"};
+  int noteIndex = midiNote % 12;
+  int octave = (midiNote / 12) - 1;
+  return String(kNoteNames[noteIndex]) + String(octave);
+}
+
+void stopAllModes() {
+  // Stop all MIDI notes
+  for (int i = 0; i < 128; i++) {
+    sendMIDI(0x80, i, 0);
+  }
+}
