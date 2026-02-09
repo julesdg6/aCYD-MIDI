@@ -2,6 +2,8 @@
 #include "common_definitions.h"
 #include "ui_elements.h"
 #include "midi_utils.h"
+#include <Arduino.h>
+#include <cmath>
 
 namespace {
 
