@@ -43,12 +43,11 @@ static void initSettingsMode() {
 }
 
 constexpr size_t kModeCount = static_cast<size_t>(WAAAVE) + 1;
+
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
   initializeBPMSettingsMode();
 }
-
-constexpr size_t kModeCount = static_cast<size_t>(MORPH) + 1;
 
 constexpr ModeEntry kModeTable[kModeCount] = {
     /* MENU */ {initMenuMode, drawMenu, handleMenu},
