@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/aCYD-MIDI/debug-console/',
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
