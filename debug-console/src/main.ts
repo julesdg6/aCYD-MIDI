@@ -3,6 +3,7 @@ import { EventBus } from './eventBus';
 import { MidiController } from './controller';
 import { Synth303 } from './synth303';
 import { formatTime, formatDelta, formatMidiMessage } from './types';
+import type { LogEntry } from './types';
 
 // Initialize app
 const eventBus = new EventBus();
@@ -259,7 +260,7 @@ function renderLog(): void {
   });
 }
 
-function formatLogEntry(entry: any): string {
+function formatLogEntry(entry: LogEntry): string {
   let output = '';
   
   // Timestamp
@@ -315,6 +316,7 @@ function generateLogFile(): string {
     
     let message = '';
     if (entry.midi) {
+      // formatMidiMessage returns plain text suitable for log export
       message = formatMidiMessage(entry.midi);
     } else if (entry.serial) {
       message = entry.serial.line;

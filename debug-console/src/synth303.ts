@@ -212,9 +212,15 @@ export class Synth303 {
    */
   setParam(param: keyof Synth303Params, value: number | string): void {
     if (param === 'waveform') {
-      this.params.waveform = value as 'saw' | 'square';
+      if (value === 'saw' || value === 'square') {
+        this.params.waveform = value;
+      }
     } else {
-      this.params[param] = Math.max(0, Math.min(1, value as number)) as never;
+      // Numeric parameters only
+      const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+      if (!isNaN(numValue)) {
+        (this.params as any)[param] = Math.max(0, Math.min(1, numValue));
+      }
     }
     
     // Update audio parameters
