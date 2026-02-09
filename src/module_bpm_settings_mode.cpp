@@ -1,6 +1,7 @@
 #include "module_bpm_settings_mode.h"
 #include "ui_elements.h"
 #include "common_definitions.h"
+#include "app/app_modes.h"
 
 namespace {
 static constexpr uint16_t kBpmStep = 1;
@@ -50,7 +51,7 @@ void initializeBPMSettingsMode() {
 }
 
 void drawBPMSettingsMode() {
-  // Draw dialog overlay (opaque background)
+  // Draw modal dialog (replaces screen content)
   tft.fillRect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, THEME_BG);
   
   BPMDialogLayout layout = calculateDialogLayout();
@@ -114,9 +115,8 @@ void handleBPMSettingsMode() {
   bool closeButton = isButtonPressed(layout.centerButtonX, layout.buttonY, layout.centerButtonW, layout.buttonH);
   
   if (closeButton || outsideDialog) {
-    // Return to the previous mode
-    currentMode = previousMode;
-    requestRedraw();
+    // Return to the previous mode using proper mode switching
+    switchMode(previousMode);
     return;
   }
 }
