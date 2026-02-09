@@ -93,6 +93,7 @@ Flash firmware directly from your browser using ESP Web Tools:
    - Device will restart automatically
    - Pair "CYD MIDI" via Bluetooth
    - Select as MIDI input in your DAW
+   - **Windows 11 users:** See [Platform-Specific Setup](#platform-specific-setup) for required software
 
 **Supported boards:** All ESP32-2432S028R, ESP32-4832S035C/R, ESP32-4832S040R variants, and headless builds.
 
@@ -138,6 +139,7 @@ Flash firmware directly from your browser using ESP Web Tools:
 3. **Connect via Bluetooth**
    - Pair "CYD MIDI" via Bluetooth
    - Select as MIDI input in your DAW
+   - **Windows 11 users:** See [Platform-Specific Setup](#platform-specific-setup) for required software
 
 ### Option C: Build from Source
 
@@ -197,6 +199,7 @@ Replace the `libraries/TFT_eSPI/User_Setup.h` with the `User_Setup.h` from the r
 ### 5. Connect
 1. Pair "CYD MIDI" via Bluetooth
 2. Select as MIDI input in your DAW
+3. **Windows 11 users:** See [Platform-Specific Setup](#platform-specific-setup) for required software
 
 ## Display Autoscaling
 
@@ -220,6 +223,57 @@ For traditional DIN-5 MIDI output with lower latency, see the complete guide:
 - Supports simultaneous BLE + Hardware MIDI
 - Two UART options: UART0 (serial breakout) or UART2 (expansion GPIOs)
 - Circuit components ~$5-10
+
+## Platform-Specific Setup
+
+### Windows 11 BLE-MIDI Connection
+
+Windows 11 requires additional software to connect to BLE-MIDI devices. Follow these steps to use your aCYD-MIDI controller with Windows:
+
+**Requirements:**
+- [BLE-MIDI Connect](https://apps.microsoft.com/detail/9NVMLZTTWWVL) (Microsoft Store)
+- [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) by Tobias Erichsen
+
+**Setup Steps:**
+
+1. **Install and configure loopMIDI**
+   - Download and install loopMIDI from [https://www.tobias-erichsen.de/software/loopmidi.html](https://www.tobias-erichsen.de/software/loopmidi.html)
+   - Open the loopMIDI application
+   - Create a new virtual MIDI port by clicking the `+` button
+   - Name it something like "aCYD MIDI In"
+   - This virtual port will act as the MIDI interface your DAW can see
+
+2. **Install and configure BLE-MIDI Connect**
+   - Install BLE-MIDI Connect from the [Microsoft Store](https://apps.microsoft.com/detail/9NVMLZTTWWVL)
+   - Launch the app
+   - Scan for your BLE-MIDI device (it should appear as "CYD MIDI")
+   - Connect to the device
+   - In the app's routing settings, select your loopMIDI port ("aCYD MIDI In") as the output
+   - BLE-MIDI Connect now translates the Bluetooth MIDI stream into a standard Windows MIDI port
+
+3. **Use the virtual port in your DAW**
+   - Open your DAW or MIDI-capable software
+   - Look for the loopMIDI port you created ("aCYD MIDI In")
+   - Enable it as a MIDI input device
+
+**Troubleshooting:**
+- Make sure both loopMIDI and BLE-MIDI Connect are running before opening your DAW
+- If the device doesn't appear, try restarting the BLE-MIDI Connect app
+- Ensure your aCYD-MIDI device is powered on and in Bluetooth pairing mode
+
+### macOS BLE-MIDI Connection
+
+macOS has native BLE-MIDI support:
+
+1. Open **Audio MIDI Setup** (Applications → Utilities → Audio MIDI Setup)
+2. Click the Bluetooth MIDI icon in the toolbar
+3. Select "CYD MIDI" from the list of available devices
+4. The device will now appear as a MIDI input in your DAW
+
+### Linux BLE-MIDI Connection
+
+Linux users can use [bluez-alsa](https://github.com/Arkq/bluez-alsa) or [BLEMidi](https://github.com/oxesoft/blemidi) for BLE-MIDI connectivity. Specific setup varies by distribution.
+
 ## Usage
 
 ### Basic Operation
