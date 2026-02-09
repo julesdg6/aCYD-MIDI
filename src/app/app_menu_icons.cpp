@@ -271,6 +271,31 @@ static void drawMorphIcon(int cx, int cy, int size, uint16_t accent, uint16_t fg
   }
 }
 
+static void drawWaaaveIcon(int cx, int cy, int size, uint16_t accent) {
+  // Draw three horizontal wave lines (representing video controller faders/waves)
+  int waveHeight = std::max(3, size / 8);
+  int waveWidth = std::max(12, size / 2);
+  int spacing = std::max(6, size / 4);
+  
+  int startX = cx - waveWidth / 2;
+  int startY = cy - spacing;
+  
+  // Draw 3 wavy lines
+  for (int wave = 0; wave < 3; ++wave) {
+    int y = startY + wave * spacing;
+    int numSegments = 4;
+    int segWidth = waveWidth / numSegments;
+    
+    for (int seg = 0; seg < numSegments; ++seg) {
+      int x1 = startX + seg * segWidth;
+      int x2 = x1 + segWidth;
+      int y1 = y + ((seg % 2 == 0) ? -waveHeight : waveHeight);
+      int y2 = y + ((seg % 2 == 0) ? waveHeight : -waveHeight);
+      tft.drawLine(x1, y1, x2, y2, accent);
+    }
+  }
+}
+
 }  // namespace
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
@@ -325,6 +350,9 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
       break;
     case MenuIcon::Morph:
       drawMorphIcon(cx, cy, size, accent, fg);
+      break;
+    case MenuIcon::Waaave:
+      drawWaaaveIcon(cx, cy, size, fg);
       break;
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);

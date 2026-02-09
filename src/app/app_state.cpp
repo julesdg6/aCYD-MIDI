@@ -26,6 +26,7 @@ bool displayColorsInverted = false;
 uint8_t displayRotationIndex = DEFAULT_DISPLAY_ROTATION;
 
 bool instantStartMode = false;
+MenuMode currentMenuMode = MENU_AUDIO;
 
 // UART2 instance for hardware MIDI (only used when HARDWARE_MIDI_UART == 2)
 // This definition matches the extern declaration in hardware_midi.h

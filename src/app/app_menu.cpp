@@ -36,7 +36,8 @@ struct MenuTile {
 static constexpr size_t kMenuCols = 4;
 static constexpr size_t kMenuRows = 4;
 
-static const MenuTile kMenuTiles[] = {
+// Audio mode menu tiles (original 16 modes)
+static const MenuTile kAudioMenuTiles[] = {
     {"KEYS", MenuIcon::Keys, KEYBOARD},
     {"BEATS", MenuIcon::Sequencer, SEQUENCER},
     {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
@@ -55,8 +56,30 @@ static const MenuTile kMenuTiles[] = {
     {"SLINK", MenuIcon::Slink, SLINK},
 };
 
-static_assert(sizeof(kMenuTiles) / sizeof(kMenuTiles[0]) == kMenuCols * kMenuRows,
-              "Menu tile count must match 4x4 grid.");
+// Video mode menu tiles (placeholder - only Waaave for now)
+static const MenuTile kVideoMenuTiles[] = {
+    {"WAAAVE", MenuIcon::Waaave, WAAAVE},
+    {"KEYS", MenuIcon::Keys, KEYBOARD},
+    {"BEATS", MenuIcon::Sequencer, SEQUENCER},
+    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
+    {"DROP", MenuIcon::Drop, PHYSICS_DROP},
+    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
+    {"XY PAD", MenuIcon::Xy, XY_PAD},
+    {"ARP", MenuIcon::Arp, ARPEGGIATOR},
+    {"GRID", MenuIcon::Grid, GRID_PIANO},
+    {"CHORD", MenuIcon::Chord, AUTO_CHORD},
+    {"LFO", MenuIcon::Lfo, LFO},
+    {"TB3PO", MenuIcon::Tb3po, TB3PO},
+    {"GRIDS", MenuIcon::Grids, GRIDS},
+    {"RAGA", MenuIcon::Raga, RAGA},
+    {"EUCLID", MenuIcon::Euclid, EUCLID},
+    {"MORPH", MenuIcon::Morph, MORPH},
+};
+
+static_assert(sizeof(kAudioMenuTiles) / sizeof(kAudioMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Audio menu tile count must match 4x4 grid.");
+static_assert(sizeof(kVideoMenuTiles) / sizeof(kVideoMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Video menu tile count must match 4x4 grid.");
 
 struct CaptureEntry {
   AppMode mode;
@@ -81,6 +104,7 @@ static const CaptureEntry kCaptureSequence[] = {
     {EUCLID, "euclid"},
     {MORPH, "morph"},
     {SLINK, "slink"},
+    {WAAAVE, "waaave"},
 };
 
 static void drawSettingsCog() {
@@ -145,6 +169,10 @@ void drawMenu() {
   tft.fillScreen(THEME_BG);
   drawHeader("aCYD MIDI", "", 5, false);
   drawSettingsCog();
+  
+  // Select the appropriate tile array based on menu mode
+  const MenuTile* kMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  
   const int gapX = SCALE_X(6);
   const int gapY = SCALE_Y(4);
   const int tileW = (DISPLAY_WIDTH - (2 * MARGIN_SMALL) - ((int)kMenuCols - 1) * gapX) / kMenuCols;
@@ -223,6 +251,9 @@ void handleMenu() {
   const int tileH = SCALE_Y(40);
   const int startX = MARGIN_SMALL;
   const int startY = HEADER_HEIGHT + SCALE_Y(6);
+
+  // Select the appropriate tile array based on menu mode
+  const MenuTile* kMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
 
   for (size_t i = 0; i < kMenuCols * kMenuRows; ++i) {
     int col = i % kMenuCols;
