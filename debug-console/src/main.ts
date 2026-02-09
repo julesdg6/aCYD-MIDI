@@ -1,11 +1,14 @@
 import './style.css';
 import { EventBus } from './eventBus';
 import { MidiController } from './controller';
+import { Synth303 } from './synth303';
+import { formatTime, formatDelta, formatMidiMessage } from './types';
 
 // Initialize app
 const eventBus = new EventBus();
 const controller = new MidiController(eventBus);
 const logger = controller.getLogger();
+const synth = new Synth303();
 
 // ============================================================
 // UI Elements
@@ -21,170 +24,108 @@ const serialStatus = $('serial-status');
 const bleLabel = $('ble-label');
 const serialLabel = $('serial-label');
 
-// Keyboard
-const keyboard = $('keyboard');
-const octaveDisplay = $('octave-display');
-const octDownBtn = $('oct-down');
-const octUpBtn = $('oct-up');
+// Synth visualizer
+const synthCanvas = $('synth-canvas') as HTMLCanvasElement;
+const cutoffDisplay = $('cutoff-display');
+const resonanceDisplay = $('resonance-display');
+const envmodDisplay = $('envmod-display');
+const decayDisplay = $('decay-display');
+const accentDisplay = $('accent-display');
+const volumeDisplay = $('volume-display');
 
-// Toggles
-const gateToggle = $('gate-toggle');
-const accentToggle = $('accent-toggle');
-const slideToggle = $('slide-toggle');
-
-// Controls
-const panicBtn = $('panic');
-const testBurstBtn = $('test-burst');
-
-// Log controls - Serial
-const searchBoxSerial = $('search-box-serial') as HTMLInputElement;
-const autoScrollCheckSerial = $('auto-scroll-serial') as HTMLInputElement;
-const showDeltaCheckSerial = $('show-delta-serial') as HTMLInputElement;
-const pauseLogBtnSerial = $('pause-log-serial');
-const clearLogBtnSerial = $('clear-log-serial');
-const logViewerSerial = $('log-viewer-serial');
-
-// Log controls - MIDI
-const searchBoxMidi = $('search-box-midi') as HTMLInputElement;
-const filterMidiIn = $('filter-midi-in') as HTMLInputElement;
-const filterMidiOut = $('filter-midi-out') as HTMLInputElement;
-const autoScrollCheckMidi = $('auto-scroll-midi') as HTMLInputElement;
-const showDeltaCheckMidi = $('show-delta-midi') as HTMLInputElement;
-const pauseLogBtnMidi = $('pause-log-midi');
-const clearLogBtnMidi = $('clear-log-midi');
-const exportJsonBtn = $('export-json');
-const exportCsvBtn = $('export-csv');
-const logViewerMidi = $('log-viewer-midi');
-
-// Knobs container
-const knobsGrid = $('knobs-grid');
+// Log controls - Unified
+const searchBox = $('search-box') as HTMLInputElement;
+const filterMidi = $('filter-midi') as HTMLInputElement;
+const filterSerial = $('filter-serial') as HTMLInputElement;
+const autoScrollCheck = $('auto-scroll') as HTMLInputElement;
+const showDeltaCheck = $('show-delta') as HTMLInputElement;
+const pauseLogBtn = $('pause-log');
+const clearLogBtn = $('clear-log');
+const saveLogBtn = $('save-log');
+const logViewer = $('log-viewer');
 
 // ============================================================
-// Keyboard Setup
+// Synth Visualizer Setup
 // ============================================================
 
-const whiteKeys = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const blackKeyPositions = [1, 2, 4, 5, 6]; // After C, D, F, G, A
-
-function createKeyboard(): void {
-  keyboard.innerHTML = '';
+function setupSynthVisualizer(): void {
+  const ctx = synthCanvas.getContext('2d')!;
+  const width = synthCanvas.width = synthCanvas.offsetWidth;
+  const height = synthCanvas.height = synthCanvas.offsetHeight;
   
-  // Create one octave of keys
-  for (let i = 0; i < 7; i++) {
-    const note = i * 2 + (i >= 3 ? -1 : 0); // C=0, D=2, E=4, F=5, G=7, A=9, B=11
+  let animationId: number;
+  
+  function draw() {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, width, height);
     
-    // White key
-    const whiteKey = document.createElement('div');
-    whiteKey.className = 'key';
-    whiteKey.dataset.note = note.toString();
-    keyboard.appendChild(whiteKey);
+    // Draw simple waveform visualization
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
     
-    // Black key (if applicable)
-    if (blackKeyPositions.includes(i)) {
-      const blackKey = document.createElement('div');
-      blackKey.className = 'key black';
-      blackKey.dataset.note = (note + 1).toString();
-      keyboard.appendChild(blackKey);
+    const centerY = height / 2;
+    const time = performance.now() / 1000;
+    
+    for (let x = 0; x < width; x++) {
+      const t = (x / width) * Math.PI * 4 + time * 2;
+      const y = centerY + Math.sin(t) * (height * 0.3);
+      
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
+    
+    ctx.stroke();
+    
+    // Continue animation
+    animationId = requestAnimationFrame(draw);
   }
   
-  // Add event listeners
-  keyboard.querySelectorAll('.key').forEach(key => {
-    const element = key as HTMLElement;
-    
-    element.addEventListener('mousedown', () => {
-      const note = parseInt(element.dataset.note || '0');
-      const absoluteNote = note + (controller.getOctave() * 12) + 24; // C0 = MIDI 24
-      controller.sendNoteOn(absoluteNote);
-      element.classList.add('active');
-    });
-    
-    element.addEventListener('mouseup', () => {
-      const note = parseInt(element.dataset.note || '0');
-      const absoluteNote = note + (controller.getOctave() * 12) + 24;
-      if (!controller.isGateEnabled()) {
-        controller.sendNoteOff(absoluteNote);
-      }
-      element.classList.remove('active');
-    });
-    
-    element.addEventListener('mouseleave', () => {
-      element.classList.remove('active');
-    });
-  });
+  draw();
 }
 
 // ============================================================
-// Knobs Setup
+// MIDI Event Handler - Connect to Synth
 // ============================================================
 
-const knobConfigs = [
-  { name: 'cutoff', label: 'Cutoff', cc: 74 },
-  { name: 'resonance', label: 'Resonance', cc: 71 },
-  { name: 'envMod', label: 'Env Mod', cc: 75 },
-  { name: 'decay', label: 'Decay', cc: 76 },
-  { name: 'accent', label: 'Accent', cc: 77 },
-  { name: 'volume', label: 'Volume', cc: 7 },
-];
+eventBus.subscribe((entry) => {
+  // Play incoming MIDI on synth
+  if (entry.midi && (entry.source === 'BLE_IN' || entry.source === 'UI_TO_MIDI')) {
+    const midi = entry.midi;
+    
+    switch (midi.kind) {
+      case 'NOTE_ON':
+        if (midi.note !== undefined && midi.vel !== undefined) {
+          synth.noteOn(midi.note, midi.vel);
+        }
+        break;
+        
+      case 'NOTE_OFF':
+        if (midi.note !== undefined) {
+          synth.noteOff(midi.note);
+        }
+        break;
+        
+      case 'CC':
+        if (midi.cc !== undefined && midi.value !== undefined) {
+          synth.handleCC(midi.cc, midi.value);
+          updateSynthDisplay();
+        }
+        break;
+    }
+  }
+});
 
-function createKnobs(): void {
-  knobsGrid.innerHTML = '';
-  
-  knobConfigs.forEach(config => {
-    const container = document.createElement('div');
-    container.className = 'knob-container';
-    
-    const knob = document.createElement('div');
-    knob.className = 'knob';
-    knob.dataset.name = config.name;
-    
-    const label = document.createElement('div');
-    label.className = 'knob-label';
-    label.textContent = config.label;
-    
-    const value = document.createElement('div');
-    value.className = 'knob-value';
-    value.id = `knob-value-${config.name}`;
-    value.textContent = '64';
-    
-    container.appendChild(knob);
-    container.appendChild(label);
-    container.appendChild(value);
-    knobsGrid.appendChild(container);
-    
-    // Knob interaction
-    let isDragging = false;
-    let startY = 0;
-    let startValue = 64;
-    
-    knob.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      startY = e.clientY;
-      startValue = controller.getKnobValue(config.name);
-      e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaY = startY - e.clientY; // Inverted
-      const newValue = Math.max(0, Math.min(127, startValue + Math.floor(deltaY / 2)));
-      
-      controller.setKnobValue(config.name, newValue);
-      value.textContent = newValue.toString();
-      
-      // Update knob rotation
-      const rotation = (newValue / 127) * 270 - 135; // -135 to +135 degrees
-      knob.style.transform = `rotate(${rotation}deg)`;
-      
-      // Send CC (with rate limiting)
-      controller.sendCC(config.cc, newValue);
-    });
-    
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-  });
+function updateSynthDisplay(): void {
+  cutoffDisplay.textContent = Math.round((synth.getParam('cutoff') as number) * 100) + '%';
+  resonanceDisplay.textContent = Math.round((synth.getParam('resonance') as number) * 100) + '%';
+  envmodDisplay.textContent = Math.round((synth.getParam('envMod') as number) * 100) + '%';
+  decayDisplay.textContent = Math.round((synth.getParam('decay') as number) * 100) + '%';
+  accentDisplay.textContent = Math.round((synth.getParam('accent') as number) * 100) + '%';
+  volumeDisplay.textContent = Math.round((synth.getParam('volume') as number) * 100) + '%';
 }
 
 // ============================================================
@@ -194,6 +135,7 @@ function createKnobs(): void {
 connectBleBtn.addEventListener('click', async () => {
   try {
     await controller.connectBle();
+    await synth.start(); // Resume audio context on user interaction
     updateConnectionStatus();
   } catch (error) {
     alert(`BLE connection failed: ${error}`);
@@ -209,115 +151,45 @@ connectSerialBtn.addEventListener('click', async () => {
   }
 });
 
-octDownBtn.addEventListener('click', () => {
-  controller.setOctave(controller.getOctave() - 1);
-  octaveDisplay.textContent = controller.getOctave().toString();
+// Log controls - Unified
+searchBox.addEventListener('input', () => {
+  renderLog();
 });
 
-octUpBtn.addEventListener('click', () => {
-  controller.setOctave(controller.getOctave() + 1);
-  octaveDisplay.textContent = controller.getOctave().toString();
+filterMidi.addEventListener('change', () => {
+  renderLog();
 });
 
-gateToggle.addEventListener('click', () => {
-  controller.toggleGate();
-  gateToggle.classList.toggle('active');
+filterSerial.addEventListener('change', () => {
+  renderLog();
 });
 
-accentToggle.addEventListener('click', () => {
-  controller.toggleAccent();
-  accentToggle.classList.toggle('active');
-});
-
-slideToggle.addEventListener('click', () => {
-  controller.toggleSlide();
-  slideToggle.classList.toggle('active');
-});
-
-panicBtn.addEventListener('click', () => {
-  controller.allNotesOff();
-});
-
-testBurstBtn.addEventListener('click', () => {
-  controller.sendTestBurst();
-});
-
-// Log controls - Serial
-searchBoxSerial.addEventListener('input', () => {
-  renderSerialLog();
-});
-
-autoScrollCheckSerial.addEventListener('change', () => {
+autoScrollCheck.addEventListener('change', () => {
   // Auto-scroll is handled per render
 });
 
-showDeltaCheckSerial.addEventListener('change', () => {
-  renderSerialLog();
+showDeltaCheck.addEventListener('change', () => {
+  renderLog();
 });
 
-pauseLogBtnSerial.addEventListener('click', () => {
+pauseLogBtn.addEventListener('click', () => {
   if (logger.isPaused()) {
     logger.resume();
-    pauseLogBtnSerial.textContent = 'Pause';
-    pauseLogBtnMidi.textContent = 'Pause';
+    pauseLogBtn.textContent = 'Pause';
   } else {
     logger.pause();
-    pauseLogBtnSerial.textContent = 'Resume';
-    pauseLogBtnMidi.textContent = 'Resume';
+    pauseLogBtn.textContent = 'Resume';
   }
 });
 
-clearLogBtnSerial.addEventListener('click', () => {
+clearLogBtn.addEventListener('click', () => {
   logger.clear();
-  renderSerialLog();
-  renderMidiLog();
+  renderLog();
 });
 
-// Log controls - MIDI
-searchBoxMidi.addEventListener('input', () => {
-  renderMidiLog();
-});
-
-filterMidiIn.addEventListener('change', () => {
-  renderMidiLog();
-});
-
-filterMidiOut.addEventListener('change', () => {
-  renderMidiLog();
-});
-
-autoScrollCheckMidi.addEventListener('change', () => {
-  // Auto-scroll is handled per render
-});
-
-showDeltaCheckMidi.addEventListener('change', () => {
-  renderMidiLog();
-});
-
-pauseLogBtnMidi.addEventListener('click', () => {
-  if (logger.isPaused()) {
-    logger.resume();
-    pauseLogBtnSerial.textContent = 'Pause';
-    pauseLogBtnMidi.textContent = 'Pause';
-  } else {
-    logger.pause();
-    pauseLogBtnSerial.textContent = 'Resume';
-    pauseLogBtnMidi.textContent = 'Resume';
-  }
-});
-
-clearLogBtnMidi.addEventListener('click', () => {
-  logger.clear();
-  renderSerialLog();
-  renderMidiLog();
-});
-
-exportJsonBtn.addEventListener('click', () => {
-  downloadFile('cyd-debug-log.json', logger.exportJson());
-});
-
-exportCsvBtn.addEventListener('click', () => {
-  downloadFile('cyd-debug-log.csv', logger.exportCsv());
+saveLogBtn.addEventListener('click', () => {
+  const content = generateLogFile();
+  downloadFile('cyd-debug-log.txt', content);
 });
 
 // ============================================================
@@ -338,91 +210,127 @@ function updateConnectionStatus(): void {
   connectSerialBtn.textContent = serialConnected ? 'Disconnect Serial' : 'Connect Serial';
 }
 
-let renderSerialScheduled = false;
-let renderMidiScheduled = false;
+let renderScheduled = false;
 
-function renderSerialLog(): void {
-  if (renderSerialScheduled) return;
-  renderSerialScheduled = true;
+function renderLog(): void {
+  if (renderScheduled) return;
+  renderScheduled = true;
   
   requestAnimationFrame(() => {
     const allEntries = logger.getEntries();
-    const searchTerm = searchBoxSerial.value.toLowerCase();
+    const searchTerm = searchBox.value.toLowerCase();
+    const showMidi = filterMidi.checked;
+    const showSerial = filterSerial.checked;
     
-    // Filter for serial entries only
+    // Filter entries
     const entries = allEntries.filter(entry => {
+      // Filter by type
+      const isMidi = entry.source === 'BLE_IN' || entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI';
       const isSerial = entry.source === 'SERIAL_IN' || entry.source === 'SERIAL_OUT';
-      if (!isSerial) return false;
+      
+      if (isMidi && !showMidi) return false;
+      if (isSerial && !showSerial) return false;
+      
+      // Filter by search term
       if (searchTerm && !entry.text.toLowerCase().includes(searchTerm)) return false;
+      
       return true;
     });
     
-    const autoScroll = autoScrollCheckSerial.checked;
-    const wasAtBottom = logViewerSerial.scrollHeight - logViewerSerial.scrollTop <= logViewerSerial.clientHeight + 50;
+    const autoScroll = autoScrollCheck.checked;
+    const wasAtBottom = logViewer.scrollHeight - logViewer.scrollTop <= logViewer.clientHeight + 50;
     
-    // Render entries
-    logViewerSerial.innerHTML = entries
+    // Render entries with left/right alignment
+    logViewer.innerHTML = entries
       .map(entry => {
-        const cssClass = logger.getSourceClass(entry.source);
-        const formatted = logger.formatEntry(entry);
-        return `<div class="log-entry ${cssClass}">${formatted}</div>`;
+        const isMidi = entry.source === 'BLE_IN' || entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI';
+        const cssClass = isMidi ? 'midi' : 'serial';
+        const formatted = formatLogEntry(entry);
+        return `<div class="log-entry ${cssClass}"><div class="content">${formatted}</div></div>`;
       })
       .join('');
     
     // Auto-scroll if enabled and was at bottom
     if (autoScroll && wasAtBottom) {
-      logViewerSerial.scrollTop = logViewerSerial.scrollHeight;
+      logViewer.scrollTop = logViewer.scrollHeight;
     }
     
-    renderSerialScheduled = false;
+    renderScheduled = false;
   });
 }
 
-function renderMidiLog(): void {
-  if (renderMidiScheduled) return;
-  renderMidiScheduled = true;
+function formatLogEntry(entry: any): string {
+  let output = '';
   
-  requestAnimationFrame(() => {
-    const allEntries = logger.getEntries();
-    const searchTerm = searchBoxMidi.value.toLowerCase();
+  // Timestamp
+  output += `<span class="timestamp">${formatTime(entry.tAbsMs)}</span>`;
+  
+  // Delta time (optional)
+  if (showDeltaCheck.checked && entry.tDeltaMs > 0) {
+    output += `<span class="timestamp"> ${formatDelta(entry.tDeltaMs)}</span>`;
+  }
+  
+  // Source
+  const sourceLabel = formatSource(entry.source);
+  output += `<span class="source">${sourceLabel}</span>`;
+  
+  // Message details
+  if (entry.midi) {
+    output += formatMidiMessage(entry.midi);
+  } else if (entry.serial) {
+    output += entry.serial.line;
+  } else {
+    output += entry.text;
+  }
+  
+  return output;
+}
+
+function formatSource(source: string): string {
+  switch (source) {
+    case 'UI_TO_MIDI':
+      return 'UI→MIDI';
+    case 'BLE_IN':
+      return 'CYD←BLE';
+    case 'BLE_OUT':
+      return 'CYD→BLE';
+    case 'SERIAL_IN':
+      return 'CYD→SER';
+    case 'SERIAL_OUT':
+      return 'SER→CYD';
+    default:
+      return source;
+  }
+}
+
+function generateLogFile(): string {
+  const allEntries = logger.getEntries();
+  
+  let output = '';
+  
+  for (const entry of allEntries) {
+    const timestamp = formatTime(entry.tAbsMs);
+    const isMidi = entry.source === 'BLE_IN' || entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI';
+    const prefix = isMidi ? 'MIDI' : 'TTY ';
     
-    // Filter for MIDI entries only
-    const entries = allEntries.filter(entry => {
-      // Check filters
-      if (entry.source === 'BLE_IN' && !filterMidiIn.checked) return false;
-      if ((entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI') && !filterMidiOut.checked) return false;
-      
-      const isMidi = entry.source === 'BLE_IN' || entry.source === 'BLE_OUT' || entry.source === 'UI_TO_MIDI';
-      if (!isMidi) return false;
-      if (searchTerm && !entry.text.toLowerCase().includes(searchTerm)) return false;
-      return true;
-    });
-    
-    const autoScroll = autoScrollCheckMidi.checked;
-    const wasAtBottom = logViewerMidi.scrollHeight - logViewerMidi.scrollTop <= logViewerMidi.clientHeight + 50;
-    
-    // Render entries
-    logViewerMidi.innerHTML = entries
-      .map(entry => {
-        const cssClass = logger.getSourceClass(entry.source);
-        const formatted = logger.formatEntry(entry);
-        return `<div class="log-entry ${cssClass}">${formatted}</div>`;
-      })
-      .join('');
-    
-    // Auto-scroll if enabled and was at bottom
-    if (autoScroll && wasAtBottom) {
-      logViewerMidi.scrollTop = logViewerMidi.scrollHeight;
+    let message = '';
+    if (entry.midi) {
+      message = formatMidiMessage(entry.midi);
+    } else if (entry.serial) {
+      message = entry.serial.line;
+    } else {
+      message = entry.text;
     }
     
-    renderMidiScheduled = false;
-  });
+    output += `${timestamp} ${prefix} ${message}\n`;
+  }
+  
+  return output;
 }
 
 // Subscribe to log updates
 eventBus.subscribe(() => {
-  renderSerialLog();
-  renderMidiLog();
+  renderLog();
 });
 
 function downloadFile(filename: string, content: string): void {
@@ -439,8 +347,8 @@ function downloadFile(filename: string, content: string): void {
 // Initialization
 // ============================================================
 
-createKeyboard();
-createKnobs();
+setupSynthVisualizer();
 updateConnectionStatus();
+updateSynthDisplay();
 
 console.log('aCYD-MIDI Web Debug Console initialized');
