@@ -97,7 +97,7 @@ static BpmDisplayArea calculateBpmDisplayArea() {
   const int bpmTouchWidth = SCALE_X(60);
   const int bpmTouchHeight = SCALE_Y(20);
   
-  BPMDisplayArea area;
+  BpmDisplayArea area;
   area.x = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
   area.y = iconsStartY;
   area.width = bpmTouchWidth;
