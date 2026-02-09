@@ -352,7 +352,7 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
       drawMorphIcon(cx, cy, size, accent, fg);
       break;
     case MenuIcon::Waaave:
-      drawWaaaveIcon(cx, cy, size, fg);
+      drawWaaaveIcon(cx, cy, size, accent);
       break;
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);

@@ -262,7 +262,17 @@ static void handleTransportPage() {
 
 static void handleControlPage(int channelStart) {
   // Static variable to track last knob position for drag tracking
+  // This is reset when touch is released or when switching pages
   static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  static int lastActivePage = -1;
+  
+  // Reset tracking when switching pages
+  if (lastActivePage != state.currentPage) {
+    for (int i = 0; i < 8; ++i) {
+      lastKnobX[i] = 0;
+    }
+    lastActivePage = state.currentPage;
+  }
   
   int numChannels = 4;
   int channelW = (DISPLAY_WIDTH - 2 * MARGIN_SMALL - SCALE_X(15)) / numChannels;
