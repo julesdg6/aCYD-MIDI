@@ -24,6 +24,9 @@ struct WaaaveState {
   bool sButtons[8] = {false, false, false, false, false, false, false, false};  // CC#32-39
   bool mButtons[8] = {false, false, false, false, false, false, false, false};  // CC#48-55
   bool rButtons[8] = {false, false, false, false, false, false, false, false};  // CC#64-71
+  
+  // Knob tracking state for drag detection
+  int lastKnobX[8] = {-1, -1, -1, -1, -1, -1, -1, -1};  // -1 = uninitialized
 };
 
 static WaaaveState state;
@@ -261,15 +264,11 @@ static void handleTransportPage() {
 }
 
 static void handleControlPage(int channelStart) {
-  // Static variable to track last knob position for drag tracking
-  // This is reset when touch is released or when switching pages
-  static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  // Reset knob tracking when switching pages
   static int lastActivePage = -1;
-  
-  // Reset tracking when switching pages
   if (lastActivePage != state.currentPage) {
     for (int i = 0; i < 8; ++i) {
-      lastKnobX[i] = 0;
+      state.lastKnobX[i] = -1;
     }
     lastActivePage = state.currentPage;
   }
@@ -295,9 +294,9 @@ static void handleControlPage(int channelStart) {
         abs(touch.x - knobCX) <= knobTouchRadius &&
         abs(touch.y - knobCY) <= knobTouchRadius) {
       // Adjust knob based on horizontal drag with sensitivity
-      int deltaX = touch.x - lastKnobX[ch];
-      if (lastKnobX[ch] == 0) {
-        lastKnobX[ch] = touch.x;
+      int deltaX = touch.x - state.lastKnobX[ch];
+      if (state.lastKnobX[ch] < 0) {
+        state.lastKnobX[ch] = touch.x;
         deltaX = 0;
       }
       
@@ -310,10 +309,10 @@ static void handleControlPage(int channelStart) {
           sendCC(CC_KNOB_BASE + ch, state.knobs[ch]);
           requestRedraw();
         }
-        lastKnobX[ch] = touch.x;
+        state.lastKnobX[ch] = touch.x;
       }
     } else {
-      lastKnobX[ch] = 0;
+      state.lastKnobX[ch] = -1;
     }
     
     contentY += knobSize + SCALE_Y(17);  // Skip knob and value
@@ -384,6 +383,7 @@ void initializeWaaaveMode() {
     state.sButtons[i] = false;
     state.mButtons[i] = false;
     state.rButtons[i] = false;
+    state.lastKnobX[i] = -1;  // Reset knob tracking
   }
 }
 
