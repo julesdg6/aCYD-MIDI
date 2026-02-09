@@ -157,6 +157,25 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
   drawStatusIndicators();
 }
 
+bool isBPMValueTapped() {
+  // Calculate the BPM display area
+  const int iconSize = SCALE_X(12);
+  const int iconSpacing = SCALE_X(4);
+  const int gridCols = 2;
+  const int totalWidth = gridCols * iconSize + (gridCols - 1) * iconSpacing;
+  int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
+  int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
+  
+  int bpmX = std::max(MARGIN_SMALL, iconsStartX - SCALE_X(70));
+  int bpmY = iconsStartY;
+  
+  // Make the tappable area generous for better UX
+  int bpmW = SCALE_X(60);
+  int bpmH = SCALE_Y(20);
+  
+  return touch.justPressed && isButtonPressed(bpmX, bpmY, bpmW, bpmH);
+}
+
 void updateStatus() {
   // Status bar removed - no more BLE connection alerts on every screen
 }

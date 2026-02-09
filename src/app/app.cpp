@@ -130,6 +130,11 @@ void appLoop() {
   updateTouch();
   updateHeaderCapture();
 
+  // Check if BPM value in header was tapped (except in BPM_SETTINGS mode)
+  if (currentMode != BPM_SETTINGS && isBPMValueTapped()) {
+    switchMode(BPM_SETTINGS);
+  }
+
   // Process simple serial CLI commands for automated testing
   processSerialCommands();
 
