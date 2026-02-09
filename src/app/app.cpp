@@ -132,6 +132,9 @@ void appLoop() {
   updateHeaderCapture();
 
   // Check if BPM value in header was tapped (except in BPM_SETTINGS mode)
+  // Note: setPreviousModeForBPMSettings must be called before switchMode
+  // because switchMode sets currentMode before calling init, making it
+  // impossible to capture the previous mode inside initializeBPMSettingsMode
   if (currentMode != BPM_SETTINGS && isBPMValueTapped()) {
     setPreviousModeForBPMSettings(currentMode);
     switchMode(BPM_SETTINGS);
