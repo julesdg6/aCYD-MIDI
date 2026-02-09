@@ -65,6 +65,7 @@ struct CaptureEntry {
 
 static const CaptureEntry kCaptureSequence[] = {
     {MENU, "menu"},
+    {SETTINGS, "settings"},
     {KEYBOARD, "keys"},
     {SEQUENCER, "sequencer"},
     {BOUNCING_BALL, "zen"},
@@ -114,7 +115,9 @@ static void drawMenuTile(int x, int y, int w, int h, const MenuTile &tile, uint1
   tft.drawCentreString(tile.label, iconX, y + h - SCALE_Y(12), 0);
 }
 
-static void captureAllScreenshots() {
+}  // namespace
+
+void captureAllScreenshots() {
   AppMode previousMode = currentMode;
 #if DEBUG_ENABLED
   Serial.println("Capturing all screens to SD...");
@@ -138,8 +141,6 @@ static void captureAllScreenshots() {
   Serial.println("Screen capture complete.");
 #endif
 }
-
-}  // namespace
 
 void drawMenu() {
   tft.fillScreen(THEME_BG);

@@ -2,6 +2,7 @@
 #include "wifi_manager.h"
 #include "ui_elements.h"
 #include "esp_now_midi_module.h"
+#include "app/app_menu.h"
 
 #include <algorithm>
 
@@ -38,6 +39,7 @@ struct SettingsLayout {
   int espNowModeRowY;
   int espNowStatusRowY;
   int displayRowY;
+  int screenshotRowY;
   int scrollbarTouchX;
   int scrollbarTrackX;
 };
@@ -73,6 +75,8 @@ static SettingsLayout computeSettingsLayout() {
   y += statusRowHeight() + settingsRowSpacing();
 #endif
   layout.displayRowY = y;
+  y += compactRowHeight() + settingsRowSpacing();
+  layout.screenshotRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.contentHeight = y - layout.viewTop + contentPadding();
   return layout;
@@ -244,6 +248,18 @@ void drawSettingsMode() {
                     displayButtonHeight, rotateLabel, THEME_PRIMARY, false, 1);
   }
 
+  const int screenshotRowY = layout.screenshotRowY - settingsScrollOffset;
+  const int screenshotLabelY = screenshotRowY - SCALE_Y(18);
+  const int screenshotLabelH = SCALE_Y(18);
+  if ((screenshotRowY + compactRowHeight() > layout.viewTop && screenshotRowY < viewBottom) ||
+      (screenshotLabelY + screenshotLabelH > layout.viewTop && screenshotLabelY < viewBottom)) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    int labelY = screenshotLabelY;
+    tft.drawString("Screenshots", rowInnerLeft, labelY, 2);
+    drawRoundButton(rowInnerLeft, screenshotRowY, rowInnerW, compactRowHeight(),
+                    "Capture All Screens", THEME_SECONDARY, false, 2);
+  }
+
   int maxScroll = std::max(0, layout.contentHeight - layout.viewHeight);
   if (maxScroll > 0) {
     int trackTop = layout.viewTop + SCALE_Y(3);
@@ -381,6 +397,16 @@ void handleSettingsMode() {
   } else if (!handled && displayRowVisible && touch.justPressed &&
              isButtonPressed(displayRotateX, displayButtonY, displaySecondWidth, displayButtonHeight)) {
     rotateDisplay180();
+    handled = true;
+  }
+
+  const int screenshotRowY = layout.screenshotRowY - settingsScrollOffset;
+  const bool screenshotRowVisible = screenshotRowY >= layout.viewTop && 
+                                     screenshotRowY + compactRowHeight() > layout.viewTop &&
+                                     screenshotRowY < layout.viewTop + layout.viewHeight;
+  if (!handled && screenshotRowVisible && touch.justPressed &&
+      isButtonPressed(rowInnerLeft, screenshotRowY, rowInnerW, compactRowHeight())) {
+    captureAllScreenshots();
     handled = true;
   }
 

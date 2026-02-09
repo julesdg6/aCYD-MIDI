@@ -2,4 +2,5 @@
 
 void drawMenu();
 void handleMenu();
+void captureAllScreenshots();
 
