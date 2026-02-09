@@ -56,28 +56,28 @@ static const MenuTile kAudioMenuTiles[] = {
     {"SLINK", MenuIcon::Slink, SLINK},
 };
 
-// Video mode menu tiles (Waaave as primary, rest are common modes)
-// This configuration allows users to access the Waaave controller first
-// while still having access to other modes for hybrid video/audio workflows.
-// Note: SLINK mode is omitted in favor of keeping only the most universally
-// useful modes in the video-focused menu to reduce cognitive load.
+// Video mode menu tiles - Optimized for video production workflows
+// Primary: Waaave Pool controller (nanoKONTROL2 emulation) for video mixing
+// Secondary: Common performance and generative modes for hybrid workflows
+// Ordering: Most video-relevant modes in top row, generative/utility modes below
+// Note: SLINK omitted to reduce cognitive load; available in audio mode
 static const MenuTile kVideoMenuTiles[] = {
-    {"WAAAVE", MenuIcon::Waaave, WAAAVE},
-    {"KEYS", MenuIcon::Keys, KEYBOARD},
-    {"BEATS", MenuIcon::Sequencer, SEQUENCER},
-    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
-    {"DROP", MenuIcon::Drop, PHYSICS_DROP},
-    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
-    {"XY PAD", MenuIcon::Xy, XY_PAD},
-    {"ARP", MenuIcon::Arp, ARPEGGIATOR},
-    {"GRID", MenuIcon::Grid, GRID_PIANO},
-    {"CHORD", MenuIcon::Chord, AUTO_CHORD},
-    {"LFO", MenuIcon::Lfo, LFO},
-    {"TB3PO", MenuIcon::Tb3po, TB3PO},
-    {"GRIDS", MenuIcon::Grids, GRIDS},
-    {"RAGA", MenuIcon::Raga, RAGA},
-    {"EUCLID", MenuIcon::Euclid, EUCLID},
-    {"MORPH", MenuIcon::Morph, MORPH},
+    {"WAAAVE", MenuIcon::Waaave, WAAAVE},     // Video controller (priority)
+    {"KEYS", MenuIcon::Keys, KEYBOARD},        // Traditional keyboard
+    {"BEATS", MenuIcon::Sequencer, SEQUENCER}, // Rhythm programming
+    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},     // Generative ambient
+    {"DROP", MenuIcon::Drop, PHYSICS_DROP},    // Physics-based gen
+    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},  // Random patterns
+    {"XY PAD", MenuIcon::Xy, XY_PAD},          // Real-time XY control
+    {"ARP", MenuIcon::Arp, ARPEGGIATOR},       // Arpeggiation
+    {"GRID", MenuIcon::Grid, GRID_PIANO},      // Grid layout keyboard
+    {"CHORD", MenuIcon::Chord, AUTO_CHORD},    // Chord progressions
+    {"LFO", MenuIcon::Lfo, LFO},               // Modulation
+    {"TB3PO", MenuIcon::Tb3po, TB3PO},         // Phrase generator
+    {"GRIDS", MenuIcon::Grids, GRIDS},         // Multi-layer arp
+    {"RAGA", MenuIcon::Raga, RAGA},            // Raga explorer
+    {"EUCLID", MenuIcon::Euclid, EUCLID},      // Euclidean rhythms
+    {"MORPH", MenuIcon::Morph, MORPH},         // Gesture morphing
 };
 
 static_assert(sizeof(kAudioMenuTiles) / sizeof(kAudioMenuTiles[0]) == kMenuCols * kMenuRows,

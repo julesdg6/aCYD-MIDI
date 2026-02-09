@@ -36,6 +36,7 @@ static constexpr int SLIDER_BORDER_WIDTH = 1;
 static constexpr int KNOB_SENSITIVITY = 3;  // Pixels of drag per value increment
 static constexpr float KNOB_ROTATION_RANGE = 270.0f;  // Degrees of rotation
 static constexpr float KNOB_START_ANGLE = -135.0f;    // Starting angle in degrees
+static constexpr float DEG_TO_RAD = PI / 180.0f;      // Degrees to radians conversion
 
 // MIDI CC mappings for Korg nanoKONTROL2
 static constexpr uint8_t CC_KNOB_BASE = 16;
@@ -163,7 +164,7 @@ static void drawControlPage(int channelStart) {
     
     // Draw knob position indicator
     float angle = (state.knobs[ch] / 127.0f) * KNOB_ROTATION_RANGE + KNOB_START_ANGLE;
-    float rad = angle * PI / 180.0f;
+    float rad = angle * DEG_TO_RAD;
     int indicatorX = knobCX + (int)(cos(rad) * knobSize / 2);
     int indicatorY = knobCY + (int)(sin(rad) * knobSize / 2);
     tft.drawLine(knobCX, knobCY, indicatorX, indicatorY, THEME_PRIMARY);
