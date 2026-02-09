@@ -28,6 +28,10 @@ struct WaaaveState {
 
 static WaaaveState state;
 
+// UI Constants
+static constexpr int SLIDER_BORDER_WIDTH = 1;
+static constexpr int KNOB_SENSITIVITY = 3;  // Pixels of drag per value increment
+
 // MIDI CC mappings for Korg nanoKONTROL2
 static constexpr uint8_t CC_KNOB_BASE = 16;
 static constexpr uint8_t CC_SLIDER_BASE = 0;
@@ -174,7 +178,8 @@ static void drawControlPage(int channelStart) {
     tft.drawRect(sliderX, sliderY, sliderW, sliderH, THEME_TEXT);
     int fillH = (state.sliders[ch] * sliderH) / 127;
     if (fillH > 0) {
-      tft.fillRect(sliderX + 1, sliderY + sliderH - fillH, sliderW - 2, fillH, THEME_ACCENT);
+      tft.fillRect(sliderX + SLIDER_BORDER_WIDTH, sliderY + sliderH - fillH, 
+                   sliderW - 2 * SLIDER_BORDER_WIDTH, fillH, THEME_ACCENT);
     }
     
     contentY += sliderH + SCALE_Y(5);
@@ -272,15 +277,28 @@ static void handleControlPage(int channelStart) {
     if (touch.isPressed &&
         abs(touch.x - knobCX) <= knobTouchRadius &&
         abs(touch.y - knobCY) <= knobTouchRadius) {
-      // Adjust knob based on horizontal drag
-      int deltaX = touch.x - knobCX;
-      int newValue = state.knobs[ch] + (deltaX > 0 ? 1 : -1);
-      newValue = constrain(newValue, 0, 127);
-      if (newValue != state.knobs[ch]) {
-        state.knobs[ch] = newValue;
-        sendCC(CC_KNOB_BASE + ch, state.knobs[ch]);
-        requestRedraw();
+      // Adjust knob based on horizontal drag with sensitivity
+      static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+      int deltaX = touch.x - lastKnobX[ch];
+      if (lastKnobX[ch] == 0) {
+        lastKnobX[ch] = touch.x;
+        deltaX = 0;
       }
+      
+      if (abs(deltaX) >= KNOB_SENSITIVITY) {
+        int increment = deltaX / KNOB_SENSITIVITY;
+        int newValue = state.knobs[ch] + increment;
+        newValue = constrain(newValue, 0, 127);
+        if (newValue != state.knobs[ch]) {
+          state.knobs[ch] = newValue;
+          sendCC(CC_KNOB_BASE + ch, state.knobs[ch]);
+          requestRedraw();
+        }
+        lastKnobX[ch] = touch.x;
+      }
+    } else {
+      static int lastKnobX[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+      lastKnobX[ch] = 0;
     }
     
     contentY += knobSize + SCALE_Y(17);  // Skip knob and value

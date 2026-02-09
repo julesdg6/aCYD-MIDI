@@ -56,7 +56,9 @@ static const MenuTile kAudioMenuTiles[] = {
     {"SLINK", MenuIcon::Slink, SLINK},
 };
 
-// Video mode menu tiles (placeholder - only Waaave for now)
+// Video mode menu tiles (Waaave as primary, rest are common modes)
+// This configuration allows users to access the Waaave controller first
+// while still having access to other modes for hybrid video/audio workflows
 static const MenuTile kVideoMenuTiles[] = {
     {"WAAAVE", MenuIcon::Waaave, WAAAVE},
     {"KEYS", MenuIcon::Keys, KEYBOARD},
