@@ -1,6 +1,6 @@
 # CYD Web Debug Console
 
-A web-based debugging tool for the aCYD MIDI controller that provides real-time MIDI and Serial monitoring with a playable TB-303-style interface.
+A web-based debugging tool for the aCYD MIDI controller that provides real-time MIDI and Serial monitoring with an integrated TB-303 bass synthesizer.
 
 ## Features
 
@@ -9,26 +9,35 @@ A web-based debugging tool for the aCYD MIDI controller that provides real-time 
 - **Web Serial**: Connect via USB for firmware log monitoring
 - **Simultaneous connections**: Both can be active at the same time
 
-### Live TB-303 Control Panel
-- **On-screen keyboard**: Mouse-playable with octave controls
-- **Gate/Accent/Slide toggles**: Classic 303-style performance controls
-- **6 Rotary knobs**: Cutoff, Resonance, Env Mod, Decay, Accent, Volume (send as CC)
-- **All Notes Off**: Panic button for immediate silence
-- **Test Burst**: Send deterministic MIDI sequence for debugging
+### TB-303 Bass Synthesizer
+- **Real-time playback**: Plays all incoming MIDI messages as a TB-303 acid bass synth
+- **Web Audio API**: High-quality analog-modeled synthesis
+- **Classic TB-303 controls**: Cutoff, Resonance, Env Mod, Decay, Accent, Volume
+- **Sawtooth/Square waveforms**: Authentic TB-303 oscillator options
+- **Slide/Portamento**: Smooth note transitions
+- **Visual feedback**: Live waveform display and parameter indicators
 
-### Time-Synced Event Logging
-- **Unified timeline**: BLE MIDI and Serial events in one scrollable log
+### Unified Event Logging
+- **Single panel design**: MIDI and Serial events in one view
+- **Smart formatting**: 
+  - MIDI events: Left-aligned in orange (#ff8800)
+  - Serial events: Right-aligned in green (#00ff88)
 - **High-resolution timestamps**: Millisecond precision with delta times
 - **Source indicators**: Clear labeling of UI→MIDI, CYD←BLE, CYD→SER
 - **MIDI parsing**: Automatic decoding of Note On/Off, CC, Program Change, etc.
 - **Real-time updates**: Live streaming with auto-scroll
 
 ### Log Controls
-- **Filters**: Toggle MIDI In/Out, Serial, specific message types
+- **Filters**: Toggle MIDI and Serial independently
 - **Search**: Real-time substring filtering
 - **Pause/Resume**: Freeze log updates for inspection
-- **Export**: Download logs as JSON or CSV
+- **Save Log**: Download combined log with timestamps and MIDI/TTY prefixes
 - **Clear**: Reset log buffer
+
+### Optimized Layout
+- **No scrolling required**: Entire interface fits in viewport (100vh)
+- **40/60 split**: Synth panel (top 40%), Log panel (bottom 60%)
+- **Responsive design**: Adapts to different screen sizes
 
 ## Browser Requirements
 
@@ -67,23 +76,27 @@ This tool requires a **Chromium-based browser** with Web Bluetooth and Web Seria
 
 1. **Connect to CYD:**
    - Click "Connect BLE MIDI" and select your CYD device
+   - Audio context will start automatically on first connection
    - Optionally click "Connect Serial" for firmware logs (115200 baud)
 
-2. **Play notes:**
-   - Click keyboard keys to send notes
-   - Use Oct +/- to change octaves
-   - Enable Gate to sustain notes
+2. **Listen to MIDI playback:**
+   - All incoming MIDI notes are played through the TB-303 synth
+   - Use MIDI CC messages to control synth parameters:
+     - CC 74: Cutoff
+     - CC 71: Resonance
+     - CC 75: Envelope Modulation
+     - CC 76: Decay
+     - CC 77: Accent
+     - CC 7: Volume
+     - CC 65: Slide (portamento on/off)
 
-3. **Adjust parameters:**
-   - Drag knobs to send CC messages
-   - Toggle Accent for higher velocity or accent CC
-   - Toggle Slide for legato/slide behavior
-
-4. **Monitor events:**
-   - Watch the bottom panel for all MIDI and Serial events
+3. **Monitor events:**
+   - Watch the unified log panel for all MIDI and Serial events
+   - MIDI events appear on the left in orange
+   - Serial events appear on the right in green
    - Use filters to focus on specific event types
    - Search for specific messages
-   - Export logs for sharing or analysis
+   - Save logs for sharing or analysis (timestamp + MIDI/TTY prefix format)
 
 ## Building for Production
 
@@ -102,20 +115,17 @@ Output will be in `dist/` directory, ready for deployment to GitHub Pages.
 - **`serial.ts`**: Web Serial connection and line reading
 - **`logger.ts`**: Ring buffer log management with filtering
 - **`controller.ts`**: Application state and MIDI message generation
+- **`synth303.ts`**: TB-303 bass synthesizer using Web Audio API
 - **`main.ts`**: UI binding and event handlers
 
 ### Data Flow
 
 ```
-UI Actions → EventBus → Logger → Log Display
+BLE/Serial → EventBus → Logger → Unified Log Display
                 ↓
-           BleMidi/Serial
+             Synth303 (Web Audio)
                 ↓
-         CYD Device
-                ↓
-    Notifications/Lines
-                ↓
-           EventBus → Logger → Log Display
+            Audio Output
 ```
 
 ### Time Synchronization
@@ -190,19 +200,21 @@ For extreme loads, consider:
 
 - No Settings UI (edit `src/types.ts` and rebuild)
 - No LocalStorage persistence (resets on reload)
-- No device-side timestamp correlation (v2 feature)
-- No latency measurement (v2 feature)
+- No device-side timestamp correlation
+- Synth parameters controlled via MIDI CC only (no manual UI controls)
 - Desktop only (mobile Web Bluetooth/Serial support is limited)
 
-## Future Enhancements (v2)
+## Future Enhancements
 
-- Settings panel UI
+- Settings panel UI for synth and MIDI configuration
 - LocalStorage for preferences
 - Latency estimation (round-trip time)
 - Device timestamp correlation
-- Improved virtualized log rendering
+- Improved virtualized log rendering for large datasets
 - MIDI message recording/playback
-- Step sequencer for pattern testing
+- Interactive synth controls (knobs/sliders in UI)
+- Multiple waveform options for synth
+- Built-in sequencer for pattern testing
 
 ## Contributing
 
