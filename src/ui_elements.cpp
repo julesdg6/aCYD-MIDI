@@ -77,14 +77,14 @@ void drawBluetoothIndicator(int x, int y, uint16_t color) {
 }
 
 // Helper to calculate BPM display area position
-struct BPMDisplayArea {
+struct BpmDisplayArea {
   int x;
   int y;
   int width;
   int height;
 };
 
-static BPMDisplayArea calculateBPMDisplayArea() {
+static BpmDisplayArea calculateBpmDisplayArea() {
   const int iconSize = SCALE_X(12);
   const int iconSpacing = SCALE_X(4);
   const int gridCols = 2;
@@ -115,7 +115,7 @@ void drawStatusIndicators() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
-  BPMDisplayArea bpmArea = calculateBPMDisplayArea();
+  BpmDisplayArea bpmArea = calculateBpmDisplayArea();
   
   String bpmLabel = String(sharedBPM);
   int bpmX = bpmArea.x;
@@ -189,7 +189,7 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
 }
 
 bool isBPMValueTapped() {
-  BPMDisplayArea area = calculateBPMDisplayArea();
+  BpmDisplayArea area = calculateBpmDisplayArea();
   return touch.justPressed && isButtonPressed(area.x, area.y, area.width, area.height);
 }
 
