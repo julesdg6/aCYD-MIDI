@@ -120,6 +120,9 @@ enum AppMode {
   EUCLID,
   MORPH,
   WAAAVE,
+#ifdef ENABLE_M5_8ENCODER
+  ENCODER_PANEL,
+#endif
   FRACTAL_ECHO
 };
 

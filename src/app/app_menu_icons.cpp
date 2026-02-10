@@ -296,6 +296,27 @@ static void drawWaaaveIcon(int cx, int cy, int size, uint16_t accent) {
   }
 }
 
+#ifdef ENABLE_M5_8ENCODER
+static void drawEncoder8Icon(int cx, int cy, int size, uint16_t accent) {
+  // Draw 8 small circles representing encoders in 2 rows of 4
+  int circleRadius = std::max(2, size / 12);
+  int spacing = std::max(6, size / 4);
+  
+  int startX = cx - (spacing * 3) / 2;
+  int startY = cy - spacing / 2;
+  
+  // Draw 2 rows of 4 encoders
+  for (int row = 0; row < 2; ++row) {
+    for (int col = 0; col < 4; ++col) {
+      int x = startX + col * spacing;
+      int y = startY + row * spacing;
+      tft.drawCircle(x, y, circleRadius + 1, accent);
+      tft.fillCircle(x, y, circleRadius - 1, THEME_SURFACE);
+    }
+  }
+}
+#endif // ENABLE_M5_8ENCODER
+
 static void drawFractalEchoIcon(int cx, int cy, int size, uint16_t accent) {
   // Draw a branching fractal pattern representing echo/delay iterations
   int baseRadius = std::max(3, size / 8);
@@ -375,6 +396,11 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
     case MenuIcon::Waaave:
       drawWaaaveIcon(cx, cy, size, accent);
       break;
+#ifdef ENABLE_M5_8ENCODER
+    case MenuIcon::Encoder8:
+      drawEncoder8Icon(cx, cy, size, accent);
+      break;
+#endif
     case MenuIcon::FractalEcho:
       drawFractalEchoIcon(cx, cy, size, accent);
       break;

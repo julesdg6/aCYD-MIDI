@@ -53,7 +53,11 @@ static const MenuTile kOriginalMenuTiles[] = {
     {"RAGA", MenuIcon::Raga, RAGA},
     {"EUCLID", MenuIcon::Euclid, EUCLID},
     {"MORPH", MenuIcon::Morph, MORPH},
+#ifdef ENABLE_M5_8ENCODER
+    {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
+#else
     {"SLINK", MenuIcon::Slink, SLINK},
+#endif
 };
 
 // Experimental mode menu tiles - Optimized for video production workflows
@@ -111,6 +115,9 @@ static const CaptureEntry kCaptureSequence[] = {
     {MORPH, "morph"},
     {SLINK, "slink"},
     {WAAAVE, "waaave"},
+#ifdef ENABLE_M5_8ENCODER
+    {ENCODER_PANEL, "encoder_panel"},
+#endif
 };
 
 static void drawSettingsCog() {

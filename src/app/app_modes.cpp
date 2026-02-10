@@ -23,6 +23,9 @@
 #include "module_tb3po_mode.h"
 #include "module_waaave_mode.h"
 #include "module_xy_pad_mode.h"
+#ifdef ENABLE_M5_8ENCODER
+#include "module_encoder_panel_mode.h"
+#endif
 
 namespace {
 
@@ -71,6 +74,9 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* EUCLID */ {initializeEuclideanMode, drawEuclideanMode, handleEuclideanMode},
     /* MORPH */ {initializeMorphMode, drawMorphMode, handleMorphMode},
     /* WAAAVE */ {initializeWaaaveMode, drawWaaaveMode, handleWaaaveMode},
+#ifdef ENABLE_M5_8ENCODER
+    /* ENCODER_PANEL */ {initializeEncoderPanelMode, drawEncoderPanelMode, handleEncoderPanelMode},
+#endif
     /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
 };
 

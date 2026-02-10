@@ -20,6 +20,9 @@ enum class MenuIcon : uint8_t {
   Euclid,
   Morph,
   Waaave,
+#ifdef ENABLE_M5_8ENCODER
+  Encoder8,
+#endif
   FractalEcho,
 };
 
