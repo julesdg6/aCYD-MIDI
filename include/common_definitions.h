@@ -123,6 +123,7 @@ enum AppMode {
 #ifdef ENABLE_M5_8ENCODER
   ENCODER_PANEL,
 #endif
+  FRACTAL_ECHO
 };
 
 enum MidiClockMaster {
@@ -134,8 +135,8 @@ enum MidiClockMaster {
 };
 
 enum MenuMode {
-  MENU_AUDIO = 0,
-  MENU_VIDEO
+  MENU_ORIGINAL = 0,
+  MENU_EXPERIMENTAL
 };
 
 // Music theory

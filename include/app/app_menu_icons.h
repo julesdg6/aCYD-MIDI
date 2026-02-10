@@ -23,6 +23,7 @@ enum class MenuIcon : uint8_t {
 #ifdef ENABLE_M5_8ENCODER
   Encoder8,
 #endif
+  FractalEcho,
 };
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent);

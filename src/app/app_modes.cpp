@@ -8,6 +8,7 @@
 #include "module_bouncing_ball_mode.h"
 #include "module_bpm_settings_mode.h"
 #include "module_euclidean_mode.h"
+#include "module_fractal_echo_mode.h"
 #include "module_grid_piano_mode.h"
 #include "module_grids_mode.h"
 #include "module_keyboard_mode.h"
@@ -45,11 +46,7 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
-#ifdef ENABLE_M5_8ENCODER
-constexpr size_t kModeCount = static_cast<size_t>(ENCODER_PANEL) + 1;
-#else
-constexpr size_t kModeCount = static_cast<size_t>(WAAAVE) + 1;
-#endif
+constexpr size_t kModeCount = static_cast<size_t>(FRACTAL_ECHO) + 1;
 
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
@@ -80,6 +77,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
 #ifdef ENABLE_M5_8ENCODER
     /* ENCODER_PANEL */ {initializeEncoderPanelMode, drawEncoderPanelMode, handleEncoderPanelMode},
 #endif
+    /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,

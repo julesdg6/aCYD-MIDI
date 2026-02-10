@@ -36,8 +36,8 @@ struct MenuTile {
 static constexpr size_t kMenuCols = 4;
 static constexpr size_t kMenuRows = 4;
 
-// Audio mode menu tiles (original 16 modes)
-static const MenuTile kAudioMenuTiles[] = {
+// Original mode menu tiles (original 16 modes)
+static const MenuTile kOriginalMenuTiles[] = {
     {"KEYS", MenuIcon::Keys, KEYBOARD},
     {"BEATS", MenuIcon::Sequencer, SEQUENCER},
     {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
@@ -60,12 +60,13 @@ static const MenuTile kAudioMenuTiles[] = {
 #endif
 };
 
-// Video mode menu tiles - Optimized for video production workflows
+// Experimental mode menu tiles - Optimized for video production workflows
 // Primary: Waaave Pool controller (nanoKONTROL2 emulation) for video mixing
 // Secondary: Common performance and generative modes for hybrid workflows
+// New: Fractal Echo MIDI effect for complex echo patterns
 // Ordering: Most video-relevant modes in top row, generative/utility modes below
-// Note: SLINK omitted to reduce cognitive load; available in audio mode
-static const MenuTile kVideoMenuTiles[] = {
+// Note: SLINK omitted to reduce cognitive load; available in original mode
+static const MenuTile kExperimentalMenuTiles[] = {
     {"WAAAVE", MenuIcon::Waaave, WAAAVE},     // Video controller (priority)
     {"KEYS", MenuIcon::Keys, KEYBOARD},        // Traditional keyboard
     {"BEATS", MenuIcon::Sequencer, SEQUENCER}, // Rhythm programming
@@ -81,13 +82,13 @@ static const MenuTile kVideoMenuTiles[] = {
     {"GRIDS", MenuIcon::Grids, GRIDS},         // Multi-layer arp
     {"RAGA", MenuIcon::Raga, RAGA},            // Raga explorer
     {"EUCLID", MenuIcon::Euclid, EUCLID},      // Euclidean rhythms
-    {"MORPH", MenuIcon::Morph, MORPH},         // Gesture morphing
+    {"ECHO", MenuIcon::FractalEcho, FRACTAL_ECHO}, // Fractal echo effect
 };
 
-static_assert(sizeof(kAudioMenuTiles) / sizeof(kAudioMenuTiles[0]) == kMenuCols * kMenuRows,
-              "Audio menu tile count must match 4x4 grid.");
-static_assert(sizeof(kVideoMenuTiles) / sizeof(kVideoMenuTiles[0]) == kMenuCols * kMenuRows,
-              "Video menu tile count must match 4x4 grid.");
+static_assert(sizeof(kOriginalMenuTiles) / sizeof(kOriginalMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Original menu tile count must match 4x4 grid.");
+static_assert(sizeof(kExperimentalMenuTiles) / sizeof(kExperimentalMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Experimental menu tile count must match 4x4 grid.");
 
 struct CaptureEntry {
   AppMode mode;
@@ -183,7 +184,7 @@ void drawMenu() {
   drawSettingsCog();
   
   // Select the appropriate tile array based on menu mode
-  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_EXPERIMENTAL) ? kExperimentalMenuTiles : kOriginalMenuTiles;
   
   const int gapX = SCALE_X(6);
   const int gapY = SCALE_Y(4);
@@ -265,7 +266,7 @@ void handleMenu() {
   const int startY = HEADER_HEIGHT + SCALE_Y(6);
 
   // Select the appropriate tile array based on menu mode
-  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_EXPERIMENTAL) ? kExperimentalMenuTiles : kOriginalMenuTiles;
 
   for (size_t i = 0; i < kMenuCols * kMenuRows; ++i) {
     int col = i % kMenuCols;
