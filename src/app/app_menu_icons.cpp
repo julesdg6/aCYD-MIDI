@@ -465,6 +465,9 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
     case MenuIcon::Dimensions:
       drawDimensionsIcon(cx, cy, size, accent);
       break;
+    case MenuIcon::Empty:
+      // Draw nothing for empty tiles
+      break;
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);
       break;
