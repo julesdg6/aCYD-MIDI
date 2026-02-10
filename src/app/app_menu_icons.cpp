@@ -296,6 +296,27 @@ static void drawWaaaveIcon(int cx, int cy, int size, uint16_t accent) {
   }
 }
 
+static void drawFractalEchoIcon(int cx, int cy, int size, uint16_t accent) {
+  // Draw a branching fractal pattern representing echo/delay iterations
+  int baseRadius = std::max(3, size / 8);
+  int spacing = std::max(8, size / 4);
+  
+  // Center dot (original note)
+  tft.fillCircle(cx - spacing, cy, baseRadius, accent);
+  
+  // First level echoes (3 dots)
+  tft.fillCircle(cx, cy - spacing / 2, baseRadius - 1, accent);
+  tft.fillCircle(cx, cy, baseRadius - 1, accent);
+  tft.fillCircle(cx, cy + spacing / 2, baseRadius - 1, accent);
+  
+  // Second level echoes (smaller)
+  int x2 = cx + spacing;
+  tft.fillCircle(x2, cy - spacing, 2, accent);
+  tft.fillCircle(x2, cy - spacing / 3, 2, accent);
+  tft.fillCircle(x2, cy + spacing / 3, 2, accent);
+  tft.fillCircle(x2, cy + spacing, 2, accent);
+}
+
 }  // namespace
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
@@ -353,6 +374,9 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
       break;
     case MenuIcon::Waaave:
       drawWaaaveIcon(cx, cy, size, accent);
+      break;
+    case MenuIcon::FractalEcho:
+      drawFractalEchoIcon(cx, cy, size, accent);
       break;
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);

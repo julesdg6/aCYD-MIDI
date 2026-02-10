@@ -8,6 +8,7 @@
 #include "module_bouncing_ball_mode.h"
 #include "module_bpm_settings_mode.h"
 #include "module_euclidean_mode.h"
+#include "module_fractal_echo_mode.h"
 #include "module_grid_piano_mode.h"
 #include "module_grids_mode.h"
 #include "module_keyboard_mode.h"
@@ -42,7 +43,7 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
-constexpr size_t kModeCount = static_cast<size_t>(WAAAVE) + 1;
+constexpr size_t kModeCount = static_cast<size_t>(FRACTAL_ECHO) + 1;
 
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
@@ -70,6 +71,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* EUCLID */ {initializeEuclideanMode, drawEuclideanMode, handleEuclideanMode},
     /* MORPH */ {initializeMorphMode, drawMorphMode, handleMorphMode},
     /* WAAAVE */ {initializeWaaaveMode, drawWaaaveMode, handleWaaaveMode},
+    /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,

@@ -20,6 +20,7 @@ enum class MenuIcon : uint8_t {
   Euclid,
   Morph,
   Waaave,
+  FractalEcho,
 };
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent);

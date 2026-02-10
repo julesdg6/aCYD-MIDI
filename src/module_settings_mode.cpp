@@ -159,7 +159,7 @@ void drawSettingsMode() {
     tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
     int labelY = menuModeLabelY;
     tft.drawString("Main Menu Mode", rowInnerLeft, labelY, 2);
-    String menuLabel = (currentMenuMode == MENU_VIDEO) ? "Video" : "Audio";
+    String menuLabel = (currentMenuMode == MENU_EXPERIMENTAL) ? "Experimental" : "Original";
     drawRoundButton(rowInnerLeft, menuModeRowY, rowInnerW, compactRowHeight(),
                     menuLabel, THEME_ACCENT, false, 2);
   }
@@ -373,7 +373,7 @@ void handleSettingsMode() {
   const int menuModeRowW = rowInnerW;
   if (!handled && touch.justPressed &&
       isButtonPressed(menuModeRowX, menuModeRowY, menuModeRowW, compactRowHeight())) {
-    currentMenuMode = (currentMenuMode == MENU_AUDIO) ? MENU_VIDEO : MENU_AUDIO;
+    currentMenuMode = (currentMenuMode == MENU_ORIGINAL) ? MENU_EXPERIMENTAL : MENU_ORIGINAL;
     requestRedraw();
     handled = true;
   }
