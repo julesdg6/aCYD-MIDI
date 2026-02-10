@@ -501,7 +501,6 @@ void handleBaby8EncoderTouch() {
         newValue = (currentValue + 1) % BABY8_MAX_PATTERNS;
       } else if (encoderModes[enc] == ENCODER_MODE_LENGTH) {
         newValue = (currentValue % BABY8_STEPS) + 1;
-        if (newValue > BABY8_STEPS) newValue = 1;
       }
       
       setBaby8EncoderValue(enc, newValue);
