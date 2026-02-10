@@ -296,6 +296,7 @@ static void drawWaaaveIcon(int cx, int cy, int size, uint16_t accent) {
   }
 }
 
+#ifdef ENABLE_M5_8ENCODER
 static void drawEncoder8Icon(int cx, int cy, int size, uint16_t accent) {
   // Draw 8 small circles representing encoders in 2 rows of 4
   int circleRadius = std::max(2, size / 12);
@@ -314,6 +315,7 @@ static void drawEncoder8Icon(int cx, int cy, int size, uint16_t accent) {
     }
   }
 }
+#endif // ENABLE_M5_8ENCODER
 
 }  // namespace
 

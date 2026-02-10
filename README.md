@@ -54,6 +54,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **Main Menu** - 4×4 grid, darker rainbow palette, and black button labels align with the updated mockup in `assets/screenshots/00_main_menu.bmp`
 - **Splash Screen** - Boot artwork now pulls `assets/aCYD-MIDI.png` and prints the connected IP when Wi-Fi is up
 - **Remote Display** - WebSocket viewer with 20 FPS frames, auto-reconnect, and status indicator for browser monitoring ([docs/REMOTE_DISPLAY.md](docs/REMOTE_DISPLAY.md))
+- **M5Stack 8Encoder Support** (Optional) - Hardware encoder expansion for hands-on parameter control with 8 rotary encoders and buttons, MIDI CC mapping, and persistent storage ([docs/M5STACK_8ENCODER.md](docs/M5STACK_8ENCODER.md))
 
 ## What You Need
 
@@ -67,6 +68,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **ESP32-S3 Dongles** - Headless USB MIDI mode (no display) with native USB MIDI support ([docs/HEADLESS_USB_MIDI.md](docs/HEADLESS_USB_MIDI.md))
 - PlatformIO or Arduino IDE with ESP32 support
 - *Optional:* Hardware MIDI circuit components (see [docs/HARDWARE_MIDI.md](docs/HARDWARE_MIDI.md))
+- *Optional:* M5Stack 8Encoder Unit for hardware parameter control (see [docs/M5STACK_8ENCODER.md](docs/M5STACK_8ENCODER.md))
 - **MicroSD Card** (optional) - For screenshot capture feature
 - Arduino IDE with ESP32 support or PlatformIO
 
