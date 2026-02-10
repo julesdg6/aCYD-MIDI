@@ -57,10 +57,14 @@ void drawFractalEchoMode() {
   drawRoundButton(SCALE_X(170), DISPLAY_HEIGHT - SCALE_Y(30), SCALE_X(40), SCALE_Y(25), ">", THEME_PRIMARY, false, 2);
   
   // Enable/Disable toggle
-  String enabledText = fractalParams.enabled ? "ENABLED" : "DISABLED";
+  String enabledText = fractalParams.enabled ? "ON" : "OFF";
   uint16_t enabledColor = fractalParams.enabled ? THEME_SUCCESS : THEME_ERROR;
-  drawRoundButton(DISPLAY_WIDTH - SCALE_X(100), SCALE_Y(10), SCALE_X(90), SCALE_Y(30), 
+  drawRoundButton(DISPLAY_WIDTH - SCALE_X(70), SCALE_Y(10), SCALE_X(60), SCALE_Y(30), 
                   enabledText, enabledColor, false, 2);
+  
+  // Test button to trigger a note
+  drawRoundButton(SCALE_X(10), SCALE_Y(10), SCALE_X(80), SCALE_Y(30), 
+                  "TEST NOTE", THEME_ACCENT, false, 2);
   
   int y = contentY;
   
@@ -195,9 +199,35 @@ void handleFractalEchoMode() {
   }
   
   // Enable/Disable toggle
-  if (isButtonPressed(DISPLAY_WIDTH - SCALE_X(100), SCALE_Y(10), SCALE_X(90), SCALE_Y(30))) {
+  if (isButtonPressed(DISPLAY_WIDTH - SCALE_X(70), SCALE_Y(10), SCALE_X(60), SCALE_Y(30))) {
     fractalParams.enabled = !fractalParams.enabled;
     requestRedraw();
+    return;
+  }
+  
+  // Test button - trigger a C4 note with fractal echo
+  if (isButtonPressed(SCALE_X(10), SCALE_Y(10), SCALE_X(80), SCALE_Y(30))) {
+    uint8_t testNote = 60; // C4
+    uint8_t testVel = 100;
+    uint8_t testChannel = 0;
+    
+    // Send original note
+    sendMIDI(0x90 | testChannel, testNote, testVel);
+    
+    // Add fractal echoes
+    if (fractalParams.enabled) {
+      addFractalEcho(testNote, testVel, testChannel);
+    }
+    
+    // Schedule note off for original
+    if (eventQueueSize < FRAC_MAX_EVENTS) {
+      eventQueue[eventQueueSize].dueTimeMs = millis() + 300;
+      eventQueue[eventQueueSize].status = 0x80 | testChannel;
+      eventQueue[eventQueueSize].data1 = testNote;
+      eventQueue[eventQueueSize].data2 = 0;
+      eventQueue[eventQueueSize].active = true;
+      eventQueueSize++;
+    }
     return;
   }
   
