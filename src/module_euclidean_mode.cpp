@@ -71,7 +71,7 @@ void initializeEuclideanMode() {
   const uint8_t baseEvents[EUCLIDEAN_VOICE_COUNT] = {4, 4, 8, 5, 3, 6, 7, 2};
   const int8_t rotations[EUCLIDEAN_VOICE_COUNT] = {0, 2, 0, 1, 0, 1, 3, 2};
   const uint8_t notes[EUCLIDEAN_VOICE_COUNT] = {36, 38, 42, 39, 45, 47, 49, 51};
-  const uint16_t colors[EUCLIDEAN_VOICE_COUNT] = {THEME_ERROR, THEME_WARNING, THEME_SUCCESS, THEME_ACCENT, THEME_PRIMARY, TFT_ORANGE, TFT_PURPLE, TFT_PINK};
+  const uint16_t colors[EUCLIDEAN_VOICE_COUNT] = {THEME_ERROR, THEME_WARNING, THEME_SUCCESS, THEME_ACCENT, THEME_PRIMARY, 0xFD40, 0x8010, 0xFE19};
 
   for (int i = 0; i < EUCLIDEAN_VOICE_COUNT; ++i) {
     euclideanState.voices[i].steps = baseSteps[i];
