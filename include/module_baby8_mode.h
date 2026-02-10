@@ -1,11 +1,11 @@
 #ifndef MODULE_BABY8_MODE_H
 #define MODULE_BABY8_MODE_H
 
-#ifdef ENABLE_BABY8_EMU
-
 #include "common_definitions.h"
 #include "ui_elements.h"
 #include "midi_utils.h"
+
+#ifdef ENABLE_BABY8_EMU
 
 // Baby8 sequencer configuration
 #define BABY8_STEPS 8
