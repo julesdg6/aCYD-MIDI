@@ -92,6 +92,8 @@ void drawBPMSettingsMode() {
   tft.drawCentreString("BPM", DISPLAY_CENTER_X, bpmLabelY, 2);
   
   // Transport controls (play/stop)
+  // Note: Mutually exclusive highlighting - only the active button is highlighted
+  // When playing, PLAY is highlighted; when stopped, STOP is highlighted
   bool isPlaying = clockManagerIsRunning();
   drawRoundButton(layout.playButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH, 
                   "PLAY", THEME_SUCCESS, isPlaying, 2);

@@ -186,6 +186,8 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
   int titleY = HEADER_HEIGHT / 2 - SCALE_Y(8);  // Vertically centered
   
   // Auto-scale font size based on display resolution while maintaining readability
+  // scaleX is the ratio of actual width to reference width (320)
+  // For displays narrower than 256px (scaleX < 0.8), reduce font size to prevent text overflow
   uint8_t scaledFont = titleFont;
   if (displayConfig.scaleX < 0.8f && titleFont > 2) {
     scaledFont = titleFont - 1;  // Reduce font size for smaller displays
