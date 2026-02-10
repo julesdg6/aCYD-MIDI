@@ -53,13 +53,7 @@ static const MenuTile kOriginalMenuTiles[] = {
     {"RAGA", MenuIcon::Raga, RAGA},
     {"EUCLID", MenuIcon::Euclid, EUCLID},
     {"MORPH", MenuIcon::Morph, MORPH},
-#ifdef ENABLE_M5_8ENCODER
-    {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
-#elif defined(ENABLE_BABY8_EMU)
-    {"BABY8", MenuIcon::Baby8, BABY8},
-#else
     {"SLINK", MenuIcon::Slink, SLINK},
-#endif
 };
 
 // Experimental mode menu tiles
