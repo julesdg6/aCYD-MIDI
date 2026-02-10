@@ -5,86 +5,143 @@ All notable changes to aCYD-MIDI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-02-06
+## [Unreleased]
 
-### First Public Release
+### Added
+- **Dimensions Parametric Sequencer Mode** - Math-driven pattern generator with 20 parametric equations
+  - Port of ErikOostveen/Dimensions sequencer engine
+  - Parametric equations map to MIDI note, velocity, and timing
+  - User-controllable parameters A, B, C, D for equation control
+  - Time parameter (t) advances with MIDI clock
+  - 20 unique equations including Lissajous, random, harmonic, and chaotic patterns
+  - Clock-synced step generation with interval divisions (1/32 to whole notes)
+  - Note subset system (default C3-B3, expandable to full MIDI range)
+  - Touch-based UI with equation selector and parameter controls
+  - Integrated with aCYD-MIDI clock manager for internal/external sync
+  - Menu icon with Lissajous curve visualization
+  - Full documentation in `docs/DIMENSIONS.md`
 
-This is the initial public release of aCYD-MIDI, a comprehensive touchscreen Bluetooth MIDI controller for ESP32-based displays.
+## [0.1.3] - 2026-02-07
 
-#### Interactive Modes (16 total)
+### Added
+- Updated public web pages: the web installer, debug console, and documentation for the public beta. These site updates consolidate installer instructions and improve the live debug tooling documentation.
 
-- **KEYS** - Virtual piano keyboard with scale and key controls
-- **BEATS** - 16-step sequencer with 4 tracks and tempo control
-- **ZEN** - Ambient bouncing ball mode for generative music
-- **DROP** - Physics-based ball drop with customizable platforms
-- **RNG** - Random music generator for creative exploration
-- **XY PAD** - Touch-controlled X/Y pad for real-time parameter control
-- **ARP** - Arpeggiator with chord-based patterns
-- **GRID** - Grid piano with 4ths layout for unique playing style
-- **CHORD** - Auto-chord mode with diatonic chord progressions
-- **LFO** - Low-frequency oscillator for modulation effects
-- **TB3PO** - TB-3 inspired generator with density, accent, and regen controls for rapid phrase creation
-- **GRIDS** - Multi-layer arpeggiator blending kick/snare/hat densities with touch-based XY tweaking
-- **RAGA** - Indian raga explorer for scale selection, drone toggles, and tempo-aware dronescapes
-- **EUCLID** - Euclidean rhythm sequencer with per-voice patterns, BPM, and triplet toggles
-- **MORPH** - Gesture morphing surface that blends stored slots, X/Y sliders, and rec/play controls
-- **SLINK** - Dual-wave generative engine with 16-band triggering, tabbed parameter panels, and MIDI scale/clock modulation for evolving textures
+### Changed
+- Clarified website copy and README links to point to the web installer and debug console for easy flashing and testing.
 
-#### MIDI Output
+### Fixed
+- Corrected out-of-date documentation references on the website and README so release notes reflect the current web pages and public beta flow.
 
-- **Bluetooth MIDI** - Wireless BLE MIDI connection to DAWs and music software
-- **Hardware MIDI** - Dual BLE + DIN-5 output with selectable UART0 (production) or UART2 (development)
-  - Supports simultaneous BLE and hardware MIDI output
-  - Configurable UART selection for debugging or production use
-  - Conditional debug output that respects UART configuration
-  - Complete wiring and circuit diagrams included
-- **USB MIDI** - Native USB MIDI device support for ESP32-S3 headless builds (PC/Mac/Android/iOS compatible, no drivers needed)
-- **ESP-NOW MIDI** - Low-latency wireless MIDI networking between multiple CYD devices without pairing (<10ms latency, auto-discovery, MIDI clock sync)
+[0.1.3]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.2...v0.1.3
 
-#### Display & Interface
+## [0.1.4] - 2026-02-08
 
-- **Touchscreen Interface** - Intuitive visual controls optimized for ESP32 displays
-- **Display Autoscaling** - Automatic UI scaling for different screen sizes and resolutions
-  - Auto-detects display dimensions at startup
-  - Scales all UI elements proportionally
-  - Maintains consistent layout across hardware variants
-- **Main Menu** - 4×4 grid with darker rainbow palette and clear button labels
-- **Splash Screen** - Boot artwork with version display and WiFi status
-- **Visual Feedback** - Responsive graphics with consistent color theme
-- **Remote Display** - WebSocket viewer with 20 FPS frames, auto-reconnect, and status indicator for browser monitoring (optional, disabled by default)
+### Added
+- Support for 7" Elecrow devices (800x480 capacitive touch) and related board manifest and build configuration updates.
 
-#### Hardware Support
+[0.1.4]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.3...v0.1.4
 
-- **ESP32-2432S028R (CYD)** - 2.8" 320x240 display
-- **ESP32-4832S035C** - 3.5" 480x320 display with capacitive touch
-- **ESP32-4832S035R** - 3.5" 480x320 display with resistive touch
-- **ESP32-4832S040R** - 4.0" 480x320 display with resistive touch
-- **ESP32-S3 Dongles** - Headless USB MIDI mode (no display) with native USB MIDI support
-- Multiple UART configurations (UART0 for production, UART2 for development)
+## [0.0.3] - 2026-02-05
 
-#### Additional Features
+### Added
+- ESP32-4832S040R (4" 480x320 resistive touch) board support with UART variants (#98)
+- **ESP32-S3 headless USB MIDI dongle support with full USB MIDI implementation** (#98)
+- **USB MIDI device support for headless builds** (PC/Mac/Android/iOS compatible)
+- **ESP-NOW MIDI networking enabled for headless builds** (master role)
+- ESP-NOW MIDI networking support between CYD devices (#56)
+- Unique Bluetooth names for each device based on MAC address (#53)
+- TB-303-style 4-row pattern display for TB3PO mode (#91)
+- uClock step sequencer extension integration across all sequencer modules (#90)
 
-- **Screenshot Capture** - LVGL snapshot to BMP writer with incremental filenames and SD card support
-- **Web Installer** - Browser-based firmware flashing using ESP Web Tools (no software installation required)
-- **Web Debug Console** - Browser-based MIDI/Serial debugging tool with TB-303-style interface, BLE MIDI and Web Serial support, real-time logging, and event export
-- **MIDI Clock Sync** - uClock step sequencer extension integration across all sequencer modules
-- **Unique Bluetooth Names** - Each device gets a unique name based on MAC address
-- **Memory Optimizations** - Comprehensive DRAM optimization (20-26KB freed)
-- **Build System** - PlatformIO-based with multiple board configurations and GitHub Actions CI/CD
+### Changed
+- Renamed existing board configurations for clarity (#98)
+- Optimized TB3PO layout with expanded grid and repositioned controls (#93)
+- Improved animated module screen updates and UI usability (#50)
 
-#### Documentation
+### Fixed
+- **GitHub release workflow now properly includes firmware binaries** (this release)
+- MIDI clock timing issues with uClock library integration (#86)
+- Splash screen initialization by setting up render layer before drawing (#96)
+- UART0 build error in midi_transport.cpp (#71)
+- Clock timing issues in sequencer (#63)
+- DRAM overflow with comprehensive memory optimization (20-26KB freed) (#46, #44)
+- Compilation issues with AsyncTCP dependencies via conditional compilation (#48)
 
-- Comprehensive README with installation instructions
-- Hardware MIDI setup guides with circuit diagrams
-- Contributing guidelines and code of conduct
-- 39 detailed documentation files covering features, implementation, and troubleshooting
+### Removed
+- Dead ISR code from modules using consumeReadySteps (Sequencer, Arpeggiator, Euclidean, Random Generator, Raga) (#100)
 
-#### Technical Highlights
+## [0.0.1] - 2026-01-19
 
-- Mode-based architecture for easy extensibility
-- Conditional compilation for optional features (WiFi, Remote Display, ESP-NOW)
-- RTOS-based concurrency with thread-safe MIDI transport
-- Atomic flags and local packet buffers to avoid cross-core races
-- Performance optimizations for smooth UI updates
+## [0.1.0] - 2026-02-07
 
-[0.1.0]: https://github.com/julesdg6/aCYD-MIDI/releases/tag/v0.1.0
+### Added
+- Further SLINK behavior and UI improvements; update-per-PPQN visuals
+
+### Changed
+- Bumped project version to `0.1.0`
+- Various concurrency and BLE/ESP-NOW robustness improvements
+
+### Fixed
+- Additional mode UI fixes and timing corrections
+
+[0.1.0]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.0.5...v0.1.0
+
+
+## [0.1.1] - 2026-02-07
+
+### Added
+- Web page updates and documentation tweaks for the public beta and release notes
+
+### Changed
+- Minor text and link fixes on the project website and README
+
+### Fixed
+- Corrected a few documentation links and formatting issues surfaced during release
+
+[0.1.1]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.0...v0.1.1
+
+
+## [0.0.5] - 2026-02-05
+
+## [0.1.2] - 2026-02-07
+
+### Added
+- Follow-up web copy and docs fixes; housekeeping for public beta
+
+### Changed
+- Small documentation and site link updates
+
+### Fixed
+- Minor text and formatting fixes on the website and README
+
+[0.1.2]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.1...v0.1.2
+
+### Added
+- Support and fixes for ESP32-4832S040R and 4" CYD builds
+
+### Changed
+- Multiple UI and concurrency fixes across SLINK, ESP-NOW, BLE and transport layers
+
+### Fixed
+- Resource leaks in `remote_display` when WiFi is unavailable
+- Races involving shared `midiPacket` replaced with local packet buffers
+- MIDI transport flags/timestamps made atomic to avoid cross-core races
+- Fixed display redraws in several modes so visuals update per PPQN tick
+- Many mode-specific fixes (Euclid triplet timing, grids layout, physics spawn logic, morph labels)
+
+[0.0.5]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.0.3...v0.0.5
+
+### Added
+- Initial public release
+- Multi-mode touchscreen UI (keyboard, sequencer, arpeggiator, XY pad, generative music)
+- BLE MIDI wireless output
+- Optional hardware MIDI via UART (DIN-5 connector)
+- Display scaling for different screen sizes
+- Mode-based architecture
+- Remote display via WiFi streaming
+- Screenshot capture to SD card
+- Consistent theming and scalable UI
+- Support for ESP32-2432S028R (CYD) and ESP32-3248S035C/R boards
+
+[0.0.3]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.0.1...v0.0.3
+[0.0.1]: https://github.com/julesdg6/aCYD-MIDI/releases/tag/v0.0.1
