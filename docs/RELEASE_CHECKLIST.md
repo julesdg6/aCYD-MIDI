@@ -16,7 +16,7 @@ Use this checklist when preparing a new release.
   ```cpp
   #define ACYD_MIDI_VERSION "X.Y.Z"
   ```
-- [ ] Add new section to `CHANGELOG.md` with:
+- [ ] Add new section to `docs/CHANGELOG.md` with:
   - [ ] Version number and date
   - [ ] Added features
   - [ ] Changed features
@@ -40,7 +40,7 @@ Use this checklist when preparing a new release.
 
 - [ ] Commit version changes:
   ```bash
-  git add common_definitions.h CHANGELOG.md
+  git add common_definitions.h docs/CHANGELOG.md
   git commit -m "Prepare release vX.Y.Z"
   git push origin main
   ```
@@ -66,7 +66,7 @@ Use this checklist when preparing a new release.
 ## Post-Release
 
 - [ ] Edit GitHub release to add detailed release notes
-  - [ ] Copy content from CHANGELOG.md
+  - [ ] Copy content from docs/CHANGELOG.md
   - [ ] Add installation instructions
   - [ ] Add upgrade notes if applicable
   - [ ] Add known issues if any

@@ -14,7 +14,7 @@ The release process is automated via GitHub Actions. When you push a version tag
 2. Create a GitHub Release with:
    - The tag name as the release title
    - All firmware binaries (.bin and .elf files) as downloadable assets
-   - Automatically extracted changelog content from CHANGELOG.md as the release body
+   - Automatically extracted changelog content from docs/CHANGELOG.md as the release body
 
 ## Steps to Create a Release
 
@@ -46,7 +46,7 @@ git push origin v0.0.1
 
 The GitHub Actions workflow will automatically:
 - Build all firmware variants
-- Extract the relevant section from CHANGELOG.md for your version
+- Extract the relevant section from docs/CHANGELOG.md for your version
 - Create the GitHub Release with the changelog content
 - Attach firmware binaries
 
@@ -66,7 +66,7 @@ If needed, you can manually edit the release on GitHub to make minor adjustments
 Before creating a release, verify:
 
 - [ ] Version updated in `common_definitions.h`
-- [ ] CHANGELOG.md (in the root directory) updated with new version
+- [ ] docs/CHANGELOG.md updated with new version
   - Ensure the version header follows the format: `## [X.Y.Z] - YYYY-MM-DD`
   - Include sections: Added, Changed, Fixed, Removed (as applicable)
   - The changelog will be automatically extracted and included in the GitHub release
@@ -122,14 +122,14 @@ The GitHub Actions workflow will handle the rest!
 
 ## Changelog Extraction
 
-The release workflow automatically extracts the changelog content for each release from `CHANGELOG.md`. The extraction process:
+The release workflow automatically extracts the changelog content for each release from `docs/CHANGELOG.md`. The extraction process:
 
 1. Reads the tag version (e.g., `v0.0.3` → `0.0.3`)
-2. Finds the section in CHANGELOG.md that matches `## [0.0.3]`
+2. Finds the section in docs/CHANGELOG.md that matches `## [0.0.3]`
 3. Extracts all content from that section until the next version header
 4. Includes this content in the GitHub release body
 
-**Important**: Ensure your CHANGELOG.md follows the format:
+**Important**: Ensure your docs/CHANGELOG.md follows the format:
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
@@ -143,4 +143,4 @@ The release workflow automatically extracts the changelog content for each relea
 - Bug fix 3
 ```
 
-If the version is not found in CHANGELOG.md, the release will include a fallback message linking to the changelog file.
+If the version is not found in docs/CHANGELOG.md, the release will include a fallback message linking to the changelog file.

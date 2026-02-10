@@ -69,15 +69,15 @@ This document summarizes the changes made to prepare the aCYD-MIDI repository fo
    - Internal troubleshooting document for Discord webhook
    - Not relevant for public users
 
-2. **docs/CHANGELOG.md**
-   - Duplicate of root CHANGELOG.md
-   - Root version has more recent content (0.0.3 vs 0.0.1)
-
 ### Files Moved
 
 1. **.github/RELEASE_CHECKLIST.md → docs/RELEASE_CHECKLIST.md**
    - Moved from internal .github/ to public docs/
    - Useful reference for contributors
+
+2. **CHANGELOG.md → docs/CHANGELOG.md**
+   - Consolidated the changelog under docs/
+   - Keeps release notes alongside other documentation
 
 ## Feature Documentation
 
@@ -108,7 +108,6 @@ This document summarizes the changes made to prepare the aCYD-MIDI repository fo
 ├── README.md              # Main project documentation
 ├── CONTRIBUTING.md        # Contribution guidelines (NEW)
 ├── CODE_OF_CONDUCT.md     # Community standards (NEW)
-├── CHANGELOG.md           # Version history
 ├── LICENSE                # MIT License
 ├── platformio.ini         # Build configuration
 └── flash.html            # Web installer
@@ -118,6 +117,7 @@ This document summarizes the changes made to prepare the aCYD-MIDI repository fo
 ```
 docs/
 ├── README.md                        # Documentation index (UPDATED)
+├── CHANGELOG.md                     # Version history (MOVED)
 ├── RELEASE_CHECKLIST.md             # Release process (MOVED from .github/)
 ├── Hardware & Configuration
 │   ├── CONFIG_RULES.md

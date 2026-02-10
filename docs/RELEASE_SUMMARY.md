@@ -13,7 +13,7 @@ Added version tracking to the codebase:
 
 ### 2. Comprehensive CHANGELOG ✅
 
-Created `CHANGELOG.md` documenting:
+Created `docs/CHANGELOG.md` documenting:
 - All 16 interactive modes (KEYS, BEATS, ZEN, DROP, RNG, XY PAD, ARP, GRID, CHORD, LFO, TB3PO, GRIDS, RAGA, EUCLID, MORPH, SLINK)
 - Core features (BLE MIDI, Hardware MIDI, Display features)
 - Advanced features (Remote Display, Screenshot Capture)
@@ -24,7 +24,7 @@ Created `CHANGELOG.md` documenting:
 
 Created comprehensive release documentation:
 - **RELEASE.md** - Step-by-step guide for creating releases
-- **.github/RELEASE_CHECKLIST.md** - Detailed checklist for maintainers
+- **docs/RELEASE_CHECKLIST.md** - Detailed checklist for maintainers
 - **.github/ISSUE_TEMPLATE/release.md** - GitHub issue template
 
 ### 4. Updated README ✅
@@ -70,7 +70,7 @@ git push origin v0.0.1
 2. **Manual step: Edit release notes**
    - Go to: https://github.com/julesdg6/aCYD-MIDI/releases
    - Edit the v0.0.1 release
-   - Copy content from CHANGELOG.md
+   - Copy content from docs/CHANGELOG.md
    - Add any additional notes
 
 3. **Users can download firmware**
@@ -88,9 +88,9 @@ Modified:
   README.md                     - Added badges and download info
 
 Created:
-  CHANGELOG.md                  - Version 0.0.1 changelog
+   docs/CHANGELOG.md             - Version 0.0.1 changelog
   RELEASE.md                    - Release process guide
-  .github/RELEASE_CHECKLIST.md  - Maintainer checklist
+   docs/RELEASE_CHECKLIST.md     - Maintainer checklist
   .github/ISSUE_TEMPLATE/release.md - Issue template
 ```
 
@@ -121,8 +121,8 @@ Created:
 
 For future releases:
 1. Update version in `common_definitions.h`
-2. Add section to `CHANGELOG.md`
-3. Follow `.github/RELEASE_CHECKLIST.md`
+2. Add section to `docs/CHANGELOG.md`
+3. Follow `docs/RELEASE_CHECKLIST.md`
 4. Create and push new tag
 5. GitHub Actions handles the rest!
 

@@ -62,29 +62,29 @@ static const MenuTile kOriginalMenuTiles[] = {
 #endif
 };
 
-// Experimental mode menu tiles - Optimized for video production workflows
-// Primary: Waaave Pool controller (nanoKONTROL2 emulation) for video mixing
-// Secondary: Common performance and generative modes for hybrid workflows
-// New: Dimensions parametric sequencer for mathematical pattern generation
-// Ordering: Most video-relevant modes in top row, generative/utility modes below
-// Note: SLINK omitted to reduce cognitive load; available in original mode
+// Experimental mode menu tiles
+// Focus: experimental/newer modes plus a subset of core modes for quick access
 static const MenuTile kExperimentalMenuTiles[] = {
-    {"WAAAVE", MenuIcon::Waaave, WAAAVE},     // Video controller (priority)
-    {"KEYS", MenuIcon::Keys, KEYBOARD},        // Traditional keyboard
-    {"BEATS", MenuIcon::Sequencer, SEQUENCER}, // Rhythm programming
-    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},     // Generative ambient
-    {"DROP", MenuIcon::Drop, PHYSICS_DROP},    // Physics-based gen
-    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},  // Random patterns
-    {"XY PAD", MenuIcon::Xy, XY_PAD},          // Real-time XY control
-    {"ARP", MenuIcon::Arp, ARPEGGIATOR},       // Arpeggiation
-    {"GRID", MenuIcon::Grid, GRID_PIANO},      // Grid layout keyboard
-    {"CHORD", MenuIcon::Chord, AUTO_CHORD},    // Chord progressions
-    {"LFO", MenuIcon::Lfo, LFO},               // Modulation
-    {"TB3PO", MenuIcon::Tb3po, TB3PO},         // Phrase generator
-    {"GRIDS", MenuIcon::Grids, GRIDS},         // Multi-layer arp
-    {"RAGA", MenuIcon::Raga, RAGA},            // Raga explorer
-    {"EUCLID", MenuIcon::Euclid, EUCLID},      // Euclidean rhythms
-    {"DIMS", MenuIcon::Dimensions, DIMENSIONS}, // Parametric sequencer
+#ifdef ENABLE_M5_8ENCODER
+  {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
+#else
+  {"SLINK", MenuIcon::Slink, SLINK},
+#endif
+  {"WAAAVE", MenuIcon::Waaave, WAAAVE},
+  {"FRACTAL", MenuIcon::FractalEcho, FRACTAL_ECHO},
+  {"DIMS", MenuIcon::Dimensions, DIMENSIONS},
+  {"KEYS", MenuIcon::Keys, KEYBOARD},
+  {"BEATS", MenuIcon::Sequencer, SEQUENCER},
+  {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
+  {"DROP", MenuIcon::Drop, PHYSICS_DROP},
+  {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
+  {"XY PAD", MenuIcon::Xy, XY_PAD},
+  {"ARP", MenuIcon::Arp, ARPEGGIATOR},
+  {"GRID", MenuIcon::Grid, GRID_PIANO},
+  {"CHORD", MenuIcon::Chord, AUTO_CHORD},
+  {"LFO", MenuIcon::Lfo, LFO},
+  {"TB3PO", MenuIcon::Tb3po, TB3PO},
+  {"GRIDS", MenuIcon::Grids, GRIDS},
 };
 
 static_assert(sizeof(kOriginalMenuTiles) / sizeof(kOriginalMenuTiles[0]) == kMenuCols * kMenuRows,
@@ -187,6 +187,8 @@ void drawMenu() {
   tft.fillScreen(THEME_BG);
   drawHeader("aCYD MIDI", "", 5, false);
   drawSettingsCog();
+  int dividerX = BACK_BUTTON_X + BACK_BUTTON_W + SCALE_X(8);
+  tft.drawFastVLine(dividerX, SCALE_Y(5), HEADER_HEIGHT - SCALE_Y(10), THEME_PRIMARY);
   
   // Select the appropriate tile array based on menu mode
   const MenuTile* activeMenuTiles = (currentMenuMode == MENU_EXPERIMENTAL) ? kExperimentalMenuTiles : kOriginalMenuTiles;
