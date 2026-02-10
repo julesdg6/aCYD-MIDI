@@ -30,6 +30,9 @@ desktop.ini
 *.hex
 *.map
 
+# Local temp artifacts
+tmp/
+
 # Logs
 *.log
 

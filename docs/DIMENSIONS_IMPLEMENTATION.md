@@ -200,7 +200,7 @@ Based on code analysis:
 - `src/app/app_menu.cpp` - Added to experimental menu
 - `src/app/app_menu_icons.cpp` - Implemented Lissajous icon drawing
 - `README.md` - Added mode description
-- `CHANGELOG.md` - Documented new feature
+- `docs/CHANGELOG.md` - Documented new feature
 
 **Total Code Added**: ~600 lines (including documentation)
 

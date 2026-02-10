@@ -122,7 +122,7 @@ Expected output should include:
 The existing `release` job is unchanged and still:
 - Creates GitHub Releases with firmware files
 - Deploys to GitHub Pages on tagged releases
-- Generates release notes from CHANGELOG.md
+- Generates release notes from docs/CHANGELOG.md
 
 Now there are **two paths** to deployment:
 1. **Continuous deployment:** Every push to `main` → web installer updated

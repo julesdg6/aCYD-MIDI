@@ -58,12 +58,13 @@ typedef struct {
 
 bool initializeSD() {
     if (sdInitialized) {
+        Serial.println("SD Card already initialized");
         return true;
     }
     
     // Initialize SD card with SPI
     if (!SD.begin(SD_CS_PIN)) {
-        Serial.println("SD Card initialization failed!");
+        Serial.println("SD Card initialization failed (SD.begin returned false)");
         return false;
     }
     
@@ -72,7 +73,24 @@ bool initializeSD() {
         Serial.println("No SD card attached");
         return false;
     }
-    
+
+    const char *typeLabel = "UNKNOWN";
+    switch (cardType) {
+        case CARD_MMC:
+            typeLabel = "MMC";
+            break;
+        case CARD_SD:
+            typeLabel = "SDSC";
+            break;
+        case CARD_SDHC:
+            typeLabel = "SDHC/SDXC";
+            break;
+        default:
+            break;
+    }
+
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card detected: %s, %lluMB\n", typeLabel, cardSize);
     Serial.println("SD Card initialized successfully");
     sdInitialized = true;
     return true;

@@ -23,7 +23,7 @@ assignees: ''
 ## Documentation Updates Needed
 
 - [ ] Update README.md
-- [ ] Update CHANGELOG.md
+- [ ] Update docs/CHANGELOG.md
 - [ ] Update relevant docs in `/docs`
 - [ ] Update version in `common_definitions.h`
 
@@ -41,14 +41,14 @@ assignees: ''
 
 - [ ] All PRs merged to main
 - [ ] Version updated in code
-- [ ] CHANGELOG.md updated
+- [ ] docs/CHANGELOG.md updated
 - [ ] All tests passing
 - [ ] Documentation complete
 - [ ] Breaking changes documented
 
 ## Release Process
 
-See [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md) for detailed steps.
+See [docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) for detailed steps.
 
 ## Post-Release Tasks
 
