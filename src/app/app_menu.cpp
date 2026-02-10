@@ -57,7 +57,7 @@ static const MenuTile kOriginalMenuTiles[] = {
 };
 
 // Experimental mode menu tiles
-// Focus: experimental/newer modes only (Baby8, Waaave, Fractal, Dimensions)
+// Focus: experimental/newer modes only (Baby8, 8Encoder, Waaave, Fractal, Dimensions)
 // Rest are empty placeholders for future expansion
 static const MenuTile kExperimentalMenuTiles[] = {
 #ifdef ENABLE_BABY8_EMU
@@ -65,11 +65,14 @@ static const MenuTile kExperimentalMenuTiles[] = {
 #else
   {"", MenuIcon::Empty, MENU},
 #endif
+#ifdef ENABLE_M5_8ENCODER
+  {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
+#else
+  {"", MenuIcon::Empty, MENU},
+#endif
   {"WAAAVE", MenuIcon::Waaave, WAAAVE},
   {"FRACTAL", MenuIcon::FractalEcho, FRACTAL_ECHO},
   {"DIMS", MenuIcon::Dimensions, DIMENSIONS},
-  {"", MenuIcon::Empty, MENU},
-  {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
