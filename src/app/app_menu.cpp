@@ -59,6 +59,7 @@ static const MenuTile kOriginalMenuTiles[] = {
 // Experimental mode menu tiles - Optimized for video production workflows
 // Primary: Waaave Pool controller (nanoKONTROL2 emulation) for video mixing
 // Secondary: Common performance and generative modes for hybrid workflows
+// New: Fractal Echo MIDI effect for complex echo patterns
 // Ordering: Most video-relevant modes in top row, generative/utility modes below
 // Note: SLINK omitted to reduce cognitive load; available in original mode
 static const MenuTile kExperimentalMenuTiles[] = {
@@ -77,7 +78,7 @@ static const MenuTile kExperimentalMenuTiles[] = {
     {"GRIDS", MenuIcon::Grids, GRIDS},         // Multi-layer arp
     {"RAGA", MenuIcon::Raga, RAGA},            // Raga explorer
     {"EUCLID", MenuIcon::Euclid, EUCLID},      // Euclidean rhythms
-    {"MORPH", MenuIcon::Morph, MORPH},         // Gesture morphing
+    {"ECHO", MenuIcon::FractalEcho, FRACTAL_ECHO}, // Fractal echo effect
 };
 
 static_assert(sizeof(kOriginalMenuTiles) / sizeof(kOriginalMenuTiles[0]) == kMenuCols * kMenuRows,

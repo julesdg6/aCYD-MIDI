@@ -119,7 +119,8 @@ enum AppMode {
   RAGA,
   EUCLID,
   MORPH,
-  WAAAVE
+  WAAAVE,
+  FRACTAL_ECHO
 };
 
 enum MidiClockMaster {
