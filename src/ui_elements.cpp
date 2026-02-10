@@ -190,8 +190,8 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
   // scaleX is the ratio of actual width to reference width (DISPLAY_REF_WIDTH = 320)
   // For displays narrower than 256px (320 * 0.8 = 256), reduce font size to prevent text overflow
   uint8_t scaledFont = titleFont;
-  if (displayConfig.scaleX < 0.8f && titleFont > 2) {
-    scaledFont = titleFont - 1;  // Reduce font size for smaller displays
+  if (displayConfig.scaleX < 0.8f && titleFont >= 2) {
+    scaledFont = titleFont - 1;  // Reduce font size for smaller displays (e.g., 2->1, 3->2, 4->3)
   }
   
   tft.setTextColor(THEME_TEXT, THEME_SURFACE);

@@ -26,7 +26,7 @@ struct BPMDialogLayout {
 static BPMDialogLayout calculateDialogLayout() {
   BPMDialogLayout layout;
   layout.dialogW = SCALE_X(240);
-  layout.dialogH = SCALE_Y(180);  // Increased height for transport controls
+  layout.dialogH = SCALE_Y(180);  // Increased from 160 to 180 to accommodate transport controls
   layout.dialogX = (DISPLAY_WIDTH - layout.dialogW) / 2;
   layout.dialogY = (DISPLAY_HEIGHT - layout.dialogH) / 2;
   
