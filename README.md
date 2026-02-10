@@ -37,7 +37,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **TB3PO** - TB-3 inspired generator with density, accent, and regen controls for rapid phrase creation
 - **GRIDS** - Multi-layer arpeggiator blending kick/snare/hat densities with touch-based XY tweaking
 - **RAGA** - Indian raga explorer for scale selection, drone toggles, and tempo-aware dronescapes
-- **EUCLID** - Euclidean rhythm sequencer with per-voice patterns, BPM, and triplet toggles
+- **EUCLID** - Euclidean rhythm sequencer with 8 voices, per-voice patterns, BPM, triplet toggles, and optional M5Stack 8Encoder hardware support for hands-on control
 - **MORPH** - Gesture morphing surface that blends stored slots, X/Y sliders, and rec/play controls
 - **SLINK** - Dual-wave generative engine with 16-band triggering, tabbed parameter panels, and MIDI scale/clock modulation for evolving textures ([docs/SLINK_IMPLEMENTATION.md](docs/SLINK_IMPLEMENTATION.md))
 

@@ -183,6 +183,43 @@ Pre-configured for typical synthesizer parameters:
 | 7       | Reverb    | 91      | 0-127 | 40      | Reverb Send Level     |
 | 8       | Delay     | 92      | 0-127 | 0       | Delay Send Level      |
 
+## Euclidean Mode Integration
+
+When 8Encoder support is enabled, the **EUCLID** mode gains hardware control for real-time pattern manipulation. The 8 encoders are organized into **4 pairs**, with each pair controlling one voice's rhythm pattern.
+
+### Encoder Mapping for Euclidean Mode
+
+| Encoder Pair | Voice | Even Encoder (0,2,4,6) | Odd Encoder (1,3,5,7) |
+|--------------|-------|------------------------|----------------------|
+| 0-1          | V1    | Steps (1-32)           | Hits (0-steps)       |
+| 2-3          | V2    | Steps (1-32)           | Hits (0-steps)       |
+| 4-5          | V3    | Steps (1-32)           | Hits (0-steps)       |
+| 6-7          | V4    | Steps (1-32)           | Hits (0-steps)       |
+
+**Note**: Euclidean mode supports 8 total voices, but only the first 4 voices are controllable via hardware encoders. Voices 5-8 display with preset patterns.
+
+### Usage in Euclidean Mode
+
+1. Enter **EUCLID** mode from the main menu
+2. Turn **even encoders** (0, 2, 4, 6) to adjust pattern length (1-32 steps)
+3. Turn **odd encoders** (1, 3, 5, 7) to adjust hit density (0 to current step count)
+4. Patterns regenerate in real-time using the Bjorklund algorithm
+5. Visual feedback shows all 8 voices as concentric circular patterns
+
+### Example Use Case
+
+Create a polyrhythmic drum pattern:
+- **Encoder 0** (V1 Steps): Set to 16 for kick drum
+- **Encoder 1** (V1 Hits): Set to 4 for every 4th beat
+- **Encoder 2** (V2 Steps): Set to 16 for snare
+- **Encoder 3** (V2 Hits): Set to 4 for backbeat
+- **Encoder 4** (V3 Steps): Set to 16 for hi-hat
+- **Encoder 5** (V3 Hits): Set to 8 for steady groove
+- **Encoder 6** (V4 Steps): Set to 12 for tom fills
+- **Encoder 7** (V4 Hits): Set to 5 for syncopation
+
+For more details, see [docs/EUCLIDEAN_ENCODER_SUPPORT.md](EUCLIDEAN_ENCODER_SUPPORT.md).
+
 ## Persistent Storage
 
 Parameter values are automatically saved to ESP32 Preferences when you press the **SAVE** button. Values are restored when entering Encoder Panel mode.
