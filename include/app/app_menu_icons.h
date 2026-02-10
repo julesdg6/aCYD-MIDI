@@ -24,6 +24,7 @@ enum class MenuIcon : uint8_t {
   Encoder8,
 #endif
   FractalEcho,
+  Dimensions,
 };
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent);
