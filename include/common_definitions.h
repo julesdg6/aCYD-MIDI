@@ -118,7 +118,8 @@ enum AppMode {
   GRIDS,
   RAGA,
   EUCLID,
-  MORPH
+  MORPH,
+  WAAAVE
 };
 
 enum MidiClockMaster {
@@ -127,6 +128,11 @@ enum MidiClockMaster {
   CLOCK_BLE,
   CLOCK_HARDWARE,
   CLOCK_ESP_NOW
+};
+
+enum MenuMode {
+  MENU_AUDIO = 0,
+  MENU_VIDEO
 };
 
 // Music theory
@@ -155,6 +161,7 @@ extern MidiClockMaster midiClockMaster;
 extern bool displayColorsInverted;
 extern uint8_t displayRotationIndex;
 extern bool instantStartMode;
+extern MenuMode currentMenuMode;
 
 void setDisplayInversion(bool invert);
 void rotateDisplay180();

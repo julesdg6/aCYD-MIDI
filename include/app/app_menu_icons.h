@@ -19,6 +19,7 @@ enum class MenuIcon : uint8_t {
   Raga,
   Euclid,
   Morph,
+  Waaave,
 };
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent);

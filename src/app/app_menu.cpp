@@ -36,7 +36,8 @@ struct MenuTile {
 static constexpr size_t kMenuCols = 4;
 static constexpr size_t kMenuRows = 4;
 
-static const MenuTile kMenuTiles[] = {
+// Audio mode menu tiles (original 16 modes)
+static const MenuTile kAudioMenuTiles[] = {
     {"KEYS", MenuIcon::Keys, KEYBOARD},
     {"BEATS", MenuIcon::Sequencer, SEQUENCER},
     {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
@@ -55,8 +56,34 @@ static const MenuTile kMenuTiles[] = {
     {"SLINK", MenuIcon::Slink, SLINK},
 };
 
-static_assert(sizeof(kMenuTiles) / sizeof(kMenuTiles[0]) == kMenuCols * kMenuRows,
-              "Menu tile count must match 4x4 grid.");
+// Video mode menu tiles - Optimized for video production workflows
+// Primary: Waaave Pool controller (nanoKONTROL2 emulation) for video mixing
+// Secondary: Common performance and generative modes for hybrid workflows
+// Ordering: Most video-relevant modes in top row, generative/utility modes below
+// Note: SLINK omitted to reduce cognitive load; available in audio mode
+static const MenuTile kVideoMenuTiles[] = {
+    {"WAAAVE", MenuIcon::Waaave, WAAAVE},     // Video controller (priority)
+    {"KEYS", MenuIcon::Keys, KEYBOARD},        // Traditional keyboard
+    {"BEATS", MenuIcon::Sequencer, SEQUENCER}, // Rhythm programming
+    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},     // Generative ambient
+    {"DROP", MenuIcon::Drop, PHYSICS_DROP},    // Physics-based gen
+    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},  // Random patterns
+    {"XY PAD", MenuIcon::Xy, XY_PAD},          // Real-time XY control
+    {"ARP", MenuIcon::Arp, ARPEGGIATOR},       // Arpeggiation
+    {"GRID", MenuIcon::Grid, GRID_PIANO},      // Grid layout keyboard
+    {"CHORD", MenuIcon::Chord, AUTO_CHORD},    // Chord progressions
+    {"LFO", MenuIcon::Lfo, LFO},               // Modulation
+    {"TB3PO", MenuIcon::Tb3po, TB3PO},         // Phrase generator
+    {"GRIDS", MenuIcon::Grids, GRIDS},         // Multi-layer arp
+    {"RAGA", MenuIcon::Raga, RAGA},            // Raga explorer
+    {"EUCLID", MenuIcon::Euclid, EUCLID},      // Euclidean rhythms
+    {"MORPH", MenuIcon::Morph, MORPH},         // Gesture morphing
+};
+
+static_assert(sizeof(kAudioMenuTiles) / sizeof(kAudioMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Audio menu tile count must match 4x4 grid.");
+static_assert(sizeof(kVideoMenuTiles) / sizeof(kVideoMenuTiles[0]) == kMenuCols * kMenuRows,
+              "Video menu tile count must match 4x4 grid.");
 
 struct CaptureEntry {
   AppMode mode;
@@ -82,6 +109,7 @@ static const CaptureEntry kCaptureSequence[] = {
     {EUCLID, "euclid"},
     {MORPH, "morph"},
     {SLINK, "slink"},
+    {WAAAVE, "waaave"},
 };
 
 static void drawSettingsCog() {
@@ -146,6 +174,10 @@ void drawMenu() {
   tft.fillScreen(THEME_BG);
   drawHeader("aCYD MIDI", "", 5, false);
   drawSettingsCog();
+  
+  // Select the appropriate tile array based on menu mode
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+  
   const int gapX = SCALE_X(6);
   const int gapY = SCALE_Y(4);
   const int tileW = (DISPLAY_WIDTH - (2 * MARGIN_SMALL) - ((int)kMenuCols - 1) * gapX) / kMenuCols;
@@ -162,7 +194,7 @@ void drawMenu() {
     uint16_t topBlend = blendColor(MENU_COLOR_TL, MENU_COLOR_TR, fx);
     uint16_t bottomBlend = blendColor(MENU_COLOR_BL, MENU_COLOR_BR, fx);
     uint16_t accent = blendColor(topBlend, bottomBlend, fy);
-    switch (kMenuTiles[i].icon) {
+    switch (activeMenuTiles[i].icon) {
       case MenuIcon::Keys:
         accent = MENU_COLOR_KEYS;
         break;
@@ -178,7 +210,7 @@ void drawMenu() {
       default:
         break;
     }
-    drawMenuTile(x, y, tileW, tileH, kMenuTiles[i], accent);
+    drawMenuTile(x, y, tileW, tileH, activeMenuTiles[i], accent);
   }
 }
 
@@ -225,13 +257,16 @@ void handleMenu() {
   const int startX = MARGIN_SMALL;
   const int startY = HEADER_HEIGHT + SCALE_Y(6);
 
+  // Select the appropriate tile array based on menu mode
+  const MenuTile* activeMenuTiles = (currentMenuMode == MENU_VIDEO) ? kVideoMenuTiles : kAudioMenuTiles;
+
   for (size_t i = 0; i < kMenuCols * kMenuRows; ++i) {
     int col = i % kMenuCols;
     int row = i / kMenuCols;
     int x = startX + col * (tileW + gapX);
     int y = startY + row * (tileH + gapY);
     if (isButtonPressed(x, y, tileW, tileH)) {
-      const MenuTile &tile = kMenuTiles[i];
+      const MenuTile &tile = activeMenuTiles[i];
       switchMode(tile.mode);
       return;
     }

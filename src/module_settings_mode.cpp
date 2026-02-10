@@ -33,6 +33,7 @@ struct SettingsLayout {
   // bpmRowY removed - BPM now accessible via header tap
   int clockRowY;
   int startModeRowY;
+  int menuModeRowY;
   int wifiRowY;
   int bluetoothRowY;
   int espNowRowY;
@@ -60,6 +61,8 @@ static SettingsLayout computeSettingsLayout() {
   layout.clockRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.startModeRowY = y;
+  y += compactRowHeight() + settingsRowSpacing();
+  layout.menuModeRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.wifiRowY = y;
   y += statusRowHeight() + settingsRowSpacing();
@@ -146,6 +149,19 @@ void drawSettingsMode() {
     String modeLabel = instantStartMode ? "Instant" : "Quantized";
     drawRoundButton(rowInnerLeft, startModeRowY, rowInnerW, compactRowHeight(),
                     modeLabel, THEME_WARNING, false, 2);
+  }
+
+  const int menuModeRowY = layout.menuModeRowY - settingsScrollOffset;
+  const int menuModeLabelY = menuModeRowY - SCALE_Y(18);
+  const int menuModeLabelH = SCALE_Y(18);
+  if ((menuModeRowY + compactRowHeight() > layout.viewTop && menuModeRowY < viewBottom) ||
+      (menuModeLabelY + menuModeLabelH > layout.viewTop && menuModeLabelY < viewBottom)) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    int labelY = menuModeLabelY;
+    tft.drawString("Main Menu Mode", rowInnerLeft, labelY, 2);
+    String menuLabel = (currentMenuMode == MENU_VIDEO) ? "Video" : "Audio";
+    drawRoundButton(rowInnerLeft, menuModeRowY, rowInnerW, compactRowHeight(),
+                    menuLabel, THEME_ACCENT, false, 2);
   }
 
   const int wifiRowY = layout.wifiRowY - settingsScrollOffset;
@@ -348,6 +364,16 @@ void handleSettingsMode() {
   if (!handled && touch.justPressed &&
       isButtonPressed(startRowX, startRowY, startRowW, compactRowHeight())) {
     instantStartMode = !instantStartMode;
+    requestRedraw();
+    handled = true;
+  }
+
+  const int menuModeRowY = layout.menuModeRowY - settingsScrollOffset;
+  const int menuModeRowX = rowInnerLeft;
+  const int menuModeRowW = rowInnerW;
+  if (!handled && touch.justPressed &&
+      isButtonPressed(menuModeRowX, menuModeRowY, menuModeRowW, compactRowHeight())) {
+    currentMenuMode = (currentMenuMode == MENU_AUDIO) ? MENU_VIDEO : MENU_AUDIO;
     requestRedraw();
     handled = true;
   }

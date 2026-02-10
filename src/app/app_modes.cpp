@@ -20,6 +20,7 @@
 #include "module_settings_mode.h"
 #include "module_slink_mode.h"
 #include "module_tb3po_mode.h"
+#include "module_waaave_mode.h"
 #include "module_xy_pad_mode.h"
 
 namespace {
@@ -41,12 +42,12 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
+constexpr size_t kModeCount = static_cast<size_t>(WAAAVE) + 1;
+
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
   initializeBPMSettingsMode();
 }
-
-constexpr size_t kModeCount = static_cast<size_t>(MORPH) + 1;
 
 constexpr ModeEntry kModeTable[kModeCount] = {
     /* MENU */ {initMenuMode, drawMenu, handleMenu},
@@ -68,6 +69,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* RAGA */ {initializeRagaMode, drawRagaMode, handleRagaMode},
     /* EUCLID */ {initializeEuclideanMode, drawEuclideanMode, handleEuclideanMode},
     /* MORPH */ {initializeMorphMode, drawMorphMode, handleMorphMode},
+    /* WAAAVE */ {initializeWaaaveMode, drawWaaaveMode, handleWaaaveMode},
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,
