@@ -115,6 +115,7 @@ bool takeScreenshot(const char* label) {
     
     if (!initializeSD()) {
         Serial.println("Failed to initialize SD card");
+        Serial.println("Screenshot aborted: SD card not present or not initialized");
         return false;
     }
     
