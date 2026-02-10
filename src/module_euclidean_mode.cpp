@@ -1,6 +1,10 @@
 #include "module_euclidean_mode.h"
 #include "clock_manager.h"
 
+#ifdef ENABLE_M5_8ENCODER
+#include "drivers/m5_8encoder.h"
+#endif
+
 #include <algorithm>
 #include <cstring>
 
@@ -63,11 +67,11 @@ static void releaseEuclideanNotes() {
 }
 
 void initializeEuclideanMode() {
-  const uint8_t baseSteps[EUCLIDEAN_VOICE_COUNT] = {16, 16, 16, 16};
-  const uint8_t baseEvents[EUCLIDEAN_VOICE_COUNT] = {4, 4, 8, 5};
-  const int8_t rotations[EUCLIDEAN_VOICE_COUNT] = {0, 2, 0, 1};
-  const uint8_t notes[EUCLIDEAN_VOICE_COUNT] = {36, 38, 42, 39};
-  const uint16_t colors[EUCLIDEAN_VOICE_COUNT] = {THEME_ERROR, THEME_WARNING, THEME_SUCCESS, THEME_ACCENT};
+  const uint8_t baseSteps[EUCLIDEAN_VOICE_COUNT] = {16, 16, 16, 16, 16, 16, 16, 16};
+  const uint8_t baseEvents[EUCLIDEAN_VOICE_COUNT] = {4, 4, 8, 5, 3, 6, 7, 2};
+  const int8_t rotations[EUCLIDEAN_VOICE_COUNT] = {0, 2, 0, 1, 0, 1, 3, 2};
+  const uint8_t notes[EUCLIDEAN_VOICE_COUNT] = {36, 38, 42, 39, 45, 47, 49, 51};
+  const uint16_t colors[EUCLIDEAN_VOICE_COUNT] = {THEME_ERROR, THEME_WARNING, THEME_SUCCESS, THEME_ACCENT, THEME_PRIMARY, TFT_ORANGE, TFT_PURPLE, TFT_PINK};
 
   for (int i = 0; i < EUCLIDEAN_VOICE_COUNT; ++i) {
     euclideanState.voices[i].steps = baseSteps[i];
@@ -109,7 +113,7 @@ void drawEuclideanMode() {
     // Draw each step as a point on the circle
     for (int step = 0; step < totalSteps; step++) {
       float angle = (2.0 * PI * step) / totalSteps - PI/2; // Start from top
-      int layerRadius = radius - (voiceIdx * SCALE_Y(12));
+      int layerRadius = radius - (voiceIdx * SCALE_Y(6));  // Reduced spacing for 8 voices
       int x = centerX + cos(angle) * layerRadius;
       int y = centerY + sin(angle) * layerRadius;
       
@@ -144,16 +148,16 @@ void drawEuclideanMode() {
   
   // Draw voice labels BELOW circle (more space)
   int labelY = centerY + radius + SCALE_Y(14);
-  int labelSpacing = SCALE_X(32);
+  int labelSpacing = SCALE_X(20);  // Reduced spacing for 8 voices
   int labelStartX = centerX - (EUCLIDEAN_VOICE_COUNT * labelSpacing) / 2 + SCALE_X(8);
   
   for (int i = 0; i < EUCLIDEAN_VOICE_COUNT; i++) {
     int x = labelStartX + i * labelSpacing;
     tft.setTextColor(euclideanState.voices[i].color, THEME_BG);
-    tft.drawString("V" + String(i+1), x, labelY, 2);  // Larger font
+    tft.drawString("V" + String(i+1), x, labelY, 1);  // Smaller font for 8 voices
     tft.setTextColor(THEME_TEXT, THEME_BG);
     tft.drawString(String(euclideanState.voices[i].events) + "/" + 
-                  String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(14), 2);  // Larger font
+                  String(euclideanState.voices[i].steps), x, labelY + SCALE_Y(10), 1);  // Smaller font
   }
 
   // RIGHT SIDE: Controls with better grouping
@@ -232,6 +236,48 @@ void updateEuclideanSequencer() {
 
 void handleEuclideanMode() {
   updateEuclideanSequencer();
+
+#ifdef ENABLE_M5_8ENCODER
+  // Poll encoder hardware for parameter changes
+  if (encoder8.isConnected() && encoder8.poll()) {
+    bool needsUpdate = false;
+    
+    // Process 8 encoders in 4 pairs (steps/hits for each voice)
+    // Encoder pairs: 0-1 (voice 0), 2-3 (voice 1), 4-5 (voice 2), 6-7 (voice 3)
+    for (int voiceIdx = 0; voiceIdx < 4; voiceIdx++) {
+      int stepsEnc = voiceIdx * 2;     // Even encoder for steps
+      int hitsEnc = voiceIdx * 2 + 1;  // Odd encoder for hits
+      
+      EncoderEvent stepsEvent = encoder8.getEvent(stepsEnc);
+      EncoderEvent hitsEvent = encoder8.getEvent(hitsEnc);
+      
+      // Adjust steps
+      if (stepsEvent.delta != 0) {
+        int newSteps = euclideanState.voices[voiceIdx].steps + stepsEvent.delta;
+        newSteps = constrain(newSteps, 1, EUCLIDEAN_MAX_STEPS);
+        euclideanState.voices[voiceIdx].steps = newSteps;
+        generateEuclideanPattern(euclideanState.voices[voiceIdx]);
+        needsUpdate = true;
+      }
+      
+      // Adjust hits (events)
+      if (hitsEvent.delta != 0) {
+        int newHits = euclideanState.voices[voiceIdx].events + hitsEvent.delta;
+        newHits = constrain(newHits, 0, euclideanState.voices[voiceIdx].steps);
+        euclideanState.voices[voiceIdx].events = newHits;
+        generateEuclideanPattern(euclideanState.voices[voiceIdx]);
+        needsUpdate = true;
+      }
+    }
+    
+    // Reset encoder deltas after processing
+    encoder8.resetAllEncoders();
+    
+    if (needsUpdate) {
+      requestRedraw();
+    }
+  }
+#endif
 
   if (!touch.justPressed) {
     return;

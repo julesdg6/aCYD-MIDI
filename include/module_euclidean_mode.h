@@ -6,7 +6,7 @@
 #include "ui_elements.h"
 
 #define EUCLIDEAN_MAX_STEPS 32
-#define EUCLIDEAN_VOICE_COUNT 4
+#define EUCLIDEAN_VOICE_COUNT 8
 
 struct EuclideanVoice {
   uint8_t steps;
