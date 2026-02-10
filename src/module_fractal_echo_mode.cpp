@@ -1,6 +1,17 @@
 #include "module_fractal_echo_mode.h"
 #include <algorithm>
 
+// Constants
+namespace {
+  constexpr uint8_t FRACTAL_TEST_NOTE_C4 = 60;
+  constexpr int PAGE_NAV_X = 120;
+  constexpr int PAGE_NAV_Y_OFFSET = 30;
+  constexpr int PAGE_NAV_BUTTON_W = 40;
+  constexpr int PAGE_NAV_BUTTON_H = 25;
+  constexpr int PAGE_NAV_SPACING = 50;
+  constexpr int NUM_PAGES = 3;
+}
+
 // Global state
 FractalParams fractalParams = {
   .enabled = true,
@@ -53,8 +64,14 @@ void drawFractalEchoMode() {
   tft.drawString(pageText, SCALE_X(10), DISPLAY_HEIGHT - SCALE_Y(25), 2);
   
   // Draw page navigation buttons
-  drawRoundButton(SCALE_X(120), DISPLAY_HEIGHT - SCALE_Y(30), SCALE_X(40), SCALE_Y(25), "<", THEME_PRIMARY, false, 2);
-  drawRoundButton(SCALE_X(170), DISPLAY_HEIGHT - SCALE_Y(30), SCALE_X(40), SCALE_Y(25), ">", THEME_PRIMARY, false, 2);
+  const int navBtnX1 = SCALE_X(PAGE_NAV_X);
+  const int navBtnX2 = SCALE_X(PAGE_NAV_X + PAGE_NAV_SPACING);
+  const int navBtnY = DISPLAY_HEIGHT - SCALE_Y(PAGE_NAV_Y_OFFSET);
+  const int navBtnW = SCALE_X(PAGE_NAV_BUTTON_W);
+  const int navBtnH = SCALE_Y(PAGE_NAV_BUTTON_H);
+  
+  drawRoundButton(navBtnX1, navBtnY, navBtnW, navBtnH, "PREV", THEME_PRIMARY, false, 2);
+  drawRoundButton(navBtnX2, navBtnY, navBtnW, navBtnH, "NEXT", THEME_PRIMARY, false, 2);
   
   // Enable/Disable toggle
   String enabledText = fractalParams.enabled ? "ON" : "OFF";
@@ -207,7 +224,7 @@ void handleFractalEchoMode() {
   
   // Test button - trigger a C4 note with fractal echo
   if (isButtonPressed(SCALE_X(10), SCALE_Y(10), SCALE_X(80), SCALE_Y(30))) {
-    uint8_t testNote = 60; // C4
+    uint8_t testNote = FRACTAL_TEST_NOTE_C4;
     uint8_t testVel = 100;
     uint8_t testChannel = 0;
     
@@ -232,13 +249,21 @@ void handleFractalEchoMode() {
   }
   
   // Page navigation
-  if (isButtonPressed(SCALE_X(120), DISPLAY_HEIGHT - SCALE_Y(30), SCALE_X(40), SCALE_Y(25))) {
-    fractalPage = (fractalPage + 2) % 3;  // Go back
+  const int navBtnX1 = SCALE_X(PAGE_NAV_X);
+  const int navBtnX2 = SCALE_X(PAGE_NAV_X + PAGE_NAV_SPACING);
+  const int navBtnY = DISPLAY_HEIGHT - SCALE_Y(PAGE_NAV_Y_OFFSET);
+  const int navBtnW = SCALE_X(PAGE_NAV_BUTTON_W);
+  const int navBtnH = SCALE_Y(PAGE_NAV_BUTTON_H);
+  
+  if (isButtonPressed(navBtnX1, navBtnY, navBtnW, navBtnH)) {
+    // Go to previous page (wrapping around)
+    fractalPage = (fractalPage - 1 + NUM_PAGES) % NUM_PAGES;
     requestRedraw();
     return;
   }
-  if (isButtonPressed(SCALE_X(170), DISPLAY_HEIGHT - SCALE_Y(30), SCALE_X(40), SCALE_Y(25))) {
-    fractalPage = (fractalPage + 1) % 3;  // Go forward
+  if (isButtonPressed(navBtnX2, navBtnY, navBtnW, navBtnH)) {
+    // Go to next page (wrapping around)
+    fractalPage = (fractalPage + 1) % NUM_PAGES;
     requestRedraw();
     return;
   }
