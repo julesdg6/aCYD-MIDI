@@ -123,7 +123,8 @@ enum AppMode {
 #ifdef ENABLE_M5_8ENCODER
   ENCODER_PANEL,
 #endif
-  FRACTAL_ECHO
+  FRACTAL_ECHO,
+  DIMENSIONS
 };
 
 enum MidiClockMaster {

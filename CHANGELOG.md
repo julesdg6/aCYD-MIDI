@@ -5,6 +5,22 @@ All notable changes to aCYD-MIDI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Dimensions Parametric Sequencer Mode** - Math-driven pattern generator with 20 parametric equations
+  - Port of ErikOostveen/Dimensions sequencer engine
+  - Parametric equations map to MIDI note, velocity, and timing
+  - User-controllable parameters A, B, C, D for equation control
+  - Time parameter (t) advances with MIDI clock
+  - 20 unique equations including Lissajous, random, harmonic, and chaotic patterns
+  - Clock-synced step generation with interval divisions (1/32 to whole notes)
+  - Note subset system (default C3-B3, expandable to full MIDI range)
+  - Touch-based UI with equation selector and parameter controls
+  - Integrated with aCYD-MIDI clock manager for internal/external sync
+  - Menu icon with Lissajous curve visualization
+  - Full documentation in `docs/DIMENSIONS.md`
+
 ## [0.1.3] - 2026-02-07
 
 ### Added
