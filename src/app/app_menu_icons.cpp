@@ -368,6 +368,29 @@ static void drawFractalEchoIcon(int cx, int cy, int size, uint16_t accent) {
   tft.fillCircle(x2, cy + spacing, 2, accent);
 }
 
+// Draw parametric wave icon for Dimensions
+static void drawDimensionsIcon(int cx, int cy, int size, uint16_t accent) {
+  // Draw a simple Lissajous curve (sine wave pattern)
+  const int numPoints = 16;
+  const float radius = size * 0.35f;
+  
+  for (int i = 0; i < numPoints; i++) {
+    float t = (float)i / numPoints * TWO_PI;
+    float x = cx + radius * sin(2.0f * t);
+    float y = cy + radius * sin(3.0f * t);
+    
+    // Draw point
+    tft.fillCircle((int)x, (int)y, 1, accent);
+    
+    // Connect to previous point
+    if (i > 0) {
+      float px = cx + radius * sin(2.0f * ((i-1) * TWO_PI / numPoints));
+      float py = cy + radius * sin(3.0f * ((i-1) * TWO_PI / numPoints));
+      tft.drawLine((int)px, (int)py, (int)x, (int)y, accent);
+    }
+  }
+}
+
 }  // namespace
 
 void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
@@ -438,6 +461,9 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
 #endif
     case MenuIcon::FractalEcho:
       drawFractalEchoIcon(cx, cy, size, accent);
+      break;
+    case MenuIcon::Dimensions:
+      drawDimensionsIcon(cx, cy, size, accent);
       break;
     default:
       tft.fillCircle(cx, cy, std::max(3, size / 4), accent);

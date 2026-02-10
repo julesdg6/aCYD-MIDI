@@ -127,6 +127,8 @@ enum AppMode {
   BABY8,
 #endif
   FRACTAL_ECHO
+  FRACTAL_ECHO,
+  DIMENSIONS
 };
 
 enum MidiClockMaster {

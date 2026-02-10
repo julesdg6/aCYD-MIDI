@@ -29,6 +29,7 @@
 #ifdef ENABLE_BABY8_EMU
 #include "module_baby8_mode.h"
 #endif
+#include "module_dimensions_mode.h"
 
 namespace {
 
@@ -49,7 +50,7 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
-constexpr size_t kModeCount = static_cast<size_t>(FRACTAL_ECHO) + 1;
+constexpr size_t kModeCount = static_cast<size_t>(DIMENSIONS) + 1;
 
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
@@ -84,6 +85,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* BABY8 */ {initializeBaby8Mode, drawBaby8Mode, handleBaby8Mode},
 #endif
     /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
+    /* DIMENSIONS */ {initializeDimensionsMode, drawDimensionsMode, handleDimensionsMode},
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,
