@@ -126,7 +126,6 @@ enum AppMode {
 #ifdef ENABLE_BABY8_EMU
   BABY8,
 #endif
-  FRACTAL_ECHO
   FRACTAL_ECHO,
   DIMENSIONS
 };
