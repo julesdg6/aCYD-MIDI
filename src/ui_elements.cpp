@@ -210,3 +210,42 @@ void updateStatus() {
   // Status bar removed - no more BLE connection alerts on every screen
 }
 
+// ========== Transport UI Helpers ==========
+
+const char* getTransportButtonLabel(TransportState state) {
+  switch (state) {
+    case TransportState::STOPPED:
+      return "PLAY";
+    case TransportState::PENDING_START:
+      return "PENDING";
+    case TransportState::RUNNING:
+      return "STOP";
+    case TransportState::PENDING_STOP:
+      return "PENDING";
+    default:
+      return "PLAY";
+  }
+}
+
+uint16_t getTransportButtonColor(TransportState state) {
+  switch (state) {
+    case TransportState::STOPPED:
+      return THEME_SUCCESS;  // Green for Play
+    case TransportState::PENDING_START:
+      return THEME_SECONDARY;  // Orange for Pending Start
+    case TransportState::RUNNING:
+      return THEME_ERROR;  // Red for Stop
+    case TransportState::PENDING_STOP:
+      return THEME_WARNING;  // Yellow for Pending Stop
+    default:
+      return THEME_SUCCESS;
+  }
+}
+
+void drawTransportButton(int x, int y, int w, int h, TransportState state) {
+  const char* label = getTransportButtonLabel(state);
+  uint16_t color = getTransportButtonColor(state);
+  drawRoundButton(x, y, w, h, label, color);
+}
+
+
