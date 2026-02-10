@@ -369,11 +369,9 @@ void drawDimensionsMode() {
   int mainY = HEADER_HEIGHT + SCALE_Y(5);
   
   // Current equation (larger, prominent)
-  tft.setTextColor(THEME_PRIMARY);
-  tft.setTextSize(1);
-  tft.setCursor(SCALE_X(10), mainY);
-  tft.print("f(x) #");
-  tft.print(dimensionsState.fx_select);
+  tft.setTextColor(THEME_PRIMARY, THEME_BG);
+  String eqText = "f(x) #" + String(dimensionsState.fx_select);
+  tft.drawString(eqText, SCALE_X(10), mainY, 2);
   
   // Equation selector buttons
   int eqBtnY = mainY - SCALE_Y(2);
@@ -382,48 +380,35 @@ void drawDimensionsMode() {
   
   // Parameters section
   int paramY = mainY + SCALE_Y(25);
-  tft.setTextColor(THEME_TEXT_DIM);
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("Parameters:");
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Parameters:", SCALE_X(10), paramY, 1);
   
   paramY += SCALE_Y(15);
   
   // Parameter A
-  tft.setTextColor(THEME_TEXT);
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("A:");
-  tft.setCursor(SCALE_X(30), paramY);
-  tft.print(dimensionsState.a, 1);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString("A: " + String(dimensionsState.a, 1), SCALE_X(10), paramY, 1);
   drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
   drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
   paramY += SCALE_Y(18);
   
   // Parameter B
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("B:");
-  tft.setCursor(SCALE_X(30), paramY);
-  tft.print(dimensionsState.b, 1);
+  tft.drawString("B: " + String(dimensionsState.b, 1), SCALE_X(10), paramY, 1);
   drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
   drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
   paramY += SCALE_Y(18);
   
   // Parameter C
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("C:");
-  tft.setCursor(SCALE_X(30), paramY);
-  tft.print(dimensionsState.c, 1);
+  tft.drawString("C: " + String(dimensionsState.c, 1), SCALE_X(10), paramY, 1);
   drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
   drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
   paramY += SCALE_Y(18);
   
   // Parameter D
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("D:");
-  tft.setCursor(SCALE_X(30), paramY);
-  tft.print(dimensionsState.d, 1);
+  tft.drawString("D: " + String(dimensionsState.d, 1), SCALE_X(10), paramY, 1);
   drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
   drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
@@ -431,56 +416,46 @@ void drawDimensionsMode() {
   int rightX = SCALE_X(155);
   int rightY = mainY + SCALE_Y(25);
   
-  tft.setTextColor(THEME_TEXT_DIM);
-  tft.setCursor(rightX, rightY);
-  tft.print("Output:");
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Output:", rightX, rightY, 1);
   
   rightY += SCALE_Y(15);
-  tft.setTextColor(THEME_ACCENT);
-  tft.setCursor(rightX, rightY);
-  tft.print("px:");
-  tft.print((int)dimensionsState.px);
+  tft.setTextColor(THEME_ACCENT, THEME_BG);
+  tft.drawString("px: " + String((int)dimensionsState.px), rightX, rightY, 1);
   
   rightY += SCALE_Y(15);
-  tft.setCursor(rightX, rightY);
-  tft.print("py:");
-  tft.print((int)dimensionsState.py);
+  tft.drawString("py: " + String((int)dimensionsState.py), rightX, rightY, 1);
   
   rightY += SCALE_Y(15);
-  tft.setCursor(rightX, rightY);
-  tft.print("pz:");
-  tft.print((int)dimensionsState.pz);
+  tft.drawString("pz: " + String((int)dimensionsState.pz), rightX, rightY, 1);
   
   // Time parameter
   rightY += SCALE_Y(20);
-  tft.setTextColor(THEME_TEXT_DIM);
-  tft.setCursor(rightX, rightY);
-  tft.print("Time:");
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("Time:", rightX, rightY, 1);
   
   rightY += SCALE_Y(15);
-  tft.setTextColor(THEME_TEXT);
-  tft.setCursor(rightX, rightY);
-  tft.print("t:");
-  tft.print((int)dimensionsState.t);
+  tft.setTextColor(THEME_TEXT, THEME_BG);
+  tft.drawString("t: " + String((int)dimensionsState.t), rightX, rightY, 1);
   
   // Transport status
   rightY += SCALE_Y(20);
-  tft.setTextColor(dimensionsSync.playing ? THEME_SUCCESS : THEME_TEXT_DIM);
-  tft.setCursor(rightX, rightY);
+  uint16_t statusColor = dimensionsSync.playing ? THEME_SUCCESS : THEME_TEXT_DIM;
+  tft.setTextColor(statusColor, THEME_BG);
+  String statusText;
   if (dimensionsSync.playing) {
-    tft.print("PLAY");
+    statusText = "PLAY";
   } else if (dimensionsSync.startPending) {
-    tft.print("START");
+    statusText = "START";
   } else {
-    tft.print("STOP");
+    statusText = "STOP";
   }
+  tft.drawString(statusText, rightX, rightY, 1);
   
   // Note info
   rightY += SCALE_Y(15);
-  tft.setTextColor(THEME_TEXT_DIM);
-  tft.setCursor(rightX, rightY);
-  tft.print("N:");
-  tft.print(dimensionsState.noteSubsetSize);
+  tft.setTextColor(THEME_TEXT_DIM, THEME_BG);
+  tft.drawString("N: " + String(dimensionsState.noteSubsetSize), rightX, rightY, 1);
   
   // Transport buttons at bottom
   int btnY = DISPLAY_HEIGHT - SCALE_Y(35);
@@ -501,7 +476,7 @@ void drawDimensionsMode() {
 }
 
 void handleDimensionsMode() {
-  updateTouchState(touch);
+  updateTouch();
   
   if (touch.justPressed) {
     int mainY = HEADER_HEIGHT + SCALE_Y(5);
