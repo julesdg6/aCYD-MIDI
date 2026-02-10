@@ -96,9 +96,136 @@ static const uint8_t kRagaIntervals[RAGA_COUNT][kRagaScaleNotes] = {
 
 static const uint8_t kRagaScaleLengths[RAGA_COUNT] = {7, 7, 5, 7, 7, 5, 7, 5};
 
+// 2nd-Order Markov Chain for Raga Bhairavi
+// Transition probabilities: P(note_i | note_i-1, note_i-2)
+// Stored as [prev_prev_note][prev_note][next_note] = probability weight
+static constexpr int kBhairavi2ndOrderSize = 7; // 7 notes in the scale
+static const uint8_t kBhairavi2ndOrderWeights[kBhairavi2ndOrderSize][kBhairavi2ndOrderSize][kBhairavi2ndOrderSize] = {
+  // From S (0) - Shadja (Samvadi - second highest weight)
+  {
+    // prev=S, current=S -> Strong tendency to move to r or m
+    {40, 30, 15, 25, 10, 5, 5},  // S,S -> S,r,g,m,P,d,n
+    // prev=S, current=r -> Part of pakad "S r g m"
+    {20, 20, 40, 35, 10, 5, 5},  // S,r -> S,r,g,m,P,d,n
+    // prev=S, current=g
+    {15, 25, 20, 50, 10, 5, 5},  // S,g -> S,r,g,m,P,d,n (favor m)
+    // prev=S, current=m
+    {30, 20, 30, 30, 15, 10, 5}, // S,m -> S,r,g,m,P,d,n
+    // prev=S, current=P
+    {25, 15, 20, 40, 20, 15, 10}, // S,P -> S,r,g,m,P,d,n
+    // prev=S, current=d
+    {20, 15, 10, 25, 15, 20, 30}, // S,d -> S,r,g,m,P,d,n
+    // prev=S, current=n
+    {50, 20, 10, 15, 10, 10, 15}, // S,n -> S,r,g,m,P,d,n (favor return to S)
+  },
+  // From r (1) - Komal Re
+  {
+    // prev=r, current=S -> Part of pakad "m g r S"
+    {40, 30, 20, 20, 10, 5, 5},  // r,S -> S,r,g,m,P,d,n
+    // prev=r, current=r -> Oscillation on Re (characteristic)
+    {25, 35, 30, 20, 10, 5, 5},  // r,r -> S,r,g,m,P,d,n
+    // prev=r, current=g -> Part of pakad "S r g m"
+    {15, 20, 25, 45, 15, 5, 5},  // r,g -> S,r,g,m,P,d,n (favor m)
+    // prev=r, current=m
+    {25, 20, 35, 30, 15, 10, 5}, // r,m -> S,r,g,m,P,d,n
+    // prev=r, current=P
+    {20, 25, 20, 35, 20, 10, 5}, // r,P -> S,r,g,m,P,d,n
+    // prev=r, current=d
+    {15, 20, 15, 25, 15, 25, 20}, // r,d -> S,r,g,m,P,d,n
+    // prev=r, current=n
+    {45, 25, 15, 15, 10, 10, 10}, // r,n -> S,r,g,m,P,d,n
+  },
+  // From g (2) - Komal Ga
+  {
+    // prev=g, current=S
+    {35, 30, 20, 25, 10, 5, 5},  // g,S -> S,r,g,m,P,d,n
+    // prev=g, current=r -> Part of pakad "m g r S"
+    {35, 25, 25, 25, 10, 5, 5},  // g,r -> S,r,g,m,P,d,n
+    // prev=g, current=g
+    {20, 25, 25, 35, 15, 10, 5}, // g,g -> S,r,g,m,P,d,n
+    // prev=g, current=m -> Part of pakad "S r g m" and "g m d n S'"
+    {20, 15, 20, 40, 20, 20, 10}, // g,m -> S,r,g,m,P,d,n (favor m)
+    // prev=g, current=P
+    {15, 20, 25, 40, 20, 15, 10}, // g,P -> S,r,g,m,P,d,n
+    // prev=g, current=d
+    {10, 15, 15, 30, 15, 25, 25}, // g,d -> S,r,g,m,P,d,n
+    // prev=g, current=n
+    {40, 25, 15, 15, 10, 10, 15}, // g,n -> S,r,g,m,P,d,n
+  },
+  // From m (3) - Madhyam (Vadi - highest weight)
+  {
+    // prev=m, current=S
+    {45, 30, 20, 20, 10, 5, 5},  // m,S -> S,r,g,m,P,d,n
+    // prev=m, current=r
+    {30, 25, 30, 25, 10, 5, 5},  // m,r -> S,r,g,m,P,d,n
+    // prev=m, current=g -> Part of pakad "m g r S"
+    {25, 35, 25, 25, 10, 5, 5},  // m,g -> S,r,g,m,P,d,n (favor r for pakad)
+    // prev=m, current=m -> Linger on Vadi
+    {25, 20, 25, 40, 20, 15, 10}, // m,m -> S,r,g,m,P,d,n
+    // prev=m, current=P
+    {20, 15, 20, 40, 25, 15, 10}, // m,P -> S,r,g,m,P,d,n
+    // prev=m, current=d -> Part of pakad "g m d n S'"
+    {10, 10, 15, 30, 15, 25, 35}, // m,d -> S,r,g,m,P,d,n (favor n for pakad)
+    // prev=m, current=n
+    {50, 20, 15, 20, 10, 10, 10}, // m,n -> S,r,g,m,P,d,n
+  },
+  // From P (4) - Pancham
+  {
+    // prev=P, current=S
+    {40, 25, 20, 25, 15, 5, 5},  // P,S -> S,r,g,m,P,d,n
+    // prev=P, current=r
+    {25, 25, 25, 30, 15, 10, 5}, // P,r -> S,r,g,m,P,d,n
+    // prev=P, current=g
+    {20, 25, 25, 40, 15, 10, 5}, // P,g -> S,r,g,m,P,d,n
+    // prev=P, current=m
+    {20, 20, 25, 40, 20, 15, 10}, // P,m -> S,r,g,m,P,d,n (favor m)
+    // prev=P, current=P
+    {25, 15, 20, 40, 25, 20, 10}, // P,P -> S,r,g,m,P,d,n
+    // prev=P, current=d
+    {15, 15, 15, 30, 15, 30, 25}, // P,d -> S,r,g,m,P,d,n
+    // prev=P, current=n
+    {45, 20, 15, 20, 15, 10, 10}, // P,n -> S,r,g,m,P,d,n
+  },
+  // From d (5) - Komal Dha
+  {
+    // prev=d, current=S
+    {40, 25, 20, 20, 15, 10, 10}, // d,S -> S,r,g,m,P,d,n
+    // prev=d, current=r
+    {25, 30, 25, 25, 15, 15, 10}, // d,r -> S,r,g,m,P,d,n
+    // prev=d, current=g
+    {20, 25, 25, 35, 15, 15, 10}, // d,g -> S,r,g,m,P,d,n
+    // prev=d, current=m
+    {20, 20, 25, 35, 20, 20, 15}, // d,m -> S,r,g,m,P,d,n
+    // prev=d, current=P
+    {20, 20, 20, 35, 25, 20, 15}, // d,P -> S,r,g,m,P,d,n
+    // prev=d, current=d -> Oscillation on Dha (characteristic)
+    {15, 15, 15, 25, 15, 30, 30}, // d,d -> S,r,g,m,P,d,n
+    // prev=d, current=n -> Part of pakad "g m d n S'"
+    {45, 20, 15, 20, 15, 15, 15}, // d,n -> S,r,g,m,P,d,n (favor S for pakad ending)
+  },
+  // From n (6) - Komal Ni
+  {
+    // prev=n, current=S -> End of pakad "g m d n S'"
+    {50, 25, 15, 20, 10, 10, 10}, // n,S -> S,r,g,m,P,d,n (strong return to S)
+    // prev=n, current=r
+    {30, 30, 25, 25, 15, 10, 5},  // n,r -> S,r,g,m,P,d,n
+    // prev=n, current=g
+    {25, 25, 25, 30, 15, 10, 10}, // n,g -> S,r,g,m,P,d,n
+    // prev=n, current=m
+    {25, 20, 25, 35, 15, 15, 10}, // n,m -> S,r,g,m,P,d,n
+    // prev=n, current=P
+    {25, 20, 20, 35, 20, 15, 10}, // n,P -> S,r,g,m,P,d,n
+    // prev=n, current=d
+    {20, 20, 15, 25, 15, 25, 25}, // n,d -> S,r,g,m,P,d,n
+    // prev=n, current=n
+    {45, 25, 15, 20, 10, 10, 15}, // n,n -> S,r,g,m,P,d,n
+  }
+};
+
 static int8_t g_ragaPhrase[kRagaMaxPhrase];
 static int g_phraseLength = 0;
 static int g_phraseIndex = 0;
+static int8_t g_bhairavi2ndOrderHistory[2] = {0, 0}; // Track last 2 notes for 2nd-order Markov
 static uint32_t g_noteIntervalMs = 0;
 static uint32_t g_noteDurationMs = 0;
 static uint32_t g_noteOffTime = 0;
@@ -113,6 +240,8 @@ static SequencerSyncState ragaSync;
 
 static bool updateRagaTempo();
 static void generateRagaPhrase();
+static void generateBhairavi2ndOrderPhrase();
+static int selectNextNoteBhairavi2ndOrder(int prevPrev, int prev);
 static void scheduleNextNote(unsigned long now);
 static void stopCurrentNote();
 static void updateDroneNote();
@@ -311,6 +440,13 @@ static bool updateRagaTempo() {
 }
 
 static void generateRagaPhrase() {
+  // Use 2nd-order Markov chain for Bhairavi, fall back to simple random for others
+  if (raga.currentRaga == RAGA_BHAIRAVI) {
+    generateBhairavi2ndOrderPhrase();
+    return;
+  }
+  
+  // Original implementation for other ragas
   const uint8_t *scale = kRagaIntervals[static_cast<int>(raga.currentRaga)];
   int scaleLength = kRagaScaleLengths[static_cast<int>(raga.currentRaga)];
   int totalNotes = kRagaBars * kRagaNotesPerBar;
@@ -327,6 +463,74 @@ static void generateRagaPhrase() {
     }
     g_ragaPhrase[i] = scale[degree] + octave * 12;
   }
+  g_phraseIndex = 0;
+}
+
+// Select next note using 2nd-order Markov chain for Bhairavi
+static int selectNextNoteBhairavi2ndOrder(int prevPrev, int prev) {
+  // Get the probability weights for this sequence
+  const uint8_t *weights = kBhairavi2ndOrderWeights[prevPrev][prev];
+  
+  // Calculate total weight
+  int totalWeight = 0;
+  for (int i = 0; i < kBhairavi2ndOrderSize; ++i) {
+    totalWeight += weights[i];
+  }
+  
+  // Select a random value within the total weight
+  int selection = random(totalWeight);
+  
+  // Find which note corresponds to this selection
+  int cumulative = 0;
+  for (int i = 0; i < kBhairavi2ndOrderSize; ++i) {
+    cumulative += weights[i];
+    if (selection < cumulative) {
+      return i;
+    }
+  }
+  
+  // Fallback (should never reach here)
+  return 0; // Return Sa (tonic)
+}
+
+// Generate phrase using 2nd-order Markov chain for Bhairavi
+static void generateBhairavi2ndOrderPhrase() {
+  const uint8_t *scale = kRagaIntervals[static_cast<int>(RAGA_BHAIRAVI)];
+  int scaleLength = kRagaScaleLengths[static_cast<int>(RAGA_BHAIRAVI)];
+  int totalNotes = kRagaBars * kRagaNotesPerBar;
+  g_phraseLength = std::min(totalNotes, kRagaMaxPhrase);
+  
+  // Initialize with Sa (0) as starting notes
+  int prevPrev = 0; // S
+  int prev = 0;     // S
+  int octave = 0;   // Middle octave
+  
+  // Store starting notes in history
+  g_bhairavi2ndOrderHistory[0] = prevPrev;
+  g_bhairavi2ndOrderHistory[1] = prev;
+  
+  for (int i = 0; i < g_phraseLength; ++i) {
+    // Use 2nd-order Markov chain to select next note degree
+    int degree = selectNextNoteBhairavi2ndOrder(prevPrev, prev);
+    
+    // Occasional octave changes (less frequent than random walk)
+    if (random(100) < 8) {
+      int octaveShift = random(3) - 1;
+      octave = std::max(-1, std::min(1, octave + octaveShift));
+    }
+    
+    // Store the actual MIDI offset
+    g_ragaPhrase[i] = scale[degree] + octave * 12;
+    
+    // Update history for next iteration
+    prevPrev = prev;
+    prev = degree;
+  }
+  
+  // Update global history with last two notes
+  g_bhairavi2ndOrderHistory[0] = prevPrev;
+  g_bhairavi2ndOrderHistory[1] = prev;
+  
   g_phraseIndex = 0;
 }
 
