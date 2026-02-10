@@ -123,6 +123,9 @@ enum AppMode {
 #ifdef ENABLE_M5_8ENCODER
   ENCODER_PANEL,
 #endif
+#ifdef ENABLE_BABY8_EMU
+  BABY8,
+#endif
   FRACTAL_ECHO
 };
 

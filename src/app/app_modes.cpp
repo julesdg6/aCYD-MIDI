@@ -26,6 +26,9 @@
 #ifdef ENABLE_M5_8ENCODER
 #include "module_encoder_panel_mode.h"
 #endif
+#ifdef ENABLE_BABY8_EMU
+#include "module_baby8_mode.h"
+#endif
 
 namespace {
 
@@ -76,6 +79,9 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* WAAAVE */ {initializeWaaaveMode, drawWaaaveMode, handleWaaaveMode},
 #ifdef ENABLE_M5_8ENCODER
     /* ENCODER_PANEL */ {initializeEncoderPanelMode, drawEncoderPanelMode, handleEncoderPanelMode},
+#endif
+#ifdef ENABLE_BABY8_EMU
+    /* BABY8 */ {initializeBaby8Mode, drawBaby8Mode, handleBaby8Mode},
 #endif
     /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
 };
