@@ -40,6 +40,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **EUCLID** - Euclidean rhythm sequencer with per-voice patterns, BPM, and triplet toggles
 - **MORPH** - Gesture morphing surface that blends stored slots, X/Y sliders, and rec/play controls
 - **SLINK** - Dual-wave generative engine with 16-band triggering, tabbed parameter panels, and MIDI scale/clock modulation for evolving textures ([docs/SLINK_IMPLEMENTATION.md](docs/SLINK_IMPLEMENTATION.md))
+- **DIMENSIONS** - Parametric sequencer using mathematical equations to generate MIDI patterns - 20 equations with A/B/C/D parameters for creating evolving, non-obvious melodies and rhythms (ported from [ErikOostveen/Dimensions](https://github.com/ErikOostveen/Dimensions))
 
 ### Core Features
 

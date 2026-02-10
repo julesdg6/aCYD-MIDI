@@ -366,77 +366,120 @@ void drawDimensionsMode() {
   drawHeader("DIMENSIONS", "Parametric Sequencer", 3);
   
   // Main display area
-  int mainY = HEADER_HEIGHT + SCALE_Y(10);
+  int mainY = HEADER_HEIGHT + SCALE_Y(5);
   
-  // Current equation
+  // Current equation (larger, prominent)
   tft.setTextColor(THEME_PRIMARY);
+  tft.setTextSize(1);
   tft.setCursor(SCALE_X(10), mainY);
-  tft.print("Equation: f(x) #");
+  tft.print("f(x) #");
   tft.print(dimensionsState.fx_select);
   
-  // Parameters
-  int paramY = mainY + SCALE_Y(20);
+  // Equation selector buttons
+  int eqBtnY = mainY - SCALE_Y(2);
+  drawRoundButton(SCALE_X(80), eqBtnY, SCALE_X(25), SCALE_Y(18), "-", THEME_SECONDARY, false);
+  drawRoundButton(SCALE_X(110), eqBtnY, SCALE_X(25), SCALE_Y(18), "+", THEME_SECONDARY, false);
+  
+  // Parameters section
+  int paramY = mainY + SCALE_Y(25);
+  tft.setTextColor(THEME_TEXT_DIM);
+  tft.setCursor(SCALE_X(10), paramY);
+  tft.print("Parameters:");
+  
+  paramY += SCALE_Y(15);
+  
+  // Parameter A
   tft.setTextColor(THEME_TEXT);
   tft.setCursor(SCALE_X(10), paramY);
   tft.print("A:");
+  tft.setCursor(SCALE_X(30), paramY);
   tft.print(dimensionsState.a, 1);
+  drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
+  drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
-  tft.setCursor(SCALE_X(80), paramY);
+  paramY += SCALE_Y(18);
+  
+  // Parameter B
+  tft.setCursor(SCALE_X(10), paramY);
   tft.print("B:");
+  tft.setCursor(SCALE_X(30), paramY);
   tft.print(dimensionsState.b, 1);
+  drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
+  drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
-  paramY += SCALE_Y(15);
+  paramY += SCALE_Y(18);
+  
+  // Parameter C
   tft.setCursor(SCALE_X(10), paramY);
   tft.print("C:");
+  tft.setCursor(SCALE_X(30), paramY);
   tft.print(dimensionsState.c, 1);
+  drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
+  drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
-  tft.setCursor(SCALE_X(80), paramY);
+  paramY += SCALE_Y(18);
+  
+  // Parameter D
+  tft.setCursor(SCALE_X(10), paramY);
   tft.print("D:");
+  tft.setCursor(SCALE_X(30), paramY);
   tft.print(dimensionsState.d, 1);
+  drawRoundButton(SCALE_X(80), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "-", THEME_SURFACE, false);
+  drawRoundButton(SCALE_X(110), paramY - SCALE_Y(2), SCALE_X(25), SCALE_Y(15), "+", THEME_SURFACE, false);
   
-  // Time parameter
-  paramY += SCALE_Y(15);
-  tft.setCursor(SCALE_X(10), paramY);
-  tft.print("t: ");
-  tft.print(dimensionsState.t, 1);
-  tft.print(" (");
-  tft.print(dimensionsState.value_t1, 0);
-  tft.print("-");
-  tft.print(dimensionsState.value_t2, 0);
-  tft.print(")");
+  // Right side - Output values and status
+  int rightX = SCALE_X(155);
+  int rightY = mainY + SCALE_Y(25);
   
-  // Current output values
-  paramY += SCALE_Y(20);
+  tft.setTextColor(THEME_TEXT_DIM);
+  tft.setCursor(rightX, rightY);
+  tft.print("Output:");
+  
+  rightY += SCALE_Y(15);
   tft.setTextColor(THEME_ACCENT);
-  tft.setCursor(SCALE_X(10), paramY);
+  tft.setCursor(rightX, rightY);
   tft.print("px:");
   tft.print((int)dimensionsState.px);
   
-  tft.setCursor(SCALE_X(80), paramY);
+  rightY += SCALE_Y(15);
+  tft.setCursor(rightX, rightY);
   tft.print("py:");
   tft.print((int)dimensionsState.py);
   
-  paramY += SCALE_Y(15);
-  tft.setCursor(SCALE_X(10), paramY);
+  rightY += SCALE_Y(15);
+  tft.setCursor(rightX, rightY);
   tft.print("pz:");
   tft.print((int)dimensionsState.pz);
   
+  // Time parameter
+  rightY += SCALE_Y(20);
+  tft.setTextColor(THEME_TEXT_DIM);
+  tft.setCursor(rightX, rightY);
+  tft.print("Time:");
+  
+  rightY += SCALE_Y(15);
+  tft.setTextColor(THEME_TEXT);
+  tft.setCursor(rightX, rightY);
+  tft.print("t:");
+  tft.print((int)dimensionsState.t);
+  
   // Transport status
-  paramY += SCALE_Y(20);
+  rightY += SCALE_Y(20);
   tft.setTextColor(dimensionsSync.playing ? THEME_SUCCESS : THEME_TEXT_DIM);
-  tft.setCursor(SCALE_X(10), paramY);
+  tft.setCursor(rightX, rightY);
   if (dimensionsSync.playing) {
-    tft.print("PLAYING");
+    tft.print("PLAY");
   } else if (dimensionsSync.startPending) {
-    tft.print("STARTING...");
+    tft.print("START");
   } else {
-    tft.print("STOPPED");
+    tft.print("STOP");
   }
   
-  // Note subset info
+  // Note info
+  rightY += SCALE_Y(15);
   tft.setTextColor(THEME_TEXT_DIM);
-  tft.setCursor(SCALE_X(120), paramY);
-  tft.print("Notes:");
+  tft.setCursor(rightX, rightY);
+  tft.print("N:");
   tft.print(dimensionsState.noteSubsetSize);
   
   // Transport buttons at bottom
@@ -448,16 +491,104 @@ void drawDimensionsMode() {
   drawRoundButton(SCALE_X(10), btnY, SCALE_X(60), SCALE_Y(25), btnText, btnColor, false);
   
   // Reset button
-  drawRoundButton(SCALE_X(80), btnY, SCALE_X(60), SCALE_Y(25), "RESET", THEME_WARNING, false);
+  drawRoundButton(SCALE_X(80), btnY, SCALE_X(50), SCALE_Y(25), "RST", THEME_WARNING, false);
   
-  // Menu button
-  drawRoundButton(SCALE_X(150), btnY, SCALE_X(60), SCALE_Y(25), "MENU", THEME_SECONDARY, false);
+  // Settings button
+  drawRoundButton(SCALE_X(140), btnY, SCALE_X(50), SCALE_Y(25), "SET", THEME_SURFACE, false);
+  
+  // Back/Menu button
+  drawRoundButton(SCALE_X(200), btnY, SCALE_X(50), SCALE_Y(25), "MENU", THEME_SECONDARY, false);
 }
 
 void handleDimensionsMode() {
   updateTouchState(touch);
   
   if (touch.justPressed) {
+    int mainY = HEADER_HEIGHT + SCALE_Y(5);
+    int eqBtnY = mainY - SCALE_Y(2);
+    
+    // Equation selector buttons
+    if (touch.y >= eqBtnY && touch.y <= eqBtnY + SCALE_Y(18)) {
+      // Previous equation
+      if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(105)) {
+        dimensionsState.fx_select--;
+        if (dimensionsState.fx_select < 1) dimensionsState.fx_select = DIMENSIONS_NUM_EQUATIONS;
+        requestRedraw();
+        return;
+      }
+      // Next equation
+      if (touch.x >= SCALE_X(110) && touch.x <= SCALE_X(135)) {
+        dimensionsState.fx_select++;
+        if (dimensionsState.fx_select > DIMENSIONS_NUM_EQUATIONS) dimensionsState.fx_select = 1;
+        requestRedraw();
+        return;
+      }
+    }
+    
+    int paramY = mainY + SCALE_Y(40);
+    
+    // Parameter A controls
+    if (touch.y >= paramY - SCALE_Y(2) && touch.y <= paramY + SCALE_Y(13)) {
+      if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(105)) {
+        dimensionsState.a = max(0.0f, dimensionsState.a - 1.0f);
+        requestRedraw();
+        return;
+      }
+      if (touch.x >= SCALE_X(110) && touch.x <= SCALE_X(135)) {
+        dimensionsState.a = min(100.0f, dimensionsState.a + 1.0f);
+        requestRedraw();
+        return;
+      }
+    }
+    
+    paramY += SCALE_Y(18);
+    
+    // Parameter B controls
+    if (touch.y >= paramY - SCALE_Y(2) && touch.y <= paramY + SCALE_Y(13)) {
+      if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(105)) {
+        dimensionsState.b = max(0.0f, dimensionsState.b - 1.0f);
+        requestRedraw();
+        return;
+      }
+      if (touch.x >= SCALE_X(110) && touch.x <= SCALE_X(135)) {
+        dimensionsState.b = min(100.0f, dimensionsState.b + 1.0f);
+        requestRedraw();
+        return;
+      }
+    }
+    
+    paramY += SCALE_Y(18);
+    
+    // Parameter C controls
+    if (touch.y >= paramY - SCALE_Y(2) && touch.y <= paramY + SCALE_Y(13)) {
+      if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(105)) {
+        dimensionsState.c = max(0.0f, dimensionsState.c - 1.0f);
+        requestRedraw();
+        return;
+      }
+      if (touch.x >= SCALE_X(110) && touch.x <= SCALE_X(135)) {
+        dimensionsState.c = min(100.0f, dimensionsState.c + 1.0f);
+        requestRedraw();
+        return;
+      }
+    }
+    
+    paramY += SCALE_Y(18);
+    
+    // Parameter D controls
+    if (touch.y >= paramY - SCALE_Y(2) && touch.y <= paramY + SCALE_Y(13)) {
+      if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(105)) {
+        dimensionsState.d = max(0.0f, dimensionsState.d - 1.0f);
+        requestRedraw();
+        return;
+      }
+      if (touch.x >= SCALE_X(110) && touch.x <= SCALE_X(135)) {
+        dimensionsState.d = min(100.0f, dimensionsState.d + 1.0f);
+        requestRedraw();
+        return;
+      }
+    }
+    
     int btnY = DISPLAY_HEIGHT - SCALE_Y(35);
     
     // Start/Stop button
@@ -474,15 +605,23 @@ void handleDimensionsMode() {
     }
     
     // Reset button
-    if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(140) &&
+    if (touch.x >= SCALE_X(80) && touch.x <= SCALE_X(130) &&
         touch.y >= btnY && touch.y <= btnY + SCALE_Y(25)) {
       dimensionsResetSequencer();
       requestRedraw();
       return;
     }
     
+    // Settings button (future expansion)
+    if (touch.x >= SCALE_X(140) && touch.x <= SCALE_X(190) &&
+        touch.y >= btnY && touch.y <= btnY + SCALE_Y(25)) {
+      // TODO: Open settings page for note subset, intervals, etc.
+      requestRedraw();
+      return;
+    }
+    
     // Menu button
-    if (touch.x >= SCALE_X(150) && touch.x <= SCALE_X(210) &&
+    if (touch.x >= SCALE_X(200) && touch.x <= SCALE_X(250) &&
         touch.y >= btnY && touch.y <= btnY + SCALE_Y(25)) {
       dimensionsSync.stopPlayback();
       dimensionsReleaseNote();
