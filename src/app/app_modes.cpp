@@ -22,6 +22,9 @@
 #include "module_tb3po_mode.h"
 #include "module_waaave_mode.h"
 #include "module_xy_pad_mode.h"
+#ifdef ENABLE_M5_8ENCODER
+#include "module_encoder_panel_mode.h"
+#endif
 
 namespace {
 
@@ -42,7 +45,11 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
+#ifdef ENABLE_M5_8ENCODER
+constexpr size_t kModeCount = static_cast<size_t>(ENCODER_PANEL) + 1;
+#else
 constexpr size_t kModeCount = static_cast<size_t>(WAAAVE) + 1;
+#endif
 
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
@@ -70,6 +77,9 @@ constexpr ModeEntry kModeTable[kModeCount] = {
     /* EUCLID */ {initializeEuclideanMode, drawEuclideanMode, handleEuclideanMode},
     /* MORPH */ {initializeMorphMode, drawMorphMode, handleMorphMode},
     /* WAAAVE */ {initializeWaaaveMode, drawWaaaveMode, handleWaaaveMode},
+#ifdef ENABLE_M5_8ENCODER
+    /* ENCODER_PANEL */ {initializeEncoderPanelMode, drawEncoderPanelMode, handleEncoderPanelMode},
+#endif
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,

@@ -119,7 +119,10 @@ enum AppMode {
   RAGA,
   EUCLID,
   MORPH,
-  WAAAVE
+  WAAAVE,
+#ifdef ENABLE_M5_8ENCODER
+  ENCODER_PANEL,
+#endif
 };
 
 enum MidiClockMaster {
