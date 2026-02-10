@@ -11,7 +11,7 @@
 #define M5_8ENCODER_ADDR 0x41
 
 // Register addresses for M5Stack 8Encoder
-#define ENCODER_REG_BASE 0x00    // Encoder counter registers (16 encoders, 1 byte each)
+#define ENCODER_REG_BASE 0x00    // Encoder counter registers (8 encoders, 1 byte each)
 #define BUTTON_REG 0x10          // Button state register (1 byte, 8 bits)
 #define ENCODER_RESET_REG 0x20   // Reset encoder counters
 

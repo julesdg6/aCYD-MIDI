@@ -377,7 +377,7 @@ void drawMenuIcon(int cx, int cy, int size, MenuIcon icon, uint16_t accent) {
       break;
 #ifdef ENABLE_M5_8ENCODER
     case MenuIcon::Encoder8:
-      drawEncoder8Icon(cx, cy, size, fg);
+      drawEncoder8Icon(cx, cy, size, accent);
       break;
 #endif
     default:
