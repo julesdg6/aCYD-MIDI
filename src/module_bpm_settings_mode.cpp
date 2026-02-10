@@ -2,6 +2,7 @@
 #include "ui_elements.h"
 #include "common_definitions.h"
 #include "app/app_modes.h"
+#include "clock_manager.h"
 
 namespace {
 static constexpr uint16_t kBpmStep = 1;
@@ -14,28 +15,42 @@ static AppMode previousMode = MENU;
 // Dialog layout helper
 struct BPMDialogLayout {
   int dialogX, dialogY, dialogW, dialogH;
-  int buttonY, buttonH;
-  int leftButtonX, centerButtonX, rightButtonX;
-  int sideButtonW, centerButtonW;
+  int bpmButtonY, bpmButtonH;
+  int leftBpmButtonX, centerBpmButtonX, rightBpmButtonX;
+  int sideBpmButtonW, centerBpmButtonW;
+  int transportButtonY, transportButtonH;
+  int playButtonX, stopButtonX;
+  int transportButtonW;
 };
 
 static BPMDialogLayout calculateDialogLayout() {
   BPMDialogLayout layout;
   layout.dialogW = SCALE_X(240);
-  layout.dialogH = SCALE_Y(160);
+  layout.dialogH = SCALE_Y(180);  // Increased height for transport controls
   layout.dialogX = (DISPLAY_WIDTH - layout.dialogW) / 2;
   layout.dialogY = (DISPLAY_HEIGHT - layout.dialogH) / 2;
   
-  layout.buttonY = layout.dialogY + layout.dialogH - SCALE_Y(40);
-  layout.buttonH = SCALE_Y(30);
+  // Transport control buttons (play/stop)
+  layout.transportButtonH = SCALE_Y(30);
+  layout.transportButtonY = layout.dialogY + SCALE_Y(105);
+  int transportButtonSpacing = SCALE_X(10);
+  layout.transportButtonW = SCALE_X(50);
+  int totalTransportWidth = 2 * layout.transportButtonW + transportButtonSpacing;
+  int transportStartX = (DISPLAY_WIDTH - totalTransportWidth) / 2;
+  layout.playButtonX = transportStartX;
+  layout.stopButtonX = transportStartX + layout.transportButtonW + transportButtonSpacing;
+  
+  // BPM adjustment buttons (-, CLOSE, +)
+  layout.bpmButtonY = layout.dialogY + layout.dialogH - SCALE_Y(40);
+  layout.bpmButtonH = SCALE_Y(30);
   int buttonSpacing = SCALE_X(10);
   int totalButtonW = layout.dialogW - SCALE_X(40);
-  layout.sideButtonW = SCALE_X(50);
-  layout.centerButtonW = totalButtonW - 2 * layout.sideButtonW - 2 * buttonSpacing;
+  layout.sideBpmButtonW = SCALE_X(50);
+  layout.centerBpmButtonW = totalButtonW - 2 * layout.sideBpmButtonW - 2 * buttonSpacing;
   
-  layout.leftButtonX = layout.dialogX + SCALE_X(20);
-  layout.centerButtonX = layout.leftButtonX + layout.sideButtonW + buttonSpacing;
-  layout.rightButtonX = layout.centerButtonX + layout.centerButtonW + buttonSpacing;
+  layout.leftBpmButtonX = layout.dialogX + SCALE_X(20);
+  layout.centerBpmButtonX = layout.leftBpmButtonX + layout.sideBpmButtonW + buttonSpacing;
+  layout.rightBpmButtonX = layout.centerBpmButtonX + layout.centerBpmButtonW + buttonSpacing;
   
   return layout;
 }
@@ -67,19 +82,26 @@ void drawBPMSettingsMode() {
   tft.drawCentreString("TEMPO", DISPLAY_CENTER_X, titleY, 4);
   
   // BPM value - large display
-  int bpmValueY = layout.dialogY + SCALE_Y(55);
+  int bpmValueY = layout.dialogY + SCALE_Y(45);
   tft.setTextColor(THEME_ACCENT, THEME_SURFACE);
   tft.drawCentreString(String(sharedBPM), DISPLAY_CENTER_X, bpmValueY, 7);
   
   // BPM label
-  int bpmLabelY = layout.dialogY + SCALE_Y(95);
+  int bpmLabelY = layout.dialogY + SCALE_Y(75);
   tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
   tft.drawCentreString("BPM", DISPLAY_CENTER_X, bpmLabelY, 2);
   
-  // Draw buttons
-  drawRoundButton(layout.leftButtonX, layout.buttonY, layout.sideButtonW, layout.buttonH, "-", THEME_SECONDARY, false, 4);
-  drawRoundButton(layout.centerButtonX, layout.buttonY, layout.centerButtonW, layout.buttonH, "CLOSE", THEME_PRIMARY, false, 2);
-  drawRoundButton(layout.rightButtonX, layout.buttonY, layout.sideButtonW, layout.buttonH, "+", THEME_SECONDARY, false, 4);
+  // Transport controls (play/stop)
+  bool isPlaying = clockManagerIsRunning();
+  drawRoundButton(layout.playButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH, 
+                  "PLAY", THEME_SUCCESS, isPlaying, 2);
+  drawRoundButton(layout.stopButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH, 
+                  "STOP", THEME_ERROR, !isPlaying, 2);
+  
+  // BPM adjustment buttons
+  drawRoundButton(layout.leftBpmButtonX, layout.bpmButtonY, layout.sideBpmButtonW, layout.bpmButtonH, "-", THEME_SECONDARY, false, 4);
+  drawRoundButton(layout.centerBpmButtonX, layout.bpmButtonY, layout.centerBpmButtonW, layout.bpmButtonH, "CLOSE", THEME_PRIMARY, false, 2);
+  drawRoundButton(layout.rightBpmButtonX, layout.bpmButtonY, layout.sideBpmButtonW, layout.bpmButtonH, "+", THEME_SECONDARY, false, 4);
 }
 
 void handleBPMSettingsMode() {
@@ -89,8 +111,26 @@ void handleBPMSettingsMode() {
   
   BPMDialogLayout layout = calculateDialogLayout();
   
+  // Play button
+  if (isButtonPressed(layout.playButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH)) {
+    if (!clockManagerIsRunning()) {
+      clockManagerRequestStart();
+      requestRedraw();
+    }
+    return;
+  }
+  
+  // Stop button
+  if (isButtonPressed(layout.stopButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH)) {
+    if (clockManagerIsRunning()) {
+      clockManagerExternalStop();
+      requestRedraw();
+    }
+    return;
+  }
+  
   // Minus button
-  if (isButtonPressed(layout.leftButtonX, layout.buttonY, layout.sideButtonW, layout.buttonH)) {
+  if (isButtonPressed(layout.leftBpmButtonX, layout.bpmButtonY, layout.sideBpmButtonW, layout.bpmButtonH)) {
     if (sharedBPM > kBpmMin) {
       uint16_t newBPM = (sharedBPM - kBpmStep < kBpmMin) ? kBpmMin : sharedBPM - kBpmStep;
       setSharedBPM(newBPM);
@@ -100,7 +140,7 @@ void handleBPMSettingsMode() {
   }
   
   // Plus button
-  if (isButtonPressed(layout.rightButtonX, layout.buttonY, layout.sideButtonW, layout.buttonH)) {
+  if (isButtonPressed(layout.rightBpmButtonX, layout.bpmButtonY, layout.sideBpmButtonW, layout.bpmButtonH)) {
     if (sharedBPM < kBpmMax) {
       uint16_t newBPM = (sharedBPM + kBpmStep > kBpmMax) ? kBpmMax : sharedBPM + kBpmStep;
       setSharedBPM(newBPM);
@@ -112,10 +152,11 @@ void handleBPMSettingsMode() {
   // Close button or tap outside dialog
   bool outsideDialog = touch.x < layout.dialogX || touch.x > layout.dialogX + layout.dialogW ||
                        touch.y < layout.dialogY || touch.y > layout.dialogY + layout.dialogH;
-  bool closeButton = isButtonPressed(layout.centerButtonX, layout.buttonY, layout.centerButtonW, layout.buttonH);
+  bool closeButton = isButtonPressed(layout.centerBpmButtonX, layout.bpmButtonY, layout.centerBpmButtonW, layout.bpmButtonH);
   
   if (closeButton || outsideDialog) {
     // Return to the previous mode using proper mode switching
+    // Note: We don't stop the sequencer/clock when closing the BPM dialog
     switchMode(previousMode);
     return;
   }

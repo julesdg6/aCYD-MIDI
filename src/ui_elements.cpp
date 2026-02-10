@@ -92,16 +92,16 @@ static BpmDisplayArea calculateBpmDisplayArea() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
-  // BPM display area constants
-  const int bpmSpacingFromIcons = SCALE_X(70);
-  const int bpmTouchWidth = SCALE_X(60);
-  const int bpmTouchHeight = SCALE_Y(20);
+  // BPM button area - right-justified to the status indicators
+  const int bpmButtonWidth = SCALE_X(55);
+  const int bpmButtonHeight = SCALE_Y(25);
+  const int bpmSpacingFromIcons = SCALE_X(8);
   
   BpmDisplayArea area;
-  area.x = std::max(MARGIN_SMALL, iconsStartX - bpmSpacingFromIcons);
-  area.y = iconsStartY;
-  area.width = bpmTouchWidth;
-  area.height = bpmTouchHeight;
+  area.x = iconsStartX - bpmButtonWidth - bpmSpacingFromIcons;
+  area.y = BACK_BUTTON_Y;  // Align with back button
+  area.width = bpmButtonWidth;
+  area.height = bpmButtonHeight;
   return area;
 }
 
@@ -115,14 +115,12 @@ void drawStatusIndicators() {
   int iconsStartX = DISPLAY_WIDTH - MARGIN_SMALL - totalWidth;
   int iconsStartY = HEADER_TITLE_Y + SCALE_Y(2);
 
+  // Draw BPM as a button (right-justified to indicators)
   BpmDisplayArea bpmArea = calculateBpmDisplayArea();
-  
   String bpmLabel = String(sharedBPM);
-  int bpmX = bpmArea.x;
-  int bpmY = iconsStartY + totalHeight / 2 - SCALE_Y(6);
-  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
-  tft.drawString(bpmLabel, bpmX, bpmY, 2);
+  drawRoundButton(bpmArea.x, bpmArea.y, bpmArea.width, bpmArea.height, bpmLabel, THEME_PRIMARY, false, 2);
 
+  // Draw 4-square status indicators
   struct Indicator {
     int dx;
     int dy;
@@ -171,20 +169,32 @@ void drawStatusIndicators() {
 }  // namespace
 
 void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackButton) {
+  // Draw header background
   tft.fillRect(0, 0, DISPLAY_WIDTH, HEADER_HEIGHT, THEME_SURFACE);
   tft.drawFastHLine(0, HEADER_HEIGHT, DISPLAY_WIDTH, THEME_PRIMARY);
 
-  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
-  tft.drawCentreString(title, DISPLAY_CENTER_X, HEADER_TITLE_Y, titleFont);
-
-  if (subtitle.length() > 0) {
-    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
-    tft.drawCentreString(subtitle, DISPLAY_CENTER_X, HEADER_SUBTITLE_Y, 2);
-  }
-
+  // Left section: Back button/icon in a box with dividing line
   if (showBackButton) {
     drawRoundButton(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_W, BACK_BUTTON_H, "BACK", THEME_ERROR, false, 1);
+    // Draw vertical dividing line after the back button
+    int dividerX = BACK_BUTTON_X + BACK_BUTTON_W + SCALE_X(8);
+    tft.drawFastVLine(dividerX, SCALE_Y(5), HEADER_HEIGHT - SCALE_Y(10), THEME_PRIMARY);
   }
+
+  // Title: Left-justified next to the back button area (no subtitle support)
+  int titleX = showBackButton ? (BACK_BUTTON_X + BACK_BUTTON_W + SCALE_X(16)) : MARGIN_SMALL;
+  int titleY = HEADER_HEIGHT / 2 - SCALE_Y(8);  // Vertically centered
+  
+  // Auto-scale font size based on display resolution while maintaining readability
+  uint8_t scaledFont = titleFont;
+  if (displayConfig.scaleX < 0.8f && titleFont > 2) {
+    scaledFont = titleFont - 1;  // Reduce font size for smaller displays
+  }
+  
+  tft.setTextColor(THEME_TEXT, THEME_SURFACE);
+  tft.drawString(title, titleX, titleY, scaledFont);
+
+  // Right section: Status indicators and BPM button
   drawStatusIndicators();
 }
 
