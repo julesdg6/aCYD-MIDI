@@ -98,7 +98,8 @@ static BpmDisplayArea calculateBpmDisplayArea() {
   const int bpmSpacingFromIcons = SCALE_X(8);
   
   BpmDisplayArea area;
-  area.x = iconsStartX - bpmButtonWidth - bpmSpacingFromIcons;
+  // Ensure BPM button doesn't go off-screen on very small displays
+  area.x = std::max(MARGIN_SMALL, iconsStartX - bpmButtonWidth - bpmSpacingFromIcons);
   area.y = BACK_BUTTON_Y;  // Align with back button
   area.width = bpmButtonWidth;
   area.height = bpmButtonHeight;
@@ -186,8 +187,8 @@ void drawHeader(String title, String subtitle, uint8_t titleFont, bool showBackB
   int titleY = HEADER_HEIGHT / 2 - SCALE_Y(8);  // Vertically centered
   
   // Auto-scale font size based on display resolution while maintaining readability
-  // scaleX is the ratio of actual width to reference width (320)
-  // For displays narrower than 256px (scaleX < 0.8), reduce font size to prevent text overflow
+  // scaleX is the ratio of actual width to reference width (DISPLAY_REF_WIDTH = 320)
+  // For displays narrower than 256px (320 * 0.8 = 256), reduce font size to prevent text overflow
   uint8_t scaledFont = titleFont;
   if (displayConfig.scaleX < 0.8f && titleFont > 2) {
     scaledFont = titleFont - 1;  // Reduce font size for smaller displays

@@ -94,6 +94,7 @@ void drawBPMSettingsMode() {
   // Transport controls (play/stop)
   // Note: Mutually exclusive highlighting - only the active button is highlighted
   // When playing, PLAY is highlighted; when stopped, STOP is highlighted
+  // Both buttons remain interactive regardless of state - user can press either at any time
   bool isPlaying = clockManagerIsRunning();
   drawRoundButton(layout.playButtonX, layout.transportButtonY, layout.transportButtonW, layout.transportButtonH, 
                   "PLAY", THEME_SUCCESS, isPlaying, 2);
