@@ -38,22 +38,28 @@ static constexpr size_t kMenuRows = 4;
 
 // Original mode menu tiles (original 16 modes)
 static const MenuTile kOriginalMenuTiles[] = {
-  {"KEYS", MenuIcon::Keys, KEYBOARD},
-  {"BEATS", MenuIcon::Sequencer, SEQUENCER},
-  {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
-  {"DROP", MenuIcon::Drop, PHYSICS_DROP},
-  {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
-  {"XY PAD", MenuIcon::Xy, XY_PAD},
-  {"ARP", MenuIcon::Arp, ARPEGGIATOR},
-  {"GRID", MenuIcon::Grid, GRID_PIANO},
-  {"CHORD", MenuIcon::Chord, AUTO_CHORD},
-  {"LFO", MenuIcon::Lfo, LFO},
-  {"TB3PO", MenuIcon::Tb3po, TB3PO},
-  {"GRIDS", MenuIcon::Grids, GRIDS},
-  {"RAGA", MenuIcon::Raga, RAGA},
-  {"EUCLID", MenuIcon::Euclid, EUCLID},
-  {"MORPH", MenuIcon::Morph, MORPH},
-  {"SLINK", MenuIcon::Slink, SLINK},
+    {"KEYS", MenuIcon::Keys, KEYBOARD},
+    {"BEATS", MenuIcon::Sequencer, SEQUENCER},
+    {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
+    {"DROP", MenuIcon::Drop, PHYSICS_DROP},
+    {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
+    {"XY PAD", MenuIcon::Xy, XY_PAD},
+    {"ARP", MenuIcon::Arp, ARPEGGIATOR},
+    {"GRID", MenuIcon::Grid, GRID_PIANO},
+    {"CHORD", MenuIcon::Chord, AUTO_CHORD},
+    {"LFO", MenuIcon::Lfo, LFO},
+    {"TB3PO", MenuIcon::Tb3po, TB3PO},
+    {"GRIDS", MenuIcon::Grids, GRIDS},
+    {"RAGA", MenuIcon::Raga, RAGA},
+    {"EUCLID", MenuIcon::Euclid, EUCLID},
+    {"MORPH", MenuIcon::Morph, MORPH},
+#ifdef ENABLE_M5_8ENCODER
+    {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
+#elif defined(ENABLE_BABY8_EMU)
+    {"BABY8", MenuIcon::Baby8, BABY8},
+#else
+    {"SLINK", MenuIcon::Slink, SLINK},
+#endif
 };
 
 // Experimental mode menu tiles
@@ -113,6 +119,9 @@ static const CaptureEntry kCaptureSequence[] = {
     {WAAAVE, "waaave"},
 #ifdef ENABLE_M5_8ENCODER
     {ENCODER_PANEL, "encoder_panel"},
+#endif
+#ifdef ENABLE_BABY8_EMU
+    {BABY8, "baby8"},
 #endif
 };
 

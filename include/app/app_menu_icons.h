@@ -23,6 +23,9 @@ enum class MenuIcon : uint8_t {
 #ifdef ENABLE_M5_8ENCODER
   Encoder8,
 #endif
+#ifdef ENABLE_BABY8_EMU
+  Baby8,
+#endif
   FractalEcho,
   Dimensions,
 };

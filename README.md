@@ -26,6 +26,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 
 - **KEYS** - Virtual piano keyboard with scale and key controls
 - **BEATS** - 16-step sequencer with 4 tracks and tempo control
+- **BABY8** (Optional) - 8-step sequencer emulation with virtual encoders, per-step note/velocity/gate, pattern storage, tempo, and swing controls ([docs/BABY8_EMULATION.md](docs/BABY8_EMULATION.md))
 - **ZEN** - Ambient bouncing ball mode for generative music
 - **DROP** - Physics-based ball drop with customizable platforms
 - **RNG** - Random music generator for creative exploration
@@ -295,6 +296,21 @@ Linux users can use [bluez-alsa](https://github.com/Arkq/bluez-alsa) or [BLEMidi
 ## Experimental & Optional Features
 
 Some features are **disabled by default** to reduce complexity and resource usage. You can enable them by modifying `platformio.ini` build flags:
+
+### Baby8 Sequencer Emulation (Disabled by Default)
+
+The Baby8 mode provides an 8-step sequencer with virtual encoder controls, per-step note/velocity/gate settings, pattern storage, and swing.
+
+**Status:** ⚠️ Disabled by default (`ENABLE_BABY8_EMU` not defined)
+
+**To enable:**
+1. In `platformio.ini`, uncomment in the `[common]` build flags:
+   ```ini
+   -D ENABLE_BABY8_EMU=1
+   ```
+2. Rebuild and upload
+
+**Note:** When enabled, Baby8 replaces SLINK in the main menu (unless M5Stack 8Encoder is also enabled). See [docs/BABY8_EMULATION.md](docs/BABY8_EMULATION.md) for full details.
 
 ### WiFi & Remote Display (Disabled by Default)
 
