@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- TBD
+## [0.1.5] - 2026-02-10
+
+### Added
 - **Dimensions Parametric Sequencer Mode** - Math-driven pattern generator with 20 parametric equations
   - Port of ErikOostveen/Dimensions sequencer engine
   - Parametric equations map to MIDI note, velocity, and timing
@@ -20,6 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integrated with aCYD-MIDI clock manager for internal/external sync
   - Menu icon with Lissajous curve visualization
   - Full documentation in `docs/DIMENSIONS.md`
+- SD card detection logging for screenshots (type/size) plus clearer failure logging.
+- Header divider on the main menu between the settings icon and title.
+
+### Changed
+- Restored original main menu ordering and moved experimental items to the experimental menu.
+- Moved root Markdown documentation into docs/ and updated references.
+
+### Removed
+- Removed tmp/ artifacts from the repository (now ignored).
+
+[0.1.5]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.4...v0.1.5
 
 ## [0.1.3] - 2026-02-07
 
