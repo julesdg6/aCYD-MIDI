@@ -53,38 +53,37 @@ static const MenuTile kOriginalMenuTiles[] = {
     {"RAGA", MenuIcon::Raga, RAGA},
     {"EUCLID", MenuIcon::Euclid, EUCLID},
     {"MORPH", MenuIcon::Morph, MORPH},
-#ifdef ENABLE_M5_8ENCODER
-    {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
-#elif defined(ENABLE_BABY8_EMU)
-    {"BABY8", MenuIcon::Baby8, BABY8},
-#else
     {"SLINK", MenuIcon::Slink, SLINK},
-#endif
 };
 
 // Experimental mode menu tiles
-// Focus: experimental/newer modes plus a subset of core modes for quick access
+// Focus: experimental/newer modes only (Baby8, 8Encoder, Waaave, Fractal, Dimensions)
+// Rest are empty placeholders for future expansion
 static const MenuTile kExperimentalMenuTiles[] = {
+#ifdef ENABLE_BABY8_EMU
+  {"BABY8", MenuIcon::Baby8, BABY8},
+#else
+  {"", MenuIcon::Empty, MENU},
+#endif
 #ifdef ENABLE_M5_8ENCODER
   {"8ENC", MenuIcon::Encoder8, ENCODER_PANEL},
 #else
-  {"SLINK", MenuIcon::Slink, SLINK},
+  {"", MenuIcon::Empty, MENU},
 #endif
   {"WAAAVE", MenuIcon::Waaave, WAAAVE},
   {"FRACTAL", MenuIcon::FractalEcho, FRACTAL_ECHO},
   {"DIMS", MenuIcon::Dimensions, DIMENSIONS},
-  {"KEYS", MenuIcon::Keys, KEYBOARD},
-  {"BEATS", MenuIcon::Sequencer, SEQUENCER},
-  {"ZEN", MenuIcon::Zen, BOUNCING_BALL},
-  {"DROP", MenuIcon::Drop, PHYSICS_DROP},
-  {"RNG", MenuIcon::Rng, RANDOM_GENERATOR},
-  {"XY PAD", MenuIcon::Xy, XY_PAD},
-  {"ARP", MenuIcon::Arp, ARPEGGIATOR},
-  {"GRID", MenuIcon::Grid, GRID_PIANO},
-  {"CHORD", MenuIcon::Chord, AUTO_CHORD},
-  {"LFO", MenuIcon::Lfo, LFO},
-  {"TB3PO", MenuIcon::Tb3po, TB3PO},
-  {"GRIDS", MenuIcon::Grids, GRIDS},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
 };
 
 static_assert(sizeof(kOriginalMenuTiles) / sizeof(kOriginalMenuTiles[0]) == kMenuCols * kMenuRows,
@@ -141,6 +140,15 @@ static void drawSettingsCog() {
 }
 
 static void drawMenuTile(int x, int y, int w, int h, const MenuTile &tile, uint16_t accent) {
+  // Empty tiles are drawn as blacked-out placeholders
+  if (tile.icon == MenuIcon::Empty) {
+    uint16_t darkBg = THEME_BG;
+    uint16_t darkBorder = blendColor(THEME_SURFACE, THEME_BG, 50);
+    tft.fillRoundRect(x, y, w, h, 10, darkBg);
+    tft.drawRoundRect(x, y, w, h, 10, darkBorder);
+    return;
+  }
+  
   uint16_t bgColor = accent;
   uint16_t borderColor = blendColor(accent, THEME_BG, 150);
   uint16_t innerBorderColor = blendColor(borderColor, THEME_BG, 80);

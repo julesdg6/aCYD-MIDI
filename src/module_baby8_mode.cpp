@@ -194,7 +194,6 @@ void drawBaby8StepGrid() {
     // Draw note name below step number if gate is on
     if (stepData.gate && isActive) {
       String noteName = getNoteNameFromMIDI(stepData.note);
-      tft.setTextSize(1);
       tft.drawCentreString(noteName, x + cellW / 2, y + SCALE_Y(13), 1);
     }
   }
@@ -258,7 +257,6 @@ void drawBaby8Encoders() {
         break;
     }
     
-    tft.setTextSize(1);
     tft.drawCentreString(valueStr, x + encW / 2, y + SCALE_Y(15), 2);
     
     // Draw value bar
