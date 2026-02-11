@@ -287,8 +287,8 @@ bool writeScreenshotDocumentation(const char *documentation[], int count) {
     file.printf("===================================\n\n");
     file.printf("Board: %s\n", BOARD_NAME);
     file.printf("Version: %s\n", ACYD_MIDI_VERSION);
-    file.printf("Date: Generated automatically\n\n");
-    file.printf("Screenshots:\n");
+    file.printf("Capture Time: %lu ms since boot\n", millis());
+    file.printf("\nScreenshots:\n");
     file.printf("------------\n\n");
 
     for (int i = 0; i < count; i++) {

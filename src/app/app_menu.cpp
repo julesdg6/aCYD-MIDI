@@ -6,6 +6,7 @@
 #include <lvgl.h>
 
 #include <algorithm>
+#include <cctype>
 
 #include "app/app_modes.h"
 #include "app/app_menu_icons.h"
@@ -190,7 +191,7 @@ void captureAllScreenshots() {
 #endif
 
   // Vector to store documentation entries
-  static const int MAX_DOCS = 100;
+  static const int MAX_DOCS = 60;
   const char* documentation[MAX_DOCS];
   int docCount = 0;
 
@@ -302,9 +303,7 @@ void captureAllScreenshots() {
       snprintf(label, sizeof(label), "slink_%s", slinkTabs[tab]);
       // Convert to lowercase
       for (int i = 0; label[i]; i++) {
-        if (label[i] >= 'A' && label[i] <= 'Z') {
-          label[i] = label[i] + 32;
-        }
+        label[i] = tolower((unsigned char)label[i]);
       }
       takeScreenshot(label);
       documentation[docCount++] = slinkDesc[tab];
