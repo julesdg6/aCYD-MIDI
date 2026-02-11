@@ -83,6 +83,7 @@ static const MenuTile kExperimentalMenuTiles[] = {
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
+  {"", MenuIcon::Empty, MENU},
 };
 
 static_assert(sizeof(kOriginalMenuTiles) / sizeof(kOriginalMenuTiles[0]) == kMenuCols * kMenuRows,
