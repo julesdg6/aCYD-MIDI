@@ -287,11 +287,17 @@ Linux users can use [bluez-alsa](https://github.com/Arkq/bluez-alsa) or [BLEMidi
 4. Tap a mode from the main menu to start playing
 
 ### Taking Screenshots
-1. Insert a MicroSD card into the CYD's SD card slot (optional feature)
-2. From the main menu, tap the "SCREENSHOT" button
-3. Screenshots are saved as BMP files (screen000.bmp, screen001.bmp, etc.) to the SD card
-4. View the serial monitor for confirmation messages
-5. Hold the BACK button on the main menu for ~1.5 s to cycle through every mode and save `/<board>_<mode>_NNN.bmp` files inside `/screenshots`
+1. Insert a MicroSD card (FAT16/FAT32 formatted) into the CYD's SD card slot
+2. From the Settings screen, tap "Capture All Screens" button (or hold the Settings cog icon on main menu for ~1.5s)
+3. The device will automatically:
+   - Navigate through all modes and screens
+   - Capture screenshots with 5-second delays between each
+   - Save screenshots as BMP files to `/screenshots/` folder
+   - Scroll through Settings menu sections if content extends beyond one screen
+   - Capture all tabs/pages for multi-screen modes (SLINK: 7 tabs, WAAAVE: 3 pages, ENCODER_PANEL: 3 pages)
+   - Generate a `documentation.txt` file listing all screenshots with descriptions
+4. Files are named: `<board>-<version>_<mode>_NNN.bmp` (e.g., `esp32-2432S028Rv2-0-1-6_menu_000.bmp`)
+5. Monitor serial output for progress and confirmation messages
 
 ## Experimental & Optional Features
 
