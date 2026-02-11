@@ -2,6 +2,27 @@ name: Notify Discord on Release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (e.g., v0.1.6)"
+        required: false
+        type: string
+      release_name:
+        description: "Release name (optional)"
+        required: false
+        type: string
+      release_url:
+        description: "Release URL (optional)"
+        required: false
+        type: string
+      release_body:
+        description: "Release notes/body (optional)"
+        required: false
+        type: string
+      release_published_at:
+        description: "Release published timestamp (ISO 8601)"
+        required: false
+        type: string
   release:
     types: [published]
     
@@ -17,7 +38,33 @@ jobs:
           RELEASE_URL: ${{ github.event.release.html_url }}
           RELEASE_BODY: ${{ github.event.release.body }}
           RELEASE_PUBLISHED_AT: ${{ github.event.release.published_at }}
+          INPUT_RELEASE_NAME: ${{ github.event.inputs.release_name }}
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          INPUT_RELEASE_URL: ${{ github.event.inputs.release_url }}
+          INPUT_RELEASE_BODY: ${{ github.event.inputs.release_body }}
+          INPUT_RELEASE_PUBLISHED_AT: ${{ github.event.inputs.release_published_at }}
         run: |
+          # Prefer workflow_dispatch inputs when provided
+          if [ -n "$INPUT_RELEASE_NAME" ]; then
+            RELEASE_NAME="$INPUT_RELEASE_NAME"
+          fi
+          if [ -n "$INPUT_RELEASE_TAG" ]; then
+            RELEASE_TAG="$INPUT_RELEASE_TAG"
+          fi
+          if [ -n "$INPUT_RELEASE_URL" ]; then
+            RELEASE_URL="$INPUT_RELEASE_URL"
+          fi
+          if [ -n "$INPUT_RELEASE_BODY" ]; then
+            RELEASE_BODY="$INPUT_RELEASE_BODY"
+          fi
+          if [ -n "$INPUT_RELEASE_PUBLISHED_AT" ]; then
+            RELEASE_PUBLISHED_AT="$INPUT_RELEASE_PUBLISHED_AT"
+          fi
+
+          if [ -z "$RELEASE_BODY" ]; then
+            RELEASE_BODY="See release notes: ${RELEASE_URL:-https://github.com/${{ github.repository }}/releases/tag/${RELEASE_TAG}}"
+          fi
+
           # Discord embed description limit is 2000 characters
           # We use 1900 as a safe buffer to account for formatting
           # Truncate to 1897 to leave room for the 3-char "..." suffix
