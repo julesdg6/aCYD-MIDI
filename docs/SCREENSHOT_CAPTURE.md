@@ -153,5 +153,5 @@ Potential improvements:
 - Adjustable delay between captures
 - Selective mode capture (choose which modes to include)
 - PNG format support for smaller file sizes
-- Timestamped documentation
+- Real-time clock (RTC) timestamps instead of millis() uptime
 - Progress indicator on display during capture

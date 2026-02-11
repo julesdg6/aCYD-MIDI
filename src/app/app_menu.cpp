@@ -300,9 +300,9 @@ void captureAllScreenshots() {
       waitAndRender();
       
       char label[32];
-      snprintf(label, sizeof(label), "slink_%s", slinkTabs[tab]);
+      int len = snprintf(label, sizeof(label), "slink_%s", slinkTabs[tab]);
       // Convert to lowercase
-      for (int i = 0; label[i]; i++) {
+      for (int i = 0; i < len && i < (int)sizeof(label) - 1; i++) {
         label[i] = tolower((unsigned char)label[i]);
       }
       takeScreenshot(label);
