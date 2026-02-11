@@ -461,3 +461,16 @@ void handleWaaaveMode() {
     }
   }
 }
+
+// Screenshot support functions
+int getWaaavePage() {
+  return state.currentPage;
+}
+
+void setWaaavePage(int page) {
+  state.currentPage = page;
+}
+
+int getWaaaveNumPages() {
+  return numPages();
+}

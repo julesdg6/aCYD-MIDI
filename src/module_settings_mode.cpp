@@ -425,3 +425,17 @@ void handleSettingsMode() {
     settingsScrollActive = false;
   }
 }
+
+// Screenshot support functions
+int getSettingsScrollOffset() {
+  return settingsScrollOffset;
+}
+
+void setSettingsScrollOffset(int offset) {
+  settingsScrollOffset = offset;
+}
+
+int getSettingsMaxScroll() {
+  const SettingsLayout layout = computeSettingsLayout();
+  return std::max(0, layout.contentHeight - layout.viewHeight);
+}
