@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - TBD
+
+## [0.1.6] - 2026-02-11
+
+### Changed
+- Restored SLINK to the main menu and kept experimental modes on the experimental screen.
+
+[0.1.6]: https://github.com/julesdg6/aCYD-MIDI/compare/v0.1.5...v0.1.6
 ## [0.1.5] - 2026-02-10
 
 ### Added
