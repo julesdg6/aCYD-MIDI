@@ -284,7 +284,8 @@ bool deserializeMode(const char* data, Mode& outMode) {
   // Simple parser for key=value format
   // This is a minimal implementation - would need expansion for full support
   
-  char tempData[512];
+  // Use smaller buffer to avoid stack overflow on ESP32
+  char tempData[256];
   strncpy(tempData, data, sizeof(tempData) - 1);
   tempData[sizeof(tempData) - 1] = '\0';
   

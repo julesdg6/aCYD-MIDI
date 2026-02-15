@@ -178,7 +178,7 @@ void initializeWorldMusicDemoMode() {
   wmDemo.isPlaying = false;
   wmDemo.currentStep = 0;
   wmDemo.lastNoteTime = 0;
-  wmDemo.noteInterval = 250;  // 250ms = quarter note at 240 BPM
+  wmDemo.noteInterval = 250;  // 250ms per note (240 BPM = 250ms per quarter note)
   wmDemo.phraseLength = 0;
   
   // Generate initial phrase
