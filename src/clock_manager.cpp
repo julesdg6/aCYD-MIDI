@@ -3,6 +3,7 @@
 
 #include "common_definitions.h"
 #include "midi_utils.h"
+#include "clock_runtime.h"
 
 #include <algorithm>
 #include <freertos/FreeRTOS.h>
@@ -48,6 +49,10 @@ static void onClockTickCallback(uint32_t tick) {
   tickCount = tick;
   tickPending = true;
   unlockClockManagerFromISR();
+  
+  // Also notify ClockRuntime (pass tick from uClock)
+  // Note: ClockRuntime::processTick is designed to be ISR-safe for enqueueing
+  clockRuntime.processTick(tick);
 }
 
 static void onClockStartCallback() {
@@ -404,7 +409,12 @@ void clockManagerExternalClock() {
     return;
   }
   tickCount++;
+  uint32_t currentTickCount = tickCount;
   unlockClockManager();
+  
+  // Notify ClockRuntime of external clock tick
+  clockRuntime.processTick(currentTickCount);
+  
   requestRedraw();
 }
 

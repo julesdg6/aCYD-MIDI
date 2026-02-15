@@ -16,6 +16,8 @@
 #include "app/app_renderer.h"
 #include "app/app_serial_cli.h"
 #include "clock_manager.h"
+#include "clock_runtime.h"
+#include "midi_out_buffer.h"
 #include "header_capture.h"
 #include "midi_clock_task.h"
 #include "midi_transport.h"
@@ -103,6 +105,9 @@ void appSetup() {
 
   bleMidiBegin();
   initHardwareMIDI();  // Initialize hardware MIDI output
+  // Initialize new framework components
+  midiOutBuffer.init();
+  clockRuntime.init();
   // Ensure all modules register uClock step callbacks before uClock is initialized
   registerAllStepCallbacks();
   initClockManager();
