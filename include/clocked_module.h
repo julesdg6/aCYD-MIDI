@@ -2,6 +2,7 @@
 #define CLOCKED_MODULE_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 /**
  * Clocked Module Base Class
