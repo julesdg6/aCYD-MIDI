@@ -504,6 +504,35 @@ const char* getSystemTypeName(SystemType type);
 SystemType parseSystemType(const char* name);
 ```
 
+## Demo Module
+
+A complete working example is available in `module_world_music_demo_mode.h/cpp`:
+
+**Features:**
+- Three pre-defined modes: Raga Yaman, Maqam Rast, Major Pentatonic
+- Real-time phrase generation with play/stop controls
+- Mode switching with validation
+- Touch-based UI for mode selection and playback control
+- Demonstrates motif-based generation and cadence usage
+
+**Integration:**
+To add to your build, include the module header and register it in `app_modes.cpp`:
+
+```cpp
+#include "module_world_music_demo_mode.h"
+
+// In mode table:
+{initializeWorldMusicDemoMode, drawWorldMusicDemoMode, handleWorldMusicDemoMode}
+```
+
+**Usage Pattern:**
+The demo shows the recommended workflow:
+1. Create mode definitions with validation
+2. Configure generator parameters
+3. Generate phrases on demand
+4. Play back using MIDI output
+5. Handle UI interaction for mode switching
+
 ## Future Enhancements
 
 1. **Extended Serialization**: Full JSON-like format for all mode properties
@@ -516,6 +545,7 @@ SystemType parseSystemType(const char* name);
 ## Related Documentation
 
 - **Raga Mode Implementation**: `docs/RAGA_MODE_MARKOV_CHAIN.md`
+- **Demo Module**: `include/module_world_music_demo_mode.h`
 - **Common Definitions**: `include/common_definitions.h`
 - **MIDI Utilities**: `include/midi_utils.h`
 - **Clock Manager**: `include/clock_manager.h`
