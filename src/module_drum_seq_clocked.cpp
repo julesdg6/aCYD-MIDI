@@ -6,6 +6,9 @@
 // Register this module with the factory
 REGISTER_MODULE(DrumSeqClocked, "drum_seq_clocked")
 
+// Define static constexpr member (required for C++11/14)
+constexpr uint8_t DrumSeqClocked::kDrumNotes[DrumSeqClocked::kNumTracks];
+
 DrumSeqClocked::DrumSeqClocked() 
   : currentStep_(0), gateLength_(3), velocity_(100) {
   // Clear pattern
