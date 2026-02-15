@@ -250,3 +250,52 @@ bool takeScreenshot(const char* label) {
     Serial.printf("Screenshot saved to %s\n", filename);
     return true;
 }
+
+bool writeScreenshotDocumentation(const char *documentation[], int count) {
+    if (!initializeSD()) {
+        Serial.println("Failed to initialize SD card for documentation");
+        return false;
+    }
+    
+    if (!ensureScreenshotDirectory()) {
+        Serial.println("Failed to create screenshots directory");
+        return false;
+    }
+
+    char boardBuf[32];
+    sanitizeLabel(BOARD_NAME, boardBuf, sizeof(boardBuf));
+
+    char versionBuf[16];
+    strncpy(versionBuf, ACYD_MIDI_VERSION, sizeof(versionBuf) - 1);
+    versionBuf[sizeof(versionBuf) - 1] = '\0';
+    for (size_t i = 0; i < sizeof(versionBuf) && versionBuf[i]; i++) {
+        if (versionBuf[i] == '.') {
+            versionBuf[i] = '-';
+        }
+    }
+
+    char filename[96];
+    snprintf(filename, sizeof(filename), "/screenshots/%s-%s_documentation.txt", boardBuf, versionBuf);
+
+    File file = SD.open(filename, FILE_WRITE);
+    if (!file) {
+        Serial.println("Failed to open documentation file for writing");
+        return false;
+    }
+
+    file.printf("aCYD MIDI Screenshot Documentation\n");
+    file.printf("===================================\n\n");
+    file.printf("Board: %s\n", BOARD_NAME);
+    file.printf("Version: %s\n", ACYD_MIDI_VERSION);
+    file.printf("Capture Time: %lu ms since boot\n", millis());
+    file.printf("\nScreenshots:\n");
+    file.printf("------------\n\n");
+
+    for (int i = 0; i < count; i++) {
+        file.printf("%s\n", documentation[i]);
+    }
+
+    file.close();
+    Serial.printf("Documentation saved to %s\n", filename);
+    return true;
+}

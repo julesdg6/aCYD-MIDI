@@ -16,5 +16,6 @@
 bool initializeSD();
 bool takeScreenshot(const char *label = nullptr);
 void shutdownSD();
+bool writeScreenshotDocumentation(const char *documentation[], int count);
 
 #endif // SCREENSHOT_H
