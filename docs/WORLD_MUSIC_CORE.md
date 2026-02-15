@@ -67,7 +67,7 @@ A melodic pattern fragment with scale degree steps, optional rhythm, and samplin
 
 ```cpp
 struct Motif {
-  int8_t degreeSteps[WM_MAX_MOTIF_STEPS];        // Scale degree indices (0-11)
+  int8_t degreeSteps[WM_MAX_MOTIF_STEPS];        // Scale degree INDICES (0-based, e.g., 0=first note, 1=second note)
   uint8_t rhythmPattern[WM_MAX_MOTIF_STEPS];     // Duration in ticks (0 = default)
   uint8_t numSteps;                               // Number of steps in motif
   uint8_t weight;                                 // Sampling probability (1-100)
@@ -76,13 +76,17 @@ struct Motif {
 
 **Example** (Raga Yaman pakad phrase):
 ```cpp
+// Raga Yaman scale: Sa Re Ga Ma# Pa Dha Ni (indices 0-6)
 Motif yamanPakad;
 yamanPakad.numSteps = 4;
-yamanPakad.degreeSteps[0] = 0;  // Sa
-yamanPakad.degreeSteps[1] = 2;  // Ga
-yamanPakad.degreeSteps[2] = 4;  // Ma#
-yamanPakad.degreeSteps[3] = 5;  // Pa
+yamanPakad.degreeSteps[0] = 6;  // Index 6 = Ni (7th note of scale)
+yamanPakad.degreeSteps[1] = 1;  // Index 1 = Re (2nd note of scale)
+yamanPakad.degreeSteps[2] = 2;  // Index 2 = Ga (3rd note of scale)
+yamanPakad.degreeSteps[3] = 3;  // Index 3 = Ma# (4th note of scale)
 yamanPakad.weight = 50;  // Higher weight = more likely to be selected
+```
+
+**Important**: `degreeSteps` contains **indices** into the scale array, not semitone offsets. For example, if your scale is `[0, 2, 4, 7, 9]` (pentatonic), then `degreeSteps[0] = 2` means "use the third note of the scale" (which is semitone offset 4).
 ```
 
 ### Segment (for Maqam/Compound Modes)

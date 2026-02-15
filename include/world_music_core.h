@@ -64,7 +64,7 @@ struct Tuning {
 // rhythm pattern and sampling weight
 
 struct Motif {
-  int8_t degreeSteps[WM_MAX_MOTIF_STEPS];  // Scale degree steps (e.g., 0,2,4 for S-g-P)
+  int8_t degreeSteps[WM_MAX_MOTIF_STEPS];  // Scale degree indices (e.g., 0,1,2 for first 3 notes of scale)
   uint8_t rhythmPattern[WM_MAX_MOTIF_STEPS];  // Optional: duration in ticks (0 = use default)
   uint8_t numSteps;
   uint8_t weight;  // Sampling probability weight (higher = more likely)

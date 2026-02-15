@@ -101,9 +101,9 @@ bool validateMotifDegrees(const Mode& mode) {
   for (uint8_t m = 0; m < mode.numMotifs; m++) {
     const Motif& motif = mode.motifs[m];
     for (uint8_t s = 0; s < motif.numSteps; s++) {
-      // Note: degreeSteps can be negative for descending motion
-      // We check absolute value doesn't exceed scale range
-      if (abs(motif.degreeSteps[s]) >= (int)mode.numDegrees) {
+      // degreeSteps are indices into the scale array
+      // Check they are within valid range [0, numDegrees-1]
+      if (motif.degreeSteps[s] < 0 || motif.degreeSteps[s] >= (int)mode.numDegrees) {
         return false;
       }
     }
@@ -133,7 +133,7 @@ void generatePhrase(const Mode& mode, const GeneratorParams& params,
   
   uint8_t noteCount = min(params.phraseLength, maxNotes);
   uint8_t currentOctave = params.baseOctave;
-  int8_t currentDegree = mode.scaleDegrees[mode.tonicIndex];
+  int8_t currentDegreeIndex = mode.tonicIndex;  // Start at tonic (index, not semitone)
   
   for (uint8_t i = 0; i < noteCount; i++) {
     bool isLastNote = (i == noteCount - 1);
@@ -146,25 +146,25 @@ void generatePhrase(const Mode& mode, const GeneratorParams& params,
       
       // Apply first step of motif (could be extended to apply full motif)
       if (motif.numSteps > 0) {
-        currentDegree = motif.degreeSteps[0];
+        currentDegreeIndex = motif.degreeSteps[0];  // This is an index
       }
     } else {
       // Random walk through scale
       int8_t step = random(-2, 3);  // -2 to +2 step size
-      int newDegreeIndex = currentDegree + step;
+      int newDegreeIndex = currentDegreeIndex + step;
       
       // Wrap to stay within scale
       while (newDegreeIndex < 0) newDegreeIndex += mode.numDegrees;
       while (newDegreeIndex >= (int)mode.numDegrees) newDegreeIndex -= mode.numDegrees;
       
-      currentDegree = newDegreeIndex;
+      currentDegreeIndex = newDegreeIndex;
     }
     
     // On last note, use cadential note if requested
     if (isLastNote && params.useCadence) {
-      int8_t cadentialNote = selectCadentialNote(mode);
-      if (cadentialNote >= 0) {
-        currentDegree = cadentialNote;
+      int8_t cadentialIndex = selectCadentialNote(mode);
+      if (cadentialIndex >= 0) {
+        currentDegreeIndex = cadentialIndex;
       }
     }
     
@@ -177,7 +177,7 @@ void generatePhrase(const Mode& mode, const GeneratorParams& params,
       }
     }
     
-    outNotes[i] = currentDegree;
+    outNotes[i] = currentDegreeIndex;  // Store index, not semitone value
     outOctaves[i] = currentOctave;
   }
 }
@@ -219,19 +219,19 @@ void selectMotif(const Mode& mode, Motif& outMotif) {
 
 int8_t selectCadentialNote(const Mode& mode) {
   if (mode.numCadential == 0) {
-    // Default to tonic
-    return mode.scaleDegrees[mode.tonicIndex];
+    // Default to tonic index
+    return mode.tonicIndex;
   }
   
-  // Random cadential note
+  // Random cadential note (returns index, not semitone value)
   uint8_t index = random(mode.numCadential);
   uint8_t degreeIndex = mode.cadentialIndices[index];
   
   if (degreeIndex < mode.numDegrees) {
-    return mode.scaleDegrees[degreeIndex];
+    return degreeIndex;
   }
   
-  return mode.scaleDegrees[mode.tonicIndex];
+  return mode.tonicIndex;
 }
 
 int8_t scaleDegreesToMidiNote(int8_t degree, uint8_t octave, const Mode& mode) {

@@ -106,10 +106,10 @@ Mode createDemoMaqamRast() {
   // Motif: Ascending Rast tetrachord
   rast.numMotifs = 1;
   rast.motifs[0].numSteps = 4;
-  rast.motifs[0].degreeSteps[0] = 0;  // Rast
-  rast.motifs[0].degreeSteps[1] = 1;  // Dukah
-  rast.motifs[0].degreeSteps[2] = 2;  // Sikah
-  rast.motifs[0].degreeSteps[3] = 3;  // Jaharka
+  rast.motifs[0].degreeSteps[0] = 0;  // Index 0 = Rast (1st note)
+  rast.motifs[0].degreeSteps[1] = 1;  // Index 1 = Dukah (2nd note)
+  rast.motifs[0].degreeSteps[2] = 2;  // Index 2 = Sikah (3rd note)
+  rast.motifs[0].degreeSteps[3] = 3;  // Index 3 = Jaharka (4th note)
   rast.motifs[0].weight = 70;
   
   return rast;
@@ -139,11 +139,11 @@ Mode createDemoPentatonic() {
   // Simple ascending motif
   penta.numMotifs = 1;
   penta.motifs[0].numSteps = 5;
-  penta.motifs[0].degreeSteps[0] = 0;  // C
-  penta.motifs[0].degreeSteps[1] = 1;  // D
-  penta.motifs[0].degreeSteps[2] = 2;  // E
-  penta.motifs[0].degreeSteps[3] = 3;  // G
-  penta.motifs[0].degreeSteps[4] = 4;  // A
+  penta.motifs[0].degreeSteps[0] = 0;  // Index 0 = C (1st note)
+  penta.motifs[0].degreeSteps[1] = 1;  // Index 1 = D (2nd note)
+  penta.motifs[0].degreeSteps[2] = 2;  // Index 2 = E (3rd note)
+  penta.motifs[0].degreeSteps[3] = 3;  // Index 3 = G (4th note)
+  penta.motifs[0].degreeSteps[4] = 4;  // Index 4 = A (5th note)
   penta.motifs[0].weight = 50;
   
   return penta;
