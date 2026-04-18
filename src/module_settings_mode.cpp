@@ -396,8 +396,8 @@ void handleSettingsMode() {
   const int slotCountRowY = layout.slotCountRowY - settingsScrollOffset;
   if (!handled && touch.justPressed &&
       isButtonPressed(rowInnerLeft, slotCountRowY, rowInnerW, compactRowHeight())) {
-    if (slotSystemSlotCount >= 12) {
-      slotSystemSlotCount = 1;
+    if (slotSystemSlotCount >= SLOT_SYSTEM_MAX_SLOTS) {
+      slotSystemSlotCount = SLOT_SYSTEM_MIN_SLOTS;
     } else {
       slotSystemSlotCount++;
     }

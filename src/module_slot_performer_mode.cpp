@@ -12,7 +12,6 @@
 
 namespace {
 
-static constexpr uint8_t kMaxSlots = 12;
 static constexpr uint8_t kQuantizeOptions = 5;
 static constexpr uint8_t kMaxMidiChannels = 16;
 static constexpr uint8_t kPatternSteps = 16;
@@ -76,7 +75,7 @@ struct CaptureNoteState {
 };
 
 struct SlotPerformerState {
-  SlotState slots[kMaxSlots];
+  SlotState slots[SLOT_SYSTEM_MAX_SLOTS];
   PendingNoteOff pendingNoteOffs[64];
 
   bool transportRunning = false;
@@ -131,10 +130,10 @@ static uint8_t quantizeTicks(uint8_t index) {
 }
 
 static uint8_t clampConfiguredSlotCount() {
-  if (slotSystemSlotCount < 1) {
-    slotSystemSlotCount = 1;
-  } else if (slotSystemSlotCount > kMaxSlots) {
-    slotSystemSlotCount = kMaxSlots;
+  if (slotSystemSlotCount < SLOT_SYSTEM_MIN_SLOTS) {
+    slotSystemSlotCount = SLOT_SYSTEM_MIN_SLOTS;
+  } else if (slotSystemSlotCount > SLOT_SYSTEM_MAX_SLOTS) {
+    slotSystemSlotCount = SLOT_SYSTEM_MAX_SLOTS;
   }
   return slotSystemSlotCount;
 }
@@ -243,7 +242,8 @@ static void captureRecordEvent(uint8_t slotIndex, uint8_t note, uint8_t velocity
   if (gState.captureNotes[note].active) {
     uint32_t minOffRaw = static_cast<uint32_t>(gState.captureNotes[note].onTick) +
                          static_cast<uint32_t>(target.loopQuantizeTicks);
-    uint16_t minOff = static_cast<uint16_t>((minOffRaw > 0xFFFFu) ? 0xFFFFu : minOffRaw);
+    uint16_t minOff =
+        static_cast<uint16_t>((minOffRaw > UINT16_MAX) ? UINT16_MAX : minOffRaw);
     if (qt < minOff) {
       qt = minOff;
     }
@@ -394,8 +394,9 @@ static bool engineShouldTrigger(const SlotState &slot, uint16_t stepIndex) {
     uint8_t pulses = clampDensity(slot.density);
     return ((stepIndex * pulses) % kPatternSteps) < pulses;
   }
-  // Dimensions engine: controlled randomness from density.
-  return random(kPatternSteps) < slot.density;
+  // Dimensions engine: deterministic pseudo-random trigger per step.
+  uint8_t value = static_cast<uint8_t>((stepIndex * 13 + slot.baseNote * 7 + slot.density) % kPatternSteps);
+  return value < clampDensity(slot.density);
 }
 
 static void processEngineSlot(uint8_t slotIndex) {
@@ -656,7 +657,7 @@ void initializeSlotPerformerMode() {
   memset(gState.pendingNoteOffs, 0, sizeof(gState.pendingNoteOffs));
   memset(gState.captureNotes, 0, sizeof(gState.captureNotes));
 
-  for (uint8_t i = 0; i < kMaxSlots; ++i) {
+  for (uint8_t i = 0; i < SLOT_SYSTEM_MAX_SLOTS; ++i) {
     resetSlotState(i, SlotType::EMPTY);
   }
 
@@ -845,7 +846,9 @@ void handleSlotPerformerMode() {
   }
   x += w + gap;
   if (isButtonPressed(x, bottomY, w, h)) {
-    gState.page = (gState.page == 0) ? 0 : static_cast<uint8_t>(gState.page - 1);
+    if (gState.page > 0) {
+      gState.page = static_cast<uint8_t>(gState.page - 1);
+    }
     requestRedraw();
     return;
   }
