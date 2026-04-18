@@ -13,6 +13,10 @@
 namespace {
 
 static constexpr uint8_t kMaxSlots = 12;
+static constexpr uint8_t kQuantizeOptions = 5;
+static constexpr uint8_t kMaxMidiChannels = 16;
+static constexpr uint8_t kPatternSteps = 16;
+static constexpr uint8_t kSwingTicksMaxOffset = 3;  // ~half-step offset at 16th resolution
 static constexpr uint16_t kTicksPerQuarter = 24;
 static constexpr uint16_t kTicksPerBar = 96;
 static constexpr uint16_t kMaxLoopEvents = 384;
@@ -118,12 +122,12 @@ static const char *slotTypeLabel(SlotType type) {
 
 static const char *quantizeLabel(uint8_t index) {
   static const char *kLabels[] = {"1/4", "1/8", "1/16", "1/32", "1/8T"};
-  return kLabels[index % 5];
+  return (index < kQuantizeOptions) ? kLabels[index] : kLabels[0];
 }
 
 static uint8_t quantizeTicks(uint8_t index) {
   static const uint8_t kTicks[] = {24, 12, 6, 3, 8};
-  return kTicks[index % 5];
+  return (index < kQuantizeOptions) ? kTicks[index] : kTicks[0];
 }
 
 static uint8_t clampConfiguredSlotCount() {
@@ -152,6 +156,12 @@ static uint16_t quantizeTick(uint32_t relTick, uint8_t qTicks) {
   if (qTicks == 0) return 0;
   uint32_t rounded = (relTick + (qTicks / 2)) / qTicks;
   return static_cast<uint16_t>(rounded * qTicks);
+}
+
+static uint8_t clampDensity(uint8_t value) {
+  if (value < 1) return 1;
+  if (value > kPatternSteps) return kPatternSteps;
+  return value;
 }
 
 static void touchActivity(uint8_t slotIndex) {
@@ -231,7 +241,9 @@ static void captureRecordEvent(uint8_t slotIndex, uint8_t note, uint8_t velocity
   }
 
   if (gState.captureNotes[note].active) {
-    uint16_t minOff = static_cast<uint16_t>(gState.captureNotes[note].onTick + target.loopQuantizeTicks);
+    uint32_t minOffRaw = static_cast<uint32_t>(gState.captureNotes[note].onTick) +
+                         static_cast<uint32_t>(target.loopQuantizeTicks);
+    uint16_t minOff = static_cast<uint16_t>((minOffRaw > 0xFFFFu) ? 0xFFFFu : minOffRaw);
     if (qt < minOff) {
       qt = minOff;
     }
@@ -379,11 +391,11 @@ static void processLooperSlot(uint8_t slotIndex) {
 
 static bool engineShouldTrigger(const SlotState &slot, uint16_t stepIndex) {
   if (slot.type == SlotType::ENGINE_EUCLID) {
-    uint8_t pulses = slot.density < 1 ? 1 : (slot.density > 16 ? 16 : slot.density);
-    return ((stepIndex * pulses) % 16) < pulses;
+    uint8_t pulses = clampDensity(slot.density);
+    return ((stepIndex * pulses) % kPatternSteps) < pulses;
   }
   // Dimensions engine: controlled randomness from density.
-  return random(16) < slot.density;
+  return random(kPatternSteps) < slot.density;
 }
 
 static void processEngineSlot(uint8_t slotIndex) {
@@ -399,7 +411,8 @@ static void processEngineSlot(uint8_t slotIndex) {
       emitNoteWithDuration(slotIndex, note, 96, 4);
     }
 
-    uint8_t swingTicks = static_cast<uint8_t>((gState.swing * 3) / 50);
+    uint8_t swingTicks =
+        static_cast<uint8_t>((gState.swing * kSwingTicksMaxOffset) / 50);
     uint8_t baseStep = 6;
     uint8_t duration = baseStep;
     if ((step & 1U) == 0U) {
@@ -596,7 +609,7 @@ static void resetSlotState(uint8_t slotIndex, SlotType newType) {
   }
   SlotState replacement;
   replacement.type = newType;
-  replacement.midiChannel = static_cast<uint8_t>((slotIndex % 16) + 1);
+  replacement.midiChannel = static_cast<uint8_t>((slotIndex % kMaxMidiChannels) + 1);
   replacement.baseNote = static_cast<uint8_t>(48 + (slotIndex * 2));
   replacement.loopLengthTicks = loopLengthTicksFromBars(gState.bars);
   replacement.loopQuantizeTicks = quantizeTicks(gState.quantizeIndex);
@@ -714,13 +727,13 @@ void handleSlotPerformerMode() {
 
     if (isButtonPressed(x + SCALE_X(10), rowY, halfW, rowH)) {
       SlotState &slot = gState.slots[gState.selectedSlot];
-      slot.midiChannel = (slot.midiChannel <= 1) ? 16 : (slot.midiChannel - 1);
+      slot.midiChannel = (slot.midiChannel <= 1) ? kMaxMidiChannels : (slot.midiChannel - 1);
       requestRedraw();
       return;
     }
     if (isButtonPressed(x + SCALE_X(20) + halfW, rowY, halfW, rowH)) {
       SlotState &slot = gState.slots[gState.selectedSlot];
-      slot.midiChannel = (slot.midiChannel >= 16) ? 1 : (slot.midiChannel + 1);
+      slot.midiChannel = (slot.midiChannel >= kMaxMidiChannels) ? 1 : (slot.midiChannel + 1);
       requestRedraw();
       return;
     }
@@ -814,17 +827,19 @@ void handleSlotPerformerMode() {
   x += w + gap;
   if (isButtonPressed(x, bottomY, w, h)) {
     static const uint8_t kBars[] = {1, 2, 4, 8};
+    static constexpr size_t kBarsCount = sizeof(kBars) / sizeof(kBars[0]);
     uint8_t idx = 0;
-    for (; idx < 4; ++idx) {
+    for (; idx < kBarsCount; ++idx) {
       if (kBars[idx] == gState.bars) break;
     }
-    gState.bars = kBars[(idx + 1) % 4];
+    gState.bars = kBars[(idx + 1) % kBarsCount];
     requestRedraw();
     return;
   }
   x += w + gap;
   if (isButtonPressed(x, bottomY, w, h)) {
-    gState.quantizeIndex = static_cast<uint8_t>((gState.quantizeIndex + 1) % 5);
+    gState.quantizeIndex =
+        static_cast<uint8_t>((gState.quantizeIndex + 1) % kQuantizeOptions);
     requestRedraw();
     return;
   }
