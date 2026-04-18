@@ -127,7 +127,8 @@ enum AppMode {
   BABY8,
 #endif
   FRACTAL_ECHO,
-  DIMENSIONS
+  DIMENSIONS,
+  SLOT_PERFORMER
 };
 
 enum MidiClockMaster {
@@ -170,6 +171,7 @@ extern bool displayColorsInverted;
 extern uint8_t displayRotationIndex;
 extern bool instantStartMode;
 extern MenuMode currentMenuMode;
+extern uint8_t slotSystemSlotCount;
 
 void setDisplayInversion(bool invert);
 void rotateDisplay180();

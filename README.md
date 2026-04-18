@@ -22,7 +22,7 @@ This project was based on and heavily inspired by NickCulbertson/CYD-MIDI-Contro
 
 See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and Wi-Fi notes.
 
-### 16 Interactive Modes
+### 17+ Interactive Modes
 
 - **KEYS** - Virtual piano keyboard with scale and key controls
 - **BEATS** - 16-step sequencer with 4 tracks and tempo control
@@ -42,6 +42,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **MORPH** - Gesture morphing surface that blends stored slots, X/Y sliders, and rec/play controls
 - **SLINK** - Dual-wave generative engine with 16-band triggering, tabbed parameter panels, and MIDI scale/clock modulation for evolving textures ([docs/SLINK_IMPLEMENTATION.md](docs/SLINK_IMPLEMENTATION.md))
 - **DIMENSIONS** - Parametric sequencer using mathematical equations to generate MIDI patterns - 20 equations with A/B/C/D parameters for creating evolving, non-obvious melodies and rhythms (ported from [ErikOostveen/Dimensions](https://github.com/ErikOostveen/Dimensions))
+- **SLOTS** - Slot-based multi-sequencer with global transport, per-slot mute/channel assignment, and quantized looper recording (experimental menu)
 
 ### Core Features
 

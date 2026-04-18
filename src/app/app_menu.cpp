@@ -15,6 +15,7 @@
 #include "screenshot.h"
 #include "ui_elements.h"
 #include "module_settings_mode.h"
+#include "module_slot_performer_mode.h"
 #include "module_waaave_mode.h"
 #include "module_slink_mode.h"
 #ifdef ENABLE_M5_8ENCODER
@@ -80,7 +81,7 @@ static const MenuTile kExperimentalMenuTiles[] = {
   {"WAAAVE", MenuIcon::Waaave, WAAAVE},
   {"FRACTAL", MenuIcon::FractalEcho, FRACTAL_ECHO},
   {"DIMS", MenuIcon::Dimensions, DIMENSIONS},
-  {"", MenuIcon::Empty, MENU},
+  {"SLOTS", MenuIcon::Grid, SLOT_PERFORMER},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
@@ -265,6 +266,7 @@ void captureAllScreenshots() {
     {MORPH, "morph", "Morph - Morphing pattern generator"},
     {FRACTAL_ECHO, "fractal", "Fractal Echo - Fractal-based music generator"},
     {DIMENSIONS, "dimensions", "Dimensions - Multi-dimensional parameter space"},
+    {SLOT_PERFORMER, "slots", "Slots - Multi-slot transport sequencer"},
 #ifdef ENABLE_BABY8_EMU
     {BABY8, "baby8", "Baby8 - Vintage computer emulator music mode"},
 #endif
