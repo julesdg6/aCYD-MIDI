@@ -20,6 +20,8 @@ static constexpr uint16_t kTicksPerQuarter = 24;
 static constexpr uint16_t kTicksPerBar = 96;
 static constexpr uint16_t kMaxLoopEvents = 384;
 static constexpr uint8_t kNoSlot = 0xFF;
+static constexpr uint8_t kDefaultEngineVelocity = 96;
+static constexpr uint8_t kDefaultEngineDurationTicks = 4;
 
 enum class SlotType : uint8_t {
   EMPTY = 0,
@@ -154,13 +156,18 @@ static uint16_t loopLengthTicksFromBars(uint8_t bars) {
 static uint16_t quantizeTick(uint32_t relTick, uint8_t qTicks) {
   if (qTicks == 0) return 0;
   uint32_t rounded = (relTick + (qTicks / 2)) / qTicks;
-  return static_cast<uint16_t>(rounded * qTicks);
+  uint32_t quantized = rounded * qTicks;
+  return static_cast<uint16_t>((quantized > UINT16_MAX) ? UINT16_MAX : quantized);
 }
 
 static uint8_t clampDensity(uint8_t value) {
   if (value < 1) return 1;
   if (value > kPatternSteps) return kPatternSteps;
   return value;
+}
+
+static uint16_t saturateToUint16(uint32_t value) {
+  return static_cast<uint16_t>((value > UINT16_MAX) ? UINT16_MAX : value);
 }
 
 static void touchActivity(uint8_t slotIndex) {
@@ -242,8 +249,7 @@ static void captureRecordEvent(uint8_t slotIndex, uint8_t note, uint8_t velocity
   if (gState.captureNotes[note].active) {
     uint32_t minOffRaw = static_cast<uint32_t>(gState.captureNotes[note].onTick) +
                          static_cast<uint32_t>(target.loopQuantizeTicks);
-    uint16_t minOff =
-        static_cast<uint16_t>((minOffRaw > UINT16_MAX) ? UINT16_MAX : minOffRaw);
+    uint16_t minOff = saturateToUint16(minOffRaw);
     if (qt < minOff) {
       qt = minOff;
     }
@@ -395,6 +401,7 @@ static bool engineShouldTrigger(const SlotState &slot, uint16_t stepIndex) {
     return ((stepIndex * pulses) % kPatternSteps) < pulses;
   }
   // Dimensions engine: deterministic pseudo-random trigger per step.
+  // Multipliers (13, 7) are co-prime with 16-step length to disperse hits.
   uint8_t value = static_cast<uint8_t>((stepIndex * 13 + slot.baseNote * 7 + slot.density) % kPatternSteps);
   return value < clampDensity(slot.density);
 }
@@ -409,7 +416,7 @@ static void processEngineSlot(uint8_t slotIndex) {
     uint16_t step = slot.engineStepIndex++;
     if (engineShouldTrigger(slot, step)) {
       uint8_t note = static_cast<uint8_t>(slot.baseNote + (step % 8));
-      emitNoteWithDuration(slotIndex, note, 96, 4);
+      emitNoteWithDuration(slotIndex, note, kDefaultEngineVelocity, kDefaultEngineDurationTicks);
     }
 
     uint8_t swingTicks =
@@ -827,7 +834,7 @@ void handleSlotPerformerMode() {
   }
   x += w + gap;
   if (isButtonPressed(x, bottomY, w, h)) {
-    static const uint8_t kBars[] = {1, 2, 4, 8};
+    static constexpr uint8_t kBars[] = {1, 2, 4, 8};
     static constexpr size_t kBarsCount = sizeof(kBars) / sizeof(kBars[0]);
     uint8_t idx = 0;
     for (; idx < kBarsCount; ++idx) {

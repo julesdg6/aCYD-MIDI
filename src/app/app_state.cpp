@@ -27,8 +27,7 @@ uint8_t displayRotationIndex = DEFAULT_DISPLAY_ROTATION;
 
 bool instantStartMode = false;
 MenuMode currentMenuMode = MENU_ORIGINAL;
-static constexpr uint8_t kDefaultSlotSystemSlotCount = SLOT_SYSTEM_DEFAULT_SLOTS;
-uint8_t slotSystemSlotCount = kDefaultSlotSystemSlotCount;
+uint8_t slotSystemSlotCount = SLOT_SYSTEM_DEFAULT_SLOTS;
 
 // UART2 instance for hardware MIDI (only used when HARDWARE_MIDI_UART == 2)
 // This definition matches the extern declaration in hardware_midi.h
