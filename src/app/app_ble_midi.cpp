@@ -89,7 +89,7 @@ class MidiCharacteristicCallbacks : public BLECharacteristicCallbacks {
       // BLE MIDI outgoing packets from this project are packed as:
       // [0x80, 0x80, status, data1, data2]
       // Decode that format to allow optional keypad triggering from external MIDI.
-      for (size_t i = 0; i + 4 < size; i += 5) {
+      for (size_t i = 0; i + 5 <= size; i += 5) {
         if ((bytes[i] & 0x80) != 0x80 || (bytes[i + 1] & 0x80) != 0x80) {
           continue;
         }

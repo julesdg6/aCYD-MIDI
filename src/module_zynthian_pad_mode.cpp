@@ -50,6 +50,29 @@ struct PadState {
   uint32_t pressedUntilMs = 0;
 } gPadState;
 
+struct PadLayout {
+  int areaX;
+  int areaY;
+  int gapX;
+  int gapY;
+  int buttonW;
+  int buttonH;
+};
+
+static PadLayout computeLayout() {
+  const int areaX = MARGIN_SMALL;
+  const int areaY = HEADER_HEIGHT + SCALE_Y(8);
+  const int areaW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
+  const int areaH = DISPLAY_HEIGHT - areaY - MARGIN_SMALL;
+  const int gapX = SCALE_X(6);
+  const int gapY = SCALE_Y(4);
+  const int buttonW = (areaW - (kCols - 1) * gapX) / kCols;
+  const int buttonH = (areaH - (kRows - 1) * gapY) / kRows;
+  return {areaX, areaY, gapX, gapY, buttonW, buttonH};
+}
+
+// Zynthian keypad keycodes derived from kpnum_jofe.yaml and extended with
+// a few local virtual keys for ALSA mixer / BACK / F2 support.
 static uint8_t actionKeycode(ZynthianPadAction action) {
   switch (action) {
     case ZynthianPadAction::PRESET:
@@ -207,22 +230,14 @@ void initializeZynthianPadMode() {
 void drawZynthianPadMode() {
   drawHeader("KPNUM", "Zynthian v5");
   tft.fillRect(0, HEADER_HEIGHT + 1, DISPLAY_WIDTH, DISPLAY_HEIGHT - HEADER_HEIGHT - 1, THEME_BG);
-
-  const int areaX = MARGIN_SMALL;
-  const int areaY = HEADER_HEIGHT + SCALE_Y(8);
-  const int areaW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
-  const int areaH = DISPLAY_HEIGHT - areaY - MARGIN_SMALL;
-  const int gapX = SCALE_X(6);
-  const int gapY = SCALE_Y(4);
-  const int buttonW = (areaW - (kCols - 1) * gapX) / kCols;
-  const int buttonH = (areaH - (kRows - 1) * gapY) / kRows;
+  const PadLayout layout = computeLayout();
 
   for (int row = 0; row < kRows; ++row) {
     for (int col = 0; col < kCols; ++col) {
-      int x = areaX + col * (buttonW + gapX);
-      int y = areaY + row * (buttonH + gapY);
+      int x = layout.areaX + col * (layout.buttonW + layout.gapX);
+      int y = layout.areaY + row * (layout.buttonH + layout.gapY);
       bool pressed = (row == gPadState.pressedRow && col == gPadState.pressedCol);
-      drawPadButton(x, y, buttonW, buttonH, kPadButtons[row][col], pressed);
+      drawPadButton(x, y, layout.buttonW, layout.buttonH, kPadButtons[row][col], pressed);
     }
   }
 }
@@ -243,20 +258,13 @@ void handleZynthianPadMode() {
     return;
   }
 
-  const int areaX = MARGIN_SMALL;
-  const int areaY = HEADER_HEIGHT + SCALE_Y(8);
-  const int areaW = DISPLAY_WIDTH - 2 * MARGIN_SMALL;
-  const int areaH = DISPLAY_HEIGHT - areaY - MARGIN_SMALL;
-  const int gapX = SCALE_X(6);
-  const int gapY = SCALE_Y(4);
-  const int buttonW = (areaW - (kCols - 1) * gapX) / kCols;
-  const int buttonH = (areaH - (kRows - 1) * gapY) / kRows;
+  const PadLayout layout = computeLayout();
 
   for (int row = 0; row < kRows; ++row) {
     for (int col = 0; col < kCols; ++col) {
-      int x = areaX + col * (buttonW + gapX);
-      int y = areaY + row * (buttonH + gapY);
-      if (isButtonPressed(x, y, buttonW, buttonH)) {
+      int x = layout.areaX + col * (layout.buttonW + layout.gapX);
+      int y = layout.areaY + row * (layout.buttonH + layout.gapY);
+      if (isButtonPressed(x, y, layout.buttonW, layout.buttonH)) {
         gPadState.pressedRow = row;
         gPadState.pressedCol = col;
         gPadState.pressedUntilMs = millis() + kButtonPressDurationMs;
