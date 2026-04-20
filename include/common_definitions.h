@@ -133,6 +133,7 @@ enum AppMode {
 #endif
   FRACTAL_ECHO,
   DIMENSIONS,
+  ZYNTHIAN_PAD,
   SLOT_PERFORMER
 };
 

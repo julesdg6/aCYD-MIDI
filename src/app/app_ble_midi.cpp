@@ -16,6 +16,7 @@
 #include "common_definitions.h"
 #include "midi_transport.h"
 #include "midi_utils.h"
+#include "module_zynthian_pad_mode.h"
 
 namespace {
 
@@ -81,8 +82,19 @@ class MidiCharacteristicCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *characteristic) override {
     std::string value = characteristic->getValue();
     if (!value.empty()) {
-      midiTransportProcessIncomingBytes(reinterpret_cast<const uint8_t *>(value.data()),
-                                        value.size());
+      const uint8_t *bytes = reinterpret_cast<const uint8_t *>(value.data());
+      const size_t size = value.size();
+      midiTransportProcessIncomingBytes(bytes, size);
+
+      // BLE MIDI outgoing packets from this project are packed as:
+      // [0x80, 0x80, status, data1, data2]
+      // Decode that format to allow optional keypad triggering from external MIDI.
+      for (size_t i = 0; i + 5 <= size; i += 5) {
+        if ((bytes[i] & 0x80) != 0x80 || (bytes[i + 1] & 0x80) != 0x80) {
+          continue;
+        }
+        triggerZynthianPadActionFromMidi(bytes[i + 2], bytes[i + 3], bytes[i + 4]);
+      }
     }
   }
 };

@@ -39,6 +39,7 @@ void processSerialCommands() {
         else if (arg == "TB3PO") switchMode(TB3PO);
         else if (arg == "SEQUENCER") switchMode(SEQUENCER);
         else if (arg == "RNG" || arg == "RANDOM_GENERATOR") switchMode(RANDOM_GENERATOR);
+        else if (arg == "KPNUM" || arg == "ZYNTHIAN_PAD") switchMode(ZYNTHIAN_PAD);
         Serial.printf("CLI: MODE %s -> %d\n", arg.c_str(), (int)currentMode);
       } else if (cmd.startsWith("MODULE ")) {
         // MODULE START RAGA
@@ -66,4 +67,3 @@ void processSerialCommands() {
   }
 #endif
 }
-

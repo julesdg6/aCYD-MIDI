@@ -24,6 +24,7 @@
 #include "module_tb3po_mode.h"
 #include "module_waaave_mode.h"
 #include "module_xy_pad_mode.h"
+#include "module_zynthian_pad_mode.h"
 #ifdef ENABLE_M5_8ENCODER
 #include "module_encoder_panel_mode.h"
 #endif
@@ -87,6 +88,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
 #endif
     /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
     /* DIMENSIONS */ {initializeDimensionsMode, drawDimensionsMode, handleDimensionsMode},
+    /* ZYNTHIAN_PAD */ {initializeZynthianPadMode, drawZynthianPadMode, handleZynthianPadMode},
     /* SLOT_PERFORMER */ {initializeSlotPerformerMode, drawSlotPerformerMode, handleSlotPerformerMode},
 };
 
