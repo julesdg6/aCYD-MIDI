@@ -223,6 +223,16 @@ void bleMidiBegin() {
   ble_initialized = false;
   ble_request_redraw = false;
   ble_disconnect_action = false;
+
+  // Attempt BLE initialization early in boot while heap is least fragmented.
+  if (setupBLE()) {
+    ble_initialized = true;
+  } else {
+    ble_init_start_ms = millis();
+#if DEBUG_ENABLED
+    Serial.println("BLE initialization failed during startup; retrying in 5s");
+#endif
+  }
 #endif
 }
 
