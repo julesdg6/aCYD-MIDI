@@ -494,6 +494,18 @@ static void computeGrid(int &gridY, int &gridH, int &cols, int &rows, int &cardW
 }
 
 static void drawSlotCard(uint8_t slotIndex, int x, int y, int w, int h) {
+  auto drawRightLabel = [&](const char *label, int rightX, int yPos) {
+    // For font 1 in smartdisplay_compat, monospace ASCII glyph width is ~6px.
+    // If font or charset changes, this alignment estimate may need adjustment.
+    if (!label) {
+      return;
+    }
+    static constexpr int kApproxFont1CharWidth = 6;
+    size_t len = strlen(label);
+    int textWidth = static_cast<int>(len * kApproxFont1CharWidth);
+    tft.drawString(label, rightX - textWidth, yPos, 1);
+  };
+
   const SlotState &slot = gState.slots[slotIndex];
   bool selected = (slotIndex == gState.selectedSlot);
   uint16_t border = selected ? THEME_ACCENT : THEME_TEXT_DIM;
@@ -503,14 +515,14 @@ static void drawSlotCard(uint8_t slotIndex, int x, int y, int w, int h) {
 
   tft.setTextColor(THEME_TEXT, fill);
   tft.drawString(String("S") + (slotIndex + 1), x + SCALE_X(6), y + SCALE_Y(5), 1);
-  tft.drawString(slotTypeLabel(slot.type), x + w - SCALE_X(56), y + SCALE_Y(5), 1);
+  drawRightLabel(slotTypeLabel(slot.type), x + w - SCALE_X(6), y + SCALE_Y(5));
   tft.setTextColor(THEME_TEXT_DIM, fill);
   tft.drawString(String("CH ") + slot.midiChannel, x + SCALE_X(6), y + SCALE_Y(20), 1);
 
   const char *muteLabel = slot.muted ? "MUTE" : "LIVE";
   uint16_t muteColor = slot.muted ? THEME_WARNING : THEME_SUCCESS;
   tft.setTextColor(muteColor, fill);
-  tft.drawString(muteLabel, x + w - SCALE_X(42), y + SCALE_Y(20), 1);
+  drawRightLabel(muteLabel, x + w - SCALE_X(6), y + SCALE_Y(20));
 
   if (slot.activity && millis() <= slot.activityUntilMs) {
     tft.fillCircle(x + SCALE_X(10), y + h - SCALE_Y(10), SCALE_X(4), THEME_PRIMARY);
