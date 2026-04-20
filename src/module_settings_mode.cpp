@@ -34,6 +34,7 @@ struct SettingsLayout {
   int clockRowY;
   int startModeRowY;
   int menuModeRowY;
+  int slotCountRowY;
   int wifiRowY;
   int bluetoothRowY;
   int espNowRowY;
@@ -63,6 +64,8 @@ static SettingsLayout computeSettingsLayout() {
   layout.startModeRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.menuModeRowY = y;
+  y += compactRowHeight() + settingsRowSpacing();
+  layout.slotCountRowY = y;
   y += compactRowHeight() + settingsRowSpacing();
   layout.wifiRowY = y;
   y += statusRowHeight() + settingsRowSpacing();
@@ -162,6 +165,18 @@ void drawSettingsMode() {
     String menuLabel = (currentMenuMode == MENU_EXPERIMENTAL) ? "Experimental" : "Original";
     drawRoundButton(rowInnerLeft, menuModeRowY, rowInnerW, compactRowHeight(),
                     menuLabel, THEME_ACCENT, false, 2);
+  }
+
+  const int slotCountRowY = layout.slotCountRowY - settingsScrollOffset;
+  const int slotCountLabelY = slotCountRowY - SCALE_Y(18);
+  const int slotCountLabelH = SCALE_Y(18);
+  if ((slotCountRowY + compactRowHeight() > layout.viewTop && slotCountRowY < viewBottom) ||
+      (slotCountLabelY + slotCountLabelH > layout.viewTop && slotCountLabelY < viewBottom)) {
+    tft.setTextColor(THEME_TEXT_DIM, THEME_SURFACE);
+    int labelY = slotCountLabelY;
+    tft.drawString("Slot Count", rowInnerLeft, labelY, 2);
+    drawRoundButton(rowInnerLeft, slotCountRowY, rowInnerW, compactRowHeight(),
+                    String(slotSystemSlotCount), THEME_PRIMARY, false, 2);
   }
 
   const int wifiRowY = layout.wifiRowY - settingsScrollOffset;
@@ -374,6 +389,18 @@ void handleSettingsMode() {
   if (!handled && touch.justPressed &&
       isButtonPressed(menuModeRowX, menuModeRowY, menuModeRowW, compactRowHeight())) {
     currentMenuMode = (currentMenuMode == MENU_ORIGINAL) ? MENU_EXPERIMENTAL : MENU_ORIGINAL;
+    requestRedraw();
+    handled = true;
+  }
+
+  const int slotCountRowY = layout.slotCountRowY - settingsScrollOffset;
+  if (!handled && touch.justPressed &&
+      isButtonPressed(rowInnerLeft, slotCountRowY, rowInnerW, compactRowHeight())) {
+    if (slotSystemSlotCount >= SLOT_SYSTEM_MAX_SLOTS) {
+      slotSystemSlotCount = SLOT_SYSTEM_MIN_SLOTS;
+    } else {
+      slotSystemSlotCount++;
+    }
     requestRedraw();
     handled = true;
   }

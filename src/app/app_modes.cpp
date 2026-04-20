@@ -20,6 +20,7 @@
 #include "module_sequencer_mode.h"
 #include "module_settings_mode.h"
 #include "module_slink_mode.h"
+#include "module_slot_performer_mode.h"
 #include "module_tb3po_mode.h"
 #include "module_waaave_mode.h"
 #include "module_xy_pad_mode.h"
@@ -50,7 +51,7 @@ static void initSettingsMode() {
   initializeSettingsMode();
 }
 
-constexpr size_t kModeCount = static_cast<size_t>(DIMENSIONS) + 1;
+constexpr size_t kModeCount = static_cast<size_t>(SLOT_PERFORMER) + 1;
 
 static void initBPMSettingsMode() {
   // Don't stop playback - allow BPM adjustment during playback
@@ -86,6 +87,7 @@ constexpr ModeEntry kModeTable[kModeCount] = {
 #endif
     /* FRACTAL_ECHO */ {initializeFractalEchoMode, drawFractalEchoMode, handleFractalEchoMode},
     /* DIMENSIONS */ {initializeDimensionsMode, drawDimensionsMode, handleDimensionsMode},
+    /* SLOT_PERFORMER */ {initializeSlotPerformerMode, drawSlotPerformerMode, handleSlotPerformerMode},
 };
 
 static_assert(sizeof(kModeTable) / sizeof(kModeTable[0]) == kModeCount,

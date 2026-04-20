@@ -52,6 +52,11 @@ extern DisplayConfig displayConfig;
 #define BACK_BUTTON_W SCALE_X(50)
 #define BACK_BUTTON_H SCALE_Y(25)
 
+// Slot system configuration defaults/limits
+static constexpr uint8_t SLOT_SYSTEM_MIN_SLOTS = 1;
+static constexpr uint8_t SLOT_SYSTEM_MAX_SLOTS = 12;
+static constexpr uint8_t SLOT_SYSTEM_DEFAULT_SLOTS = 6;
+
 // Common button dimensions
 #define BTN_SMALL_W SCALE_X(40)
 #define BTN_SMALL_H SCALE_Y(25)
@@ -127,7 +132,8 @@ enum AppMode {
   BABY8,
 #endif
   FRACTAL_ECHO,
-  DIMENSIONS
+  DIMENSIONS,
+  SLOT_PERFORMER
 };
 
 enum MidiClockMaster {
@@ -170,6 +176,7 @@ extern bool displayColorsInverted;
 extern uint8_t displayRotationIndex;
 extern bool instantStartMode;
 extern MenuMode currentMenuMode;
+extern uint8_t slotSystemSlotCount;
 
 void setDisplayInversion(bool invert);
 void rotateDisplay180();
