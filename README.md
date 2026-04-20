@@ -22,7 +22,7 @@ This project was based on and heavily inspired by NickCulbertson/CYD-MIDI-Contro
 
 See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and Wi-Fi notes.
 
-### 17+ Interactive Modes
+### 18+ Interactive Modes
 
 - **KEYS** - Virtual piano keyboard with scale and key controls
 - **BEATS** - 16-step sequencer with 4 tracks and tempo control
@@ -43,6 +43,7 @@ See [`docs/README.md`](docs/README.md) for module deep-dives, capture flow, and 
 - **SLINK** - Dual-wave generative engine with 16-band triggering, tabbed parameter panels, and MIDI scale/clock modulation for evolving textures ([docs/SLINK_IMPLEMENTATION.md](docs/SLINK_IMPLEMENTATION.md))
 - **DIMENSIONS** - Parametric sequencer using mathematical equations to generate MIDI patterns - 20 equations with A/B/C/D parameters for creating evolving, non-obvious melodies and rhythms (ported from [ErikOostveen/Dimensions](https://github.com/ErikOostveen/Dimensions))
 - **SLOTS** - Slot-based multi-sequencer with global transport, per-slot mute/channel assignment, and quantized looper recording (experimental menu)
+- **KPNUM** - Zynthian v5 keypad emulator (kpnum_jofe-inspired) with a 5x4 touch pad, menu/navigation actions, and play/record transport toggles (experimental menu)
 
 ### Core Features
 

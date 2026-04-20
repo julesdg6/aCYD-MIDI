@@ -82,7 +82,7 @@ static const MenuTile kExperimentalMenuTiles[] = {
   {"FRACTAL", MenuIcon::FractalEcho, FRACTAL_ECHO},
   {"DIMS", MenuIcon::Dimensions, DIMENSIONS},
   {"SLOTS", MenuIcon::Grid, SLOT_PERFORMER},
-  {"", MenuIcon::Empty, MENU},
+  {"KPNUM", MenuIcon::Grid, ZYNTHIAN_PAD},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
   {"", MenuIcon::Empty, MENU},
@@ -124,6 +124,7 @@ static const CaptureEntry kCaptureSequence[] = {
     {MORPH, "morph"},
     {SLINK, "slink"},
     {WAAAVE, "waaave"},
+    {ZYNTHIAN_PAD, "kpnum"},
 #ifdef ENABLE_M5_8ENCODER
     {ENCODER_PANEL, "encoder_panel"},
 #endif
@@ -266,6 +267,7 @@ void captureAllScreenshots() {
     {MORPH, "morph", "Morph - Morphing pattern generator"},
     {FRACTAL_ECHO, "fractal", "Fractal Echo - Fractal-based music generator"},
     {DIMENSIONS, "dimensions", "Dimensions - Multi-dimensional parameter space"},
+    {ZYNTHIAN_PAD, "kpnum", "KPNUM - Zynthian keypad emulator"},
     {SLOT_PERFORMER, "slots", "Slots - Multi-slot transport sequencer"},
 #ifdef ENABLE_BABY8_EMU
     {BABY8, "baby8", "Baby8 - Vintage computer emulator music mode"},
