@@ -6,11 +6,16 @@
 #include <SPI.h>
 #include <lvgl.h>
 
-// SD Card pin for ESP32-2432S028R (CYD)
-// Note: SD card uses same SPI bus as display
-// The SD card CS pin is board-specific and may vary
-// Common values: 5 (some variants) or no SD card on some boards
-#define SD_CS_PIN 5  // SD card chip select pin - adjust if needed
+// SD Card pins
+// Prefer board-provided TF_* build flags where available.
+#ifndef SD_CS_PIN
+#ifdef TF_CS
+#define SD_CS_PIN TF_CS
+#else
+// Fallback: common CS value for CYD variants with TF slot
+#define SD_CS_PIN 5
+#endif
+#endif
 
 // Screenshot functions
 bool initializeSD();
