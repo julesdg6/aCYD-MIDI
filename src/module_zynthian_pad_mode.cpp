@@ -11,6 +11,7 @@ static constexpr int kCols = 4;
 static constexpr int kRows = 5;
 static constexpr uint8_t kActionChannel = 15;  // MIDI channel 16
 static constexpr uint8_t kToggleRecordStateCC = 119;
+static constexpr uint32_t kButtonPressDurationMs = 120;
 
 struct PadButton {
   const char *line1;
@@ -258,7 +259,7 @@ void handleZynthianPadMode() {
       if (isButtonPressed(x, y, buttonW, buttonH)) {
         gPadState.pressedRow = row;
         gPadState.pressedCol = col;
-        gPadState.pressedUntilMs = millis() + 120;
+        gPadState.pressedUntilMs = millis() + kButtonPressDurationMs;
         performAction(kPadButtons[row][col].action, true);
         requestRedraw();
         return;
@@ -278,15 +279,11 @@ bool triggerZynthianPadActionFromMidi(uint8_t status, uint8_t data1, uint8_t dat
     return false;
   }
 
-  bool trigger = false;
-  if (messageType == 0x90) {
-    trigger = (data2 > 0);
-  } else if (messageType == 0xB0) {
-    trigger = (data2 > 0);
-  } else {
+  if (messageType != 0x90 && messageType != 0xB0) {
     return false;
   }
 
+  bool trigger = (data2 > 0);
   if (!trigger) {
     return false;
   }
@@ -301,7 +298,7 @@ bool triggerZynthianPadActionFromMidi(uint8_t status, uint8_t data1, uint8_t dat
   if (findButtonForAction(action, row, col)) {
     gPadState.pressedRow = row;
     gPadState.pressedCol = col;
-    gPadState.pressedUntilMs = millis() + 120;
+    gPadState.pressedUntilMs = millis() + kButtonPressDurationMs;
   }
 
   performAction(action, false);
