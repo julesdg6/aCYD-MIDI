@@ -503,14 +503,14 @@ static void drawSlotCard(uint8_t slotIndex, int x, int y, int w, int h) {
 
   tft.setTextColor(THEME_TEXT, fill);
   tft.drawString(String("S") + (slotIndex + 1), x + SCALE_X(6), y + SCALE_Y(5), 1);
-  tft.drawRightString(slotTypeLabel(slot.type), x + w - SCALE_X(6), y + SCALE_Y(5), 1);
+  tft.drawString(slotTypeLabel(slot.type), x + w - SCALE_X(56), y + SCALE_Y(5), 1);
   tft.setTextColor(THEME_TEXT_DIM, fill);
   tft.drawString(String("CH ") + slot.midiChannel, x + SCALE_X(6), y + SCALE_Y(20), 1);
 
   const char *muteLabel = slot.muted ? "MUTE" : "LIVE";
   uint16_t muteColor = slot.muted ? THEME_WARNING : THEME_SUCCESS;
   tft.setTextColor(muteColor, fill);
-  tft.drawRightString(muteLabel, x + w - SCALE_X(6), y + SCALE_Y(20), 1);
+  tft.drawString(muteLabel, x + w - SCALE_X(42), y + SCALE_Y(20), 1);
 
   if (slot.activity && millis() <= slot.activityUntilMs) {
     tft.fillCircle(x + SCALE_X(10), y + h - SCALE_Y(10), SCALE_X(4), THEME_PRIMARY);
