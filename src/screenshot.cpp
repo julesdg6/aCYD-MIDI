@@ -5,6 +5,9 @@
 
 static bool sdInitialized = false;
 static int screenshot_count = 0;
+#if defined(ARDUINO_ARCH_ESP32) && defined(VSPI)
+static SPIClass tfSpi(VSPI);
+#endif
 
 static void sanitizeLabel(const char *src, char *dst, size_t len) {
     size_t idx = 0;
@@ -62,8 +65,35 @@ bool initializeSD() {
         return true;
     }
     
+    SPIClass *sdSpi = &SPI;
+#if defined(ARDUINO_ARCH_ESP32) && defined(VSPI)
+    sdSpi = &tfSpi;
+#endif
+
+    pinMode(SD_CS_PIN, OUTPUT);
+    digitalWrite(SD_CS_PIN, HIGH);
+
+    // Initialize SPI with board-defined TF pins when available
+#if defined(TF_SPI_SCLK) && defined(TF_SPI_MISO) && defined(TF_SPI_MOSI)
+    Serial.printf("SD SPI pins: SCLK=%d MISO=%d MOSI=%d CS=%d\n", TF_SPI_SCLK, TF_SPI_MISO, TF_SPI_MOSI, SD_CS_PIN);
+    sdSpi->begin(TF_SPI_SCLK, TF_SPI_MISO, TF_SPI_MOSI, SD_CS_PIN);
+#else
+    Serial.printf("SD SPI pins: using default SPI, CS=%d\n", SD_CS_PIN);
+    sdSpi->begin();
+#endif
+
     // Initialize SD card with SPI
-    if (!SD.begin(SD_CS_PIN)) {
+    const uint32_t kSdSpeeds[] = {40000000, 20000000, 10000000, 4000000, 1000000};
+    bool sdOk = false;
+    for (uint32_t speed : kSdSpeeds) {
+        if (SD.begin(SD_CS_PIN, *sdSpi, speed)) {
+            Serial.printf("SD Card initialized at %lu Hz\n", (unsigned long)speed);
+            sdOk = true;
+            break;
+        }
+        Serial.printf("SD.begin failed at %lu Hz\n", (unsigned long)speed);
+    }
+    if (!sdOk) {
         Serial.println("SD Card initialization failed (SD.begin returned false)");
         return false;
     }
