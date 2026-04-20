@@ -87,13 +87,20 @@ class MidiCharacteristicCallbacks : public BLECharacteristicCallbacks {
   }
 };
 
-static void setupBLE() {
+static bool setupBLE() {
   static bool bt_mem_released = false;
   if (!bt_mem_released) {
-    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    esp_err_t release_result = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    if (release_result != ESP_OK && release_result != ESP_ERR_INVALID_STATE) {
+#if DEBUG_ENABLED
+      Serial.printf("Failed to release BT classic memory (error %d)\n", release_result);
+#endif
+      return false;
+    }
     bt_mem_released = true;
   }
 
+  pCharacteristic = nullptr;
   String deviceName = getUniqueDeviceName();
 
   BLEDevice::init(deviceName.c_str());
@@ -103,7 +110,10 @@ static void setupBLE() {
 
   // Configure BLE security for "Just Works" pairing (no PIN/passkey) and
   // also provide a static PIN for clients that require one.
-  BLESecurity *pSecurity = new BLESecurity();
+  // Use static instances for BLE-owned callback/config objects so retries
+  // do not leak heap allocations after a failed initialization attempt.
+  static BLESecurity security;
+  BLESecurity *pSecurity = &security;
   pSecurity->setCapability(0x03); // IO_CAPS_NONE
   pSecurity->setStaticPIN(123456);
 #if DEBUG_ENABLED
@@ -146,31 +156,63 @@ static void setupBLE() {
 #endif
     }
   };
-  BLEDevice::setSecurityCallbacks(new MyBLESecurityCallbacks());
+  static MyBLESecurityCallbacks securityCallbacks;
+  BLEDevice::setSecurityCallbacks(&securityCallbacks);
 
   BLEServer *server = BLEDevice::createServer();
-  server->setCallbacks(new MIDICallbacks());
+  if (server == nullptr) {
+#if DEBUG_ENABLED
+    Serial.println("BLE server creation failed");
+#endif
+    return false;
+  }
+  static MIDICallbacks serverCallbacks;
+  server->setCallbacks(&serverCallbacks);
   BLEService *service = server->createService(SERVICE_UUID);
-  pCharacteristic = service->createCharacteristic(
+  if (service == nullptr) {
+#if DEBUG_ENABLED
+    Serial.println("BLE service creation failed");
+#endif
+    return false;
+  }
+  BLECharacteristic *characteristic = service->createCharacteristic(
       CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
       BLECharacteristic::PROPERTY_WRITE |
       BLECharacteristic::PROPERTY_WRITE_NR |
       BLECharacteristic::PROPERTY_NOTIFY);
-  pCharacteristic->addDescriptor(new BLE2902());
-  pCharacteristic->setCallbacks(new MidiCharacteristicCallbacks());
+  if (characteristic == nullptr) {
+#if DEBUG_ENABLED
+    Serial.println("BLE characteristic creation failed");
+#endif
+    return false;
+  }
+  static BLE2902 descriptor;
+  characteristic->addDescriptor(&descriptor);
+
+  static MidiCharacteristicCallbacks characteristicCallbacks;
+  characteristic->setCallbacks(&characteristicCallbacks);
   service->start();
 
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
+  if (advertising == nullptr) {
+#if DEBUG_ENABLED
+    Serial.println("BLE advertising object is null");
+#endif
+    return false;
+  }
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->setScanResponse(true);
   advertising->setMinPreferred(0x06);
   advertising->setMaxPreferred(0x12);
   BLEDevice::startAdvertising();
 
+  pCharacteristic = characteristic;
+
 #if DEBUG_ENABLED
   Serial.printf("BLE advertising initialized for %s\n", deviceName.c_str());
 #endif
+  return true;
 }
 
 }  // namespace
@@ -190,8 +232,15 @@ void bleMidiLoop(uint32_t now) {
   return;
 #else
   if (!ble_initialized && (now - ble_init_start_ms) > 5000) {
-    setupBLE();
-    ble_initialized = true;
+    if (setupBLE()) {
+      ble_initialized = true;
+    } else {
+      // Backoff before retrying BLE initialization again.
+      ble_init_start_ms = now;
+#if DEBUG_ENABLED
+      Serial.println("BLE initialization failed; retrying in 5s");
+#endif
+    }
 
 #if ESP_NOW_ENABLED
 #if DEBUG_ENABLED
@@ -221,4 +270,3 @@ void bleMidiLoop(uint32_t now) {
   }
 #endif
 }
-
