@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - TBD
 
+### Changed
+- Refactored scheduled note-off processing in `MidiOutBuffer::updateScheduledNotes()` to batch due notes outside the scheduled-note mutex and avoid extra scheduled-note scans during note-off enqueue.
+
 ## [0.1.6] - 2026-02-11
 
 ### Changed

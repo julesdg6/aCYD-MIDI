@@ -160,19 +160,33 @@ bool MidiOutBuffer::midiStop() {
 }
 
 void MidiOutBuffer::updateScheduledNotes(uint32_t currentTick) {
+  uint8_t dueChannels[kMaxScheduledNotes];
+  uint8_t dueNotes[kMaxScheduledNotes];
+  size_t dueCount = 0;
+
   if (notesMutex_ == nullptr || xSemaphoreTake(notesMutex_, 0) != pdTRUE) {
     return;
   }
   
   for (size_t i = 0; i < kMaxScheduledNotes; ++i) {
     if (scheduledNotes_[i].active && currentTick >= scheduledNotes_[i].offTick) {
-      // Send note off
-      noteOff(scheduledNotes_[i].channel, scheduledNotes_[i].note, 0);
+      dueChannels[dueCount] = scheduledNotes_[i].channel;
+      dueNotes[dueCount] = scheduledNotes_[i].note;
+      ++dueCount;
       scheduledNotes_[i].active = false;
     }
   }
   
   xSemaphoreGive(notesMutex_);
+
+  for (size_t i = 0; i < dueCount; ++i) {
+    MidiEvent event;
+    event.type = MidiEventType::NOTE_OFF;
+    event.channel = dueChannels[i] & 0x0F;
+    event.data1 = dueNotes[i] & 0x7F;
+    event.data2 = 0;
+    enqueue(event);
+  }
 }
 
 void MidiOutBuffer::panic() {
